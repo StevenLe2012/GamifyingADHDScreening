@@ -11,18 +11,23 @@ public class NPCFollow : MonoBehaviour
 {
     public GameObject Player;
     public float minDistance;
+    public float maxDistance;
     public float followSpeedPercent;
+
+    private float targetDistance;
 
     // Update is called once per frame
     void Update()
     {
         transform.LookAt(Player.transform);
+
+        // moves towards player
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hitData;
         if (Physics.Raycast(ray, out hitData))
         {
-            var targetDistance = hitData.distance;
-            if (targetDistance >= minDistance)
+            targetDistance = hitData.distance;
+            if (targetDistance > minDistance)
             {
                 //gameObject.GetComponent<Animation>().Play("running");  //TODO: Change to correct name
                 transform.position = Vector3.Lerp(transform.position, Player.transform.position, followSpeedPercent);
@@ -32,6 +37,14 @@ public class NPCFollow : MonoBehaviour
                 //gameObject.GetComponent<Animation>().Play("idle");  //TODO: Change to correct name
 
             }
+
+            // checks for too far from player
+            if (targetDistance > maxDistance)
+            {
+                transform.position = Player.transform.position;
+            }
         }
+
+
     }
 }
