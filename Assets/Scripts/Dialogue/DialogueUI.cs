@@ -91,7 +91,7 @@ namespace UIElements
                 return false;
             }
             sentenceText.text = _sentences.Dequeue();
-            Vocals.instance.Say(_audioObjects.Dequeue());  // my attempt to play the voice and subtitles when displaying sentences.
+            //Vocals.instance.Say(_audioObjects.Dequeue());  // my attempt to play the voice and subtitles when displaying sentences.
             return _sentences.Count > 0;
         }
 
@@ -166,6 +166,7 @@ namespace UIElements
 
         }
 
+        /*
         public void SetVocals(IEnumerable<AudioObjects> audioObjects)
         {
             _audioObjects.Clear();
@@ -174,6 +175,7 @@ namespace UIElements
                 _audioObjects.Enqueue(audioObject);
             }
         }
+        */
 
     }
 
