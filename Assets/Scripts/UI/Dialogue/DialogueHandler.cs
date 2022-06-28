@@ -39,11 +39,7 @@ namespace Dialogue
         // used when interacting with the NPC to get the dialogueState
         public void OnInteract(Interactor interactor)
         {
-            //Debug.Log("DialogueHandler Interaction Began");
-            //Debug.Log(interactor);
-            //Debug.Log(interactor.gameObject.name);
             var dialogueState = interactor.GetComponent<DialogueState>();
-            //Debug.Log(dialogueState);
             if (dialogueState == null) return;
 
             dialogueTree.SetUpDialogueState(dialogueState);
@@ -69,7 +65,7 @@ namespace Dialogue
             // Populate the dialogue UI
             dialogueUI.SetNpcName(dialogueTree.npcName);
             dialogueUI.SetSentences(dialogueUnit.sentences);
-            //dialogueUI.SetVocals(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
+            dialogueUI.SetVocals(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
             dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
             dialogueUI.ContinueDialogue();
         }

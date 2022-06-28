@@ -14,11 +14,12 @@ public class Vocals : MonoBehaviour
     }
     private void Start()
     {
-        source = gameObject.AddComponent<AudioSource>();
+        //source = gameObject.AddComponent<AudioSource>();
     }
 
     public void Say(AudioObjects clip)
     {
+        source = GetComponent<AudioSource>();
         if (source.isPlaying)
         {
             source.Stop();

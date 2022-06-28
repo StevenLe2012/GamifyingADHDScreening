@@ -2,41 +2,40 @@ using UnityEngine;
 using System.IO;
 using System;
 using Assets.Scripts.Biometrics;
+using System.Collections;
+using System.Collections.Generic;
 
 public class LoggingBiometrics : MonoBehaviour
 {
     private const string CSVSeperator = ",";
     private static int framesPassed;
     private static float startingTime;
-    private static BiometricInfo biometricData;
-    private static int buttonPress;
+    private static BiometricInfo  biometricData;
+    private static int _buttonPress;
+
     
     private void Awake()
     {
-        startingTime = Time.time; 
-        buttonPress = 0;
+        startingTime = Time.time;
+        biometricData = new BiometricInfo();
+        _buttonPress = 0;
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         // Creates to the CSV file with only heading
         CreateBiometricCSV();
+        // Updates and Appends the Biometric data to teh CSV
+        StartCoroutine(UpdateAndAppendBiometrics());
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // TODO: Rather than every 10 frames, make it so that it is consistent with time passed.
-        if (framesPassed % 10 == 0)
+        // updates the button press counter for each button they press on controller.
+        if (Input.anyKeyDown)
         {
-            UpdateBiometricData();
-            AppendToBiometricCSV(biometricData);
+            _buttonPress++;
         }
-
-        //TODO: If player hits any buttons, buttonPress++;
-
-        framesPassed += 1;
     }
 
     private static string[] CSVHeaders = new string[6] {
@@ -49,8 +48,7 @@ public class LoggingBiometrics : MonoBehaviour
     };
     public static void CreateBiometricCSV()
     {
-        Debug.Log("Created!");
-        using (StreamWriter sw = File.CreateText(getCSVPath()))
+        using (StreamWriter sw = File.CreateText(GetCSVPath()))
         {
             string finalString = "";
             for (int i = 0; i < CSVHeaders.Length; i++)
@@ -68,7 +66,7 @@ public class LoggingBiometrics : MonoBehaviour
 
     public static void AppendToBiometricCSV(BiometricInfo Biometrics)
     {
-        using (StreamWriter sw = File.AppendText(getCSVPath()))
+        using (StreamWriter sw = File.AppendText(GetCSVPath()))
         {
             // Casts all Biometrics to string
             string playerPos = Biometrics.PlayerPos.ToString();
@@ -86,7 +84,7 @@ public class LoggingBiometrics : MonoBehaviour
             string controllerRot = Biometrics.ControllerRot.ToString();
             controllerRot = controllerRot.Replace(",", "");
 
-            string ButtonPress = Biometrics.ButtonPress.ToString();
+            string buttonPress = Biometrics.ButtonPress.ToString();
 
             // adds biometric data to the finalString
             string finalString = "";
@@ -95,7 +93,7 @@ public class LoggingBiometrics : MonoBehaviour
             finalString += eyeMov + CSVSeperator;
             finalString += controllerMov + CSVSeperator;
             finalString += controllerRot + CSVSeperator;
-            finalString += ButtonPress + CSVSeperator;
+            finalString += buttonPress + CSVSeperator;
 
             var secondsPassed = Time.time - startingTime;
             finalString += secondsPassed.ToString();
@@ -104,10 +102,9 @@ public class LoggingBiometrics : MonoBehaviour
             sw.WriteLine(finalString);
         }
     }
-
-    private BiometricInfo UpdateBiometricData()
+    public BiometricInfo UpdateBiometricData()
     {
-        biometricData.ButtonPress = buttonPress;
+        biometricData.ButtonPress = _buttonPress;
         biometricData.ControllerMov = transform.position;
         biometricData.ControllerRot = transform.rotation;
         biometricData.HeadsetRot = transform.rotation;
@@ -116,9 +113,20 @@ public class LoggingBiometrics : MonoBehaviour
         return biometricData;
     }
 
-    private static string getCSVPath()
+    private static string GetCSVPath()
     {
         return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantBiometricData", $"P__Biometrics.csv");
         //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantBiometricData", $"Biometrics-{DateTime.Now.ToFileTime()}.csv");
     }
+
+    IEnumerator UpdateAndAppendBiometrics()
+    {
+        while (true)  //TODO: TURN OFF WHEN GAME IS FINISHED
+        {
+            UpdateBiometricData();
+            AppendToBiometricCSV(biometricData);
+            yield return new WaitForSeconds(0.04f);
+        }
+    }
+
 }

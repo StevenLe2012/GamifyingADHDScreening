@@ -9,7 +9,7 @@ public class TriggerAudio : MonoBehaviour
     // SET HOW TO TRIGGER IT.
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             Vocals.instance.Say(clipToPlay);
         }

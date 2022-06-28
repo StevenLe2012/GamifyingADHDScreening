@@ -31,7 +31,9 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-  scriptableCallbackNames: []
+  scriptableCallbackNames:
+  - 2sec
+  - 3sec
   dialogueUnits:
   - requiredStateKey: a
     sentences:
@@ -43,6 +45,18 @@ MonoBehaviour:
       actionToTrigger:
         m_PersistentCalls:
           m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: CallScriptableAction
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 2sec
+              m_BoolArgument: 0
+            m_CallState: 2
           - m_Target: {fileID: 11400000}
             m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
             m_MethodName: AddToState
@@ -69,8 +83,7 @@ MonoBehaviour:
             m_CallState: 2
   - requiredStateKey: aa
     sentences:
-    - It's good to see you.
-    - What is your name?
+    - It's good to see you. What is your name?
     audioObjects:
     - {fileID: 11400000, guid: 50ff9fa18d221334a8e97317593334c9, type: 2}
     - {fileID: 11400000, guid: d4d40b037fedfe84bb0089ad8b82a4e7, type: 2}
@@ -103,6 +116,18 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: CallScriptableAction
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 3sec
+              m_BoolArgument: 0
+            m_CallState: 2
     - buttonText: Bob
       actionToTrigger:
         m_PersistentCalls:
@@ -131,6 +156,18 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: CallScriptableAction
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 3sec
+              m_BoolArgument: 0
+            m_CallState: 2
   - requiredStateKey: aaa
     sentences:
     - Nice to meet you Adams!
@@ -152,6 +189,18 @@ MonoBehaviour:
               m_StringArgument: a
               m_BoolArgument: 0
             m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
   - requiredStateKey: aab
     sentences:
     - Nice to meet you Bob.
@@ -171,6 +220,18 @@ MonoBehaviour:
               m_IntArgument: 0
               m_FloatArgument: 0
               m_StringArgument: a
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 2
   - requiredStateKey: aaaa

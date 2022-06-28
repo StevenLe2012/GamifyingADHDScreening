@@ -107,7 +107,7 @@ namespace Dialogue
         // this function gets the next dialogue unit based on the dialogueState
         public DialogueUnit GetNextDialogueUnit()
         {
-            //dialogueState.stateDict[npcName] gets what state we are in with that particular NPC
+            // the dialogueState.stateDict[npcName] gets what state we are in with that particular NPC
             return dialogueUnitsDict.TryGetValue(dialogueState.stateDict[npcName], out var value) ? value : null;
         }
     }
