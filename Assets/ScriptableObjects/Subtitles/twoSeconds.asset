@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: twoSeconds
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: bb2da65dd61d1014e9b9531ed0a16e29, type: 3}
-  subtitle: What's your name? (2 sec)
+  subtitle: "I feel like I\u2019m so close to escaping. I know how to do it, but
+    it\u2019s impossible with only 1 person. You\u2019re the first person to come
+    here as well, so we can actually escape!"
