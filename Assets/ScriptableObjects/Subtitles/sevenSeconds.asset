@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: sevenSeconds
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: d8f89f2e2c505a645848171d7609a4d6, type: 3}
-  subtitle: Welcome Traveller to the world of Runeterra! (7 seconds)
+  subtitle: This is 7 seconds

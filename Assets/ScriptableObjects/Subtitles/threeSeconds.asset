@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: threeSeconds
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 4732ee6e3083055488aac1b15ce7e21c, type: 3}
-  subtitle: It's good to see you. (3 sec)
+  subtitle: This is 3 seconds

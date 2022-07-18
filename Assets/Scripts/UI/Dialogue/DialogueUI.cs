@@ -17,11 +17,12 @@ namespace UIElements
         [SerializeField] private TextMeshProUGUI sentenceText;
 
         private Button[] _buttons;  // all buttons user can press
+        private Queue<AudioObjects> _audioObjects;
         private Queue<string> _sentences;  // all sentences that will be said one by one
         private DialogueOption[] _dialogueOptions;  // all dialogue options applied to each button
         private DialogueOption _defaultDialogueOption; // the default dialogue option
-
-        private Queue<AudioObjects> _audioObjects;
+        private AudioObjects _curAudioObject;
+        private Vocals _speaker;
 
         // initializes all private variables
         void Start()
@@ -29,6 +30,7 @@ namespace UIElements
             _buttons = GetComponentsInChildren<Button>();
             _sentences = new Queue<string>();
             _audioObjects = new Queue<AudioObjects>();
+            _speaker = GetComponent<Vocals>();
             gameObject.SetActive(false);
         }
 
@@ -38,13 +40,23 @@ namespace UIElements
             npcNameText.text = npcName;
         }
 
+        /*
         // puts all sentences into a queue
-        public void SetSentences(IEnumerable<string> sentences)
+        public void SetSentences(IEnumerable<AudioObjects> audioObjects)
         {
             _sentences.Clear();
-            foreach (var sentence in sentences)
+            foreach (var audioObject in audioObjects)
             {
-                _sentences.Enqueue(sentence);
+                _sentences.Enqueue(audioObject.subtitle);
+            }
+        }
+        */
+        public void SetAudioObjects(IEnumerable<AudioObjects> audioObjects)
+        {
+            _audioObjects.Clear();
+            foreach (var audioObject in audioObjects)
+            {
+                _audioObjects.Enqueue(audioObject);
             }
         }
 
@@ -59,16 +71,23 @@ namespace UIElements
         public void ContinueDialogue()
         {
             gameObject.SetActive(true);
-            if (DisplaySentence())
+            if (GetNextAudioObject())
             {
-                DisplayContinueDialogueButton();
+                for (var i = 0; i < _buttons.Length; i++)
+                {
+                    _buttons[i].gameObject.SetActive(false);
+                }
+                SayCurDialogue();
+                Invoke("ContinueDialogue", _curAudioObject.clip.length); //ADD IN THE AUDIO OBJECT CLIP LENGTH HERE
             }
             else if (_dialogueOptions.Length > 0)
             {
+                SayCurDialogue();
                 DisplayDialogueOptions();
             }
             else if (_defaultDialogueOption != null)
             {
+                //SayCurDialogue();
                 DisplayDefaultDialogueOption();
             }
             else
@@ -77,24 +96,36 @@ namespace UIElements
             }
         }
 
+        public void SayCurDialogue()
+        {
+            _speaker.Say(_curAudioObject);
+        }
+
         // ends the dialogue
         public void EndDialogue()
         {
             gameObject.SetActive(false);
         }
 
-        // displays sentence on UI as long as there are still sentences in queue left.
-        // Returns true when there is at least 1 more sentence in queue after showing it. Else, return false.
-        private bool DisplaySentence()
+        private bool GetNextAudioObject()
         {
-            if (_sentences.Count <= 0)
+            if (_audioObjects.Count == 0)
             {
                 return false;
             }
-            sentenceText.text = _sentences.Dequeue();
-            return _sentences.Count > 0;
+            _curAudioObject = _audioObjects.Dequeue();
+            DisplaySentence(_curAudioObject);
+            return _audioObjects.Count > 0;
         }
 
+        // displays sentence on UI as long as there are still sentences in queue left.
+        // Returns true when there is at least 1 more sentence in queue after showing it. Else, return false.
+        private void DisplaySentence(AudioObjects audioObject)
+        {
+            sentenceText.text = audioObject.subtitle;
+        }
+
+        /*
         // displays only the continue button. The rest will be turned off.
         private void DisplayContinueDialogueButton()
         {
@@ -119,6 +150,7 @@ namespace UIElements
                 }
             }
         }
+        */
 
         // displays all the dialogue options availiable and turn the rest of the buttons off.
         private void DisplayDialogueOptions()
@@ -164,16 +196,6 @@ namespace UIElements
                 }
             }
 
-        }
-
-        
-        public void SetVocals(IEnumerable<AudioObjects> audioObjects)
-        {
-            _audioObjects.Clear();
-            foreach (var audioObject in audioObjects)
-            {
-                _audioObjects.Enqueue(audioObject);
-            }
         }
 
         public AudioObjects getAudioObject()

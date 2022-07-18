@@ -17,7 +17,7 @@ public class Vocals : MonoBehaviour
         //source = gameObject.AddComponent<AudioSource>();
     }
 
-    public void Say(AudioObjects clip)
+    public void Say(AudioObjects clip) // change to "start conversation" to play through array of audio objects one by one
     {
         source = GetComponent<AudioSource>();
         if (source.isPlaying)
@@ -27,6 +27,6 @@ public class Vocals : MonoBehaviour
 
         source.PlayOneShot(clip.clip);
 
-        UI.instance.SetSubtitle(clip.subtitle, clip.clip.length);
+        //SubtitleUI.instance.SetSubtitle(clip.subtitle, clip.clip.length);
     }
 }

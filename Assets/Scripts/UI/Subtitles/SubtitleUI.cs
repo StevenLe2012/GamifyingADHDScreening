@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class UI : MonoBehaviour
+public class SubtitleUI : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI subtitleText = default;
 
-    public static UI instance;
+    public static SubtitleUI instance;
 
     private void Awake()
     {
