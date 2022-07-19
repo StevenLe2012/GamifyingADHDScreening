@@ -59,7 +59,7 @@ public class Interactor : MonoBehaviour
         if (_collidersInRange == null || _collidersInRange.Length == 0) return;
         foreach (var colliderInRange in _collidersInRange)
         {
-            //Debug.Log(colliderInRange);
+            Debug.Log(colliderInRange);
             var interactable = colliderInRange.GetComponent<Interactable>();
             if (interactable != null)
             {

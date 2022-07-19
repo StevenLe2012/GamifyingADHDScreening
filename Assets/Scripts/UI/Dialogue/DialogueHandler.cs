@@ -63,8 +63,6 @@ namespace Dialogue
         {
             // Get the UI From the UI provider
             // Populate the dialogue UI
-            dialogueUI.SetNpcName(dialogueTree.npcName);
-            //dialogueUI.SetSentences(dialogueUnit.audioObjects);
             dialogueUI.SetAudioObjects(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
             dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
             dialogueUI.ContinueDialogue();

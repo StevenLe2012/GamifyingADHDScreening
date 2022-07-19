@@ -13,7 +13,6 @@ namespace UIElements
     public class DialogueUI : MonoBehaviour
     {
         // this is where we will add the npc name and text they say
-        [SerializeField] private TextMeshProUGUI npcNameText;
         [SerializeField] private TextMeshProUGUI sentenceText;
 
         private Button[] _buttons;  // all buttons user can press
@@ -32,12 +31,6 @@ namespace UIElements
             _audioObjects = new Queue<AudioObjects>();
             _speaker = GetComponent<Vocals>();
             gameObject.SetActive(false);
-        }
-
-        // sets up NPC name
-        public void SetNpcName(string npcName)
-        {
-            npcNameText.text = npcName;
         }
 
         /*
@@ -78,7 +71,7 @@ namespace UIElements
                     _buttons[i].gameObject.SetActive(false);
                 }
                 SayCurDialogue();
-                Invoke("ContinueDialogue", _curAudioObject.clip.length); //ADD IN THE AUDIO OBJECT CLIP LENGTH HERE
+                Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?)
             }
             else if (_dialogueOptions.Length > 0)
             {
