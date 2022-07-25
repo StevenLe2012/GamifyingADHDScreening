@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 6772455161085349384}
   - component: {fileID: 1420849255732129986}
   - component: {fileID: 454778993480867162}
-  - component: {fileID: 7516765190545116021}
   m_Layer: 0
   m_Name: Player Teleport (Blue)
   m_TagString: Untagged
@@ -99,17 +98,3 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &7516765190545116021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2387331629576005960}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 731f1c3faa86ccc49b8dd68a0fe2bc7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  code: 0
-  secondsTillTP: 2

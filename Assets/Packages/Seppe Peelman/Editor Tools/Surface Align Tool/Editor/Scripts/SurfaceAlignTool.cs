@@ -170,7 +170,7 @@ namespace SeppePeelman.EditorTools.SurfaceAlignTool
             Quaternion targetRotation = _activeTransform.rotation;
 
             Handles.color = Color.yellow;
-            Handles.FreeMoveHandle(1, _activeTransform.position, handleRotation, .25f * HandleUtility.GetHandleSize(_activeTransform.position), Vector3.one, Handles.SphereHandleCap);
+            Handles.FreeMoveHandle(1, _activeTransform.position, .25f * HandleUtility.GetHandleSize(_activeTransform.position), Vector3.one, Handles.SphereHandleCap);
 
             Vector3 mouseRaycastNormal = Vector3.zero;
 

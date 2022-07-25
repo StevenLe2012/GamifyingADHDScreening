@@ -51,8 +51,8 @@ public class Hand : MonoBehaviour {
         // transition the grip fingers slowly towards target per frame
         if (_triggerCurrent != _triggerTarget)
         {
-            _triggerCurrent = Mathf.MoveTowards(_gripCurrent, _gripTarget, Time.deltaTime * speed);
-            _animator.SetFloat(_animatorTriggerID, _gripCurrent);
+            _triggerCurrent = Mathf.MoveTowards(_triggerCurrent, _triggerTarget, Time.deltaTime * speed);
+            _animator.SetFloat(_animatorTriggerID, _triggerCurrent);
         }
     }
 
