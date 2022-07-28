@@ -4,15 +4,17 @@ using UnityEngine;
 public class Hand : MonoBehaviour {
 
     [SerializeField] private float speed = 10f;
+    [SerializeField] private bool useTriggerAndGrip;
 
     private Animator _animator;
     private SkinnedMeshRenderer _mesh;
-    private float _gripTarget;
-    private float _triggerTarget;
     private float _gripCurrent;
+    private float _gripTarget;
     private float _triggerCurrent;
+    private float _triggerTarget;
     private int _animatorGripID;
     private int _animatorTriggerID;
+    private int _animatorFullHandID;
 
     private void Start()
     {
@@ -22,6 +24,7 @@ public class Hand : MonoBehaviour {
         // hash to prevent string lookups in update (hash is faster!)
         _animatorGripID = Animator.StringToHash("Grip");
         _animatorTriggerID = Animator.StringToHash("Trigger");
+        _animatorFullHandID = Animator.StringToHash("FullHand");
     }
 
     private void Update()
@@ -41,19 +44,33 @@ public class Hand : MonoBehaviour {
 
     private void AnimateHand()
     {
-        // transition the grip fingers slowly towards target per frame
-        if (_gripCurrent != _gripTarget)
+        if (useTriggerAndGrip)
         {
-            _gripCurrent = Mathf.MoveTowards(_gripCurrent, _gripTarget, Time.deltaTime * speed);
-            _animator.SetFloat(_animatorGripID, _gripCurrent);
-        }
+            // transition the grip fingers slowly towards target per frame
+            if (_gripCurrent != _gripTarget)
+            {
+                _gripCurrent = Mathf.MoveTowards(_gripCurrent, _gripTarget, Time.deltaTime * speed);
+                _animator.SetFloat(_animatorGripID, _gripCurrent);
+            }
 
-        // transition the grip fingers slowly towards target per frame
-        if (_triggerCurrent != _triggerTarget)
-        {
-            _triggerCurrent = Mathf.MoveTowards(_triggerCurrent, _triggerTarget, Time.deltaTime * speed);
-            _animator.SetFloat(_animatorTriggerID, _triggerCurrent);
+            // transition the trigger fingers slowly towards target per frame
+            if (_triggerCurrent != _triggerTarget)
+            {
+                _triggerCurrent = Mathf.MoveTowards(_triggerCurrent, _triggerTarget, Time.deltaTime * speed);
+                _animator.SetFloat(_animatorTriggerID, _triggerCurrent);
+            }
         }
+        else
+        {
+            // transitions the full hand (all fingers) slowly towards target per frame
+            if (_triggerCurrent != _triggerTarget)
+            {
+                _triggerCurrent = Mathf.MoveTowards(_triggerCurrent, _triggerTarget, Time.deltaTime * speed);
+                _animator.SetFloat(_animatorFullHandID, _triggerCurrent);
+            }
+         }
+
+
     }
 
     public void ToggleVisibility()
