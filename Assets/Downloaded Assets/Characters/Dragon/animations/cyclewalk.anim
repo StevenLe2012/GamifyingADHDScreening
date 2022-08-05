@@ -9641,7 +9641,7 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    path: Dragon Lord/Sketchfab_model/Root/Ossos_BONES/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
+    path: Sketchfab_model/Root/Ossos/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
   m_ScaleCurves:
   - curve:
       serializedVersion: 2
@@ -9870,7 +9870,7 @@ AnimationClip:
       isPPtrCurve: 0
       isIntCurve: 0
     - serializedVersion: 2
-      path: 2358467785
+      path: 856843558
       attribute: 1
       script: {fileID: 0}
       typeID: 4
@@ -47950,7 +47950,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalPosition.x
-    path: Dragon Lord/Sketchfab_model/Root/Ossos_BONES/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
+    path: Sketchfab_model/Root/Ossos/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
     classID: 4
     script: {fileID: 0}
   - curve:
@@ -48194,7 +48194,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalPosition.y
-    path: Dragon Lord/Sketchfab_model/Root/Ossos_BONES/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
+    path: Sketchfab_model/Root/Ossos/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
     classID: 4
     script: {fileID: 0}
   - curve:
@@ -48438,7 +48438,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalPosition.z
-    path: Dragon Lord/Sketchfab_model/Root/Ossos_BONES/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
+    path: Sketchfab_model/Root/Ossos/Ossos_rootJoint/centroide_geral_Ossos/centroide_Ossos
     classID: 4
     script: {fileID: 0}
   m_EulerEditorCurves:
