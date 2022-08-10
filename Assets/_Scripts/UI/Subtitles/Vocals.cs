@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class Vocals : MonoBehaviour
 {
+    public static Vocals instance;
+    
     private AudioSource source;
 
-    public static Vocals instance;
+    
 
     private void Awake()
     {
