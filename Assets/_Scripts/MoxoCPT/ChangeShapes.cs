@@ -29,7 +29,7 @@ namespace MoxoCPT
         {
             _counts = new Dictionary<int, int>();
             
-            _cards.TurnAllCardsOff();
+            //_cards.TurnAllCardsOff();
 
             StartCoroutine("Change");
         }
@@ -39,27 +39,27 @@ namespace MoxoCPT
             // for the first card
             yield return new WaitForSeconds(_secondsTillGameStarts);
             var newCard = GetNextObj();
-            newCard.gameObject.SetActive(true);
+            TurnCardOn(newCard);
             _cards.UpdateCurCard(newCard);
             
             for (var i = 1; i < NUM_TRIALS; i++)
             {
                 var duration = GetCardDuration();
                 
-                // turn off old card
                 yield return new WaitForSeconds(duration);
                 newCard = GetNextObj();
-                _cards.curCard.gameObject.SetActive(false);
+                TurnCardOff(_cards.curCard);
                 
-                // turn on new card
                 yield return new WaitForSeconds(duration);
-                newCard.gameObject.SetActive(true);
+                TurnCardOn(newCard);
                 _cards.UpdateCurCard(newCard);
             }
             
-            _cards.curCard.gameObject.SetActive(false);
+            TurnCardOff(_cards.curCard);
+            
+            
 
-            //foreach (var i in _counts) Debug.Log(i);
+            foreach (var num in _counts) Debug.Log(num);
         }
 
         private Transform GetNextObj()
@@ -90,6 +90,18 @@ namespace MoxoCPT
         private float GetCardDuration()
         {
             return _cards.cardDuration[Random.Range(0, _cards.numDurations)];
+        }
+
+        private void TurnCardOn(Transform card)
+        {
+            card.gameObject.SetActive(true);
+            _cards.isActive = true;
+        }
+
+        private void TurnCardOff(Transform card)
+        {
+            card.gameObject.SetActive(false);
+            _cards.isActive = false;
         }
     }
 }

@@ -115,8 +115,8 @@ public class LoggingBiometrics : MonoBehaviour
 
     private static string GetCSVPath()
     {
-        return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantBiometricData", $"P__Biometrics.csv");
-        //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantBiometricData", $"Biometrics-{DateTime.Now.ToFileTime()}.csv");
+        return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "BiometricData", $"P__Biometrics.csv");
+        //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "BiometricData", $"Biometrics-{DateTime.Now.ToFileTime()}.csv");
     }
 
     IEnumerator UpdateAndAppendBiometrics()

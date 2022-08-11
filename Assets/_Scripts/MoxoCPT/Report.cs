@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MoxoCPT
 {
@@ -11,10 +12,11 @@ namespace MoxoCPT
     {
         public List<bool> Attentiveness;
         public List<bool> Timelineess;
-        public List<bool> HyperReactive;
-        public List<bool> Impulsive;
-        
-        public List<int> ReactionSpeed;
+        public List<bool> HyperReactiveness;
+        public List<bool> Impulsiveness;
+        public List<float> ReactionTime;
+
+        public int HyperReactiveCount = 0;
     }
 }
 

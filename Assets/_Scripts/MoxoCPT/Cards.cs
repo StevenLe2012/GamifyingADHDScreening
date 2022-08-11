@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using UnityEngine.Serialization;
 
 namespace MoxoCPT
 {
@@ -19,6 +20,8 @@ namespace MoxoCPT
 
         [HideInInspector] public int numCards;
         [HideInInspector] public int numDurations;
+        [HideInInspector] public int numSeen = 0;
+        [HideInInspector] public bool isActive;
 
 
         private void Awake()
@@ -34,18 +37,21 @@ namespace MoxoCPT
         private void Start()
         {
             cardArr = GetComponentsInChildren<Transform>().Where(child =>
-                child.gameObject.tag == "Target" || child.gameObject.tag == "NonTarget").ToArray();
+                child.gameObject.CompareTag("Target") || child.gameObject.CompareTag("NonTarget")).ToArray();
 
             numCards = cardArr.Length;
             numDurations = cardDuration.Length;
+            
+            TurnAllCardsOff();
         }
 
         public void UpdateCurCard(Transform newCard)
         {
             curCard = newCard;
+            numSeen++;
         }
 
-        public void TurnAllCardsOff()
+        private void TurnAllCardsOff()
         {
             foreach (var card in cardArr) card.gameObject.SetActive(false);
         }
