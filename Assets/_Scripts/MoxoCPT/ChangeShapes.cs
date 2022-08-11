@@ -11,7 +11,7 @@ namespace MoxoCPT
     {
         [SerializeField] private float _secondsTillGameStarts = 5.0f;
 
-        private Cards _cards;
+        private Report _report;
 
         private Dictionary<int, int> _counts;
 
@@ -19,17 +19,10 @@ namespace MoxoCPT
         private const int NUM_TRIALS = 59;
         private const int MAX_NUM_NONTARGET = 5;
 
-
-        private void Awake()
-        {
-            _cards = GetComponent<Cards>();
-        }
-
         private void Start()
         {
             _counts = new Dictionary<int, int>();
-            
-            //_cards.TurnAllCardsOff();
+            _report = new Report();
 
             StartCoroutine("Change");
         }
@@ -40,35 +33,38 @@ namespace MoxoCPT
             yield return new WaitForSeconds(_secondsTillGameStarts);
             var newCard = GetNextObj();
             TurnCardOn(newCard);
-            _cards.UpdateCurCard(newCard);
+            Cards.Instance.UpdateCurCard(newCard);
             
             for (var i = 1; i < NUM_TRIALS; i++)
             {
                 var duration = GetCardDuration();
                 
+                _report.ResetReport();
+                StartCoroutine(Interact.StartReport(_report, duration * 2));
                 yield return new WaitForSeconds(duration);
                 newCard = GetNextObj();
-                TurnCardOff(_cards.curCard);
+                TurnCardOff(Cards.Instance.curCard);
                 
                 yield return new WaitForSeconds(duration);
                 TurnCardOn(newCard);
-                _cards.UpdateCurCard(newCard);
+                Cards.Instance.UpdateCurCard(newCard);
             }
             
-            TurnCardOff(_cards.curCard);
+            TurnCardOff(Cards.Instance.curCard);
             
-            
+            MoxoCPTManager.Instance.isGameOver = true;
+
 
             foreach (var num in _counts) Debug.Log(num);
         }
 
         private Transform GetNextObj()
         {
-            var index = Random.Range(0, _cards.numCards);
+            var index = Random.Range(0, Cards.Instance.numCards);
             
             AddToDict(index);
             
-            return _cards.cardArr[index];
+            return Cards.Instance.cardArr[index];
         }
 
         private void AddToDict(int index)
@@ -79,7 +75,7 @@ namespace MoxoCPT
             {
                 while (index != 0 && _counts[index] >= MAX_NUM_NONTARGET)
                 {
-                    index = Random.Range(0, _cards.numCards);
+                    index = Random.Range(0, Cards.Instance.numCards);
                     if (!_counts.ContainsKey(index)) _counts.Add(index, 0);
                 }
 
@@ -89,19 +85,19 @@ namespace MoxoCPT
 
         private float GetCardDuration()
         {
-            return _cards.cardDuration[Random.Range(0, _cards.numDurations)];
+            return Cards.Instance.cardDuration[Random.Range(0, Cards.Instance.numDurations)];
         }
 
         private void TurnCardOn(Transform card)
         {
             card.gameObject.SetActive(true);
-            _cards.isActive = true;
+            Cards.Instance.isActive = true;
         }
 
         private void TurnCardOff(Transform card)
         {
             card.gameObject.SetActive(false);
-            _cards.isActive = false;
+            Cards.Instance.isActive = false;
         }
     }
 }

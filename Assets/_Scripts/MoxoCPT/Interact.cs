@@ -1,55 +1,76 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using MoxoCPT;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace MoxoCPT
 {
     public class Interact : MonoBehaviour
     {
-        private Cards _cards;
-        [HideInInspector] public Report _report;
-
-        private bool _hasPressed;
-
-        private void Awake()
+        public static bool _buttonPressed = false;
+        private static bool _alreadyPressed;
+        
+        // TODO: Make it so they can't access ButtonPressed until after the game starts b/c that would cause error.
+        public static IEnumerator StartReport(Report report, float duration)
         {
-            _cards = GetComponent<Cards>();
-            _report = new Report();
+            var timePassed = 0f;
+            _alreadyPressed = false;
+            while (timePassed <= duration)
+            {
+                Debug.Log(_buttonPressed);
+                if (_buttonPressed)
+                {
+                    _buttonPressed = false;
+                    Debug.Log("Button Pressed!");
+                    
+                    
+                    // Hyper Reactiveness
+                    if (_alreadyPressed)
+                    {
+                        Debug.Log("Pressed Again!");
+                        report.HyperReactiveness = true;
+                        report.HyperReactiveCount++;
+                    }
+                    
+                    // Storing Target/Distractor, Card Duration, and ReactionTime
+                    else
+                    {
+                        report.IsTarget = IsTargetCard();
+                        report.TimeShown = duration / 2;
+                        report.ReactionTime = timePassed;
+                    }
+
+                    // Attentiveness and Timeliness
+                    if (IsTargetCard() && !_alreadyPressed)
+                    {
+                        if (Cards.Instance.isActive) report.Timelineess = true;
+                        report.Attentiveness = true;
+                        _alreadyPressed = true;
+                    }
+            
+                    // Impulsiveness
+                    if (!IsTargetCard() && !_alreadyPressed)
+                    {
+                        report.Impulsiveness = true;
+                        _alreadyPressed = true;
+                    }
+                }
+                
+                timePassed += Time.deltaTime;
+
+                yield return null;
+            }
+            Debug.Log("Appending to CSV");
+            LoggingReport.AppendToReportCSV(report);
         }
 
-        public void ButtonPressed()  // TODO: Make it for when they press button
+        private static bool IsTargetCard()
         {
-            var index = _cards.numSeen - 1;
-            
-            // HyperReactiveness
-            if (_hasPressed)
-            {
-                _report.HyperReactiveness[index] = true;
-                _report.HyperReactiveCount++;
-            }
-            
-            // Attentiveness and Timeliness
-            if (IsTargetCard() && !_hasPressed)
-            {
-                if (_cards.isActive) _report.Timelineess[index] = true;
-                _report.Attentiveness[index] = true;
-                _hasPressed = true;
-            }
-            
-            // Impulsiveness
-            if (!IsTargetCard() && !_hasPressed)
-            {
-                _report.Impulsiveness[index] = true;
-                _hasPressed = true;
-            }
-        }
-
-        private bool IsTargetCard()
-        {
-            return _cards.curCard.gameObject.CompareTag("Target");
+            return Cards.Instance.curCard.gameObject.CompareTag("Target");
         }
 
     }

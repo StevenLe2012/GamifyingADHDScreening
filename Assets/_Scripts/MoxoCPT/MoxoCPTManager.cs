@@ -7,23 +7,21 @@ namespace MoxoCPT
 {
     public class MoxoCPTManager : MonoBehaviour
     {
-        public static MoxoCPTManager instance;
+        public static MoxoCPTManager Instance;
 
         [HideInInspector] public bool isGameOver = false;
-
-        private Cards _cards;
+        
         private LoggingReport _loggingReport;
         
         private void Awake()
         {
-            if (instance == null)
+            if (Instance == null)
             {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
+                Instance = this;
+                //DontDestroyOnLoad(gameObject);
             }
-            else Destroy(instance);
-
-            _cards = GetComponent<Cards>();
+            else Destroy(Instance);
+            
             _loggingReport = GetComponent<LoggingReport>();
         }
 
@@ -32,13 +30,12 @@ namespace MoxoCPT
             if (isGameOver)
             {
                 isGameOver = false;  // only plays once
-                
+                GameOver();
             }
         }
 
         private void GameOver()
         {
-            _loggingReport.LogReport();
         }
     }
 }

@@ -10,19 +10,54 @@ namespace MoxoCPT
 {
     public class LoggingReport : MonoBehaviour
     {
-        [SerializeField] private Interact _interact;
-        
         private const string CSVSeperator = ",";
 
-        public void LogReport()
+        private void Start()
         {
             CreateReportCSV();
-            AppendToReportCSV();
+        }
+        
+        public static void AppendToReportCSV(Report report)
+        {
+            using (StreamWriter sw = File.AppendText(GetCSVPath()))
+            {
+                // Casts all Biometrics to 
+                var isTarget = report.IsTarget ? "Target" : "Distractor";
+
+                var timeShown = report.TimeShown.ToString();
+                
+                var attentiveness = report.Attentiveness.ToString();
+
+                var timeliness =  report.Timelineess.ToString();
+
+                var hyperReactiveness = report.HyperReactiveness.ToString();
+
+                var impulsiveness = report.Impulsiveness.ToString();
+
+                var reactionTime = report.ReactionTime.ToString();
+                
+                var hyperReactiveCount = report.HyperReactiveCount.ToString();
+
+                // adds biometric data to the finalString
+                var finalString = "";
+                finalString += isTarget + CSVSeperator;
+                finalString += timeShown + CSVSeperator;
+                finalString += attentiveness + CSVSeperator;
+                finalString += timeliness + CSVSeperator;
+                finalString += hyperReactiveness + CSVSeperator;
+                finalString += impulsiveness + CSVSeperator;
+                finalString += reactionTime + CSVSeperator;
+                finalString += hyperReactiveCount;
+
+                // appends the biometric to the CSV
+                sw.WriteLine(finalString);
+            }
         }
 
-
-        private string[] CSVHeaders = new string[6]
+        private static string[] CSVHeaders = new string[8]
         {
+            "Type",
+            "Time Shown",
             "Attentiveness",
             "Timelineess",
             "HyperReactiveness",
@@ -31,7 +66,7 @@ namespace MoxoCPT
             "HyperReactiveCount"
         };
 
-        private void CreateReportCSV()
+        private static void CreateReportCSV()
         {
             using (StreamWriter sw = File.CreateText(GetCSVPath()))
             {
@@ -48,48 +83,10 @@ namespace MoxoCPT
             }
         }
         
-        private void AppendToReportCSV()
-        {
-            using (StreamWriter sw = File.AppendText(GetCSVPath()))
-            {
-                string hyperReactiveCount = default;
-                for (var i = 0; i < 59; i++)
-                {
-                    // Casts all Biometrics to string
-                    var attentiveness = _interact._report.Attentiveness[i].ToString();
-
-                    var timeliness =  _interact._report.Timelineess[i].ToString();
-
-                    var hyperReactiveness = _interact._report.HyperReactiveness[i].ToString();
-
-                    var impulsiveness = _interact._report.Impulsiveness.ToString();
-
-                    var reactionTime = _interact._report.ReactionTime.ToString();
-
-                    if (i == 0)
-                    {
-                        hyperReactiveCount = _interact._report.HyperReactiveCount.ToString();
-                    }
-
-                    // adds biometric data to the finalString
-                    var finalString = "";
-                    finalString += attentiveness + CSVSeperator;
-                    finalString += timeliness + CSVSeperator;
-                    finalString += hyperReactiveness + CSVSeperator;
-                    finalString += impulsiveness + CSVSeperator;
-                    finalString += reactionTime + CSVSeperator;
-                    if (i == 0) finalString += hyperReactiveCount;
-
-                    // appends the biometric to the CSV
-                    sw.WriteLine(finalString);
-                }
-            }
-        }
-        
         private static string GetCSVPath()
         {
-            return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "ReportData", $"P__MoxoCPT.csv");
-            //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "ReportData", $"MoxoCPT-{DateTime.Now.ToFileTime()}.csv");
+            return Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData", $"P__MoxoCPT.csv");
+            //return Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData", $"MoxoCPT-{DateTime.Now.ToFileTime()}.csv");
         }
     }
 }

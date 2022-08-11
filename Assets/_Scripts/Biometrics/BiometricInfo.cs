@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.Scripts.Biometrics
+namespace Biometrics
 {
     public class BiometricInfo  //used to be internal class
     {
@@ -17,10 +17,5 @@ namespace Assets.Scripts.Biometrics
         public Vector3 ControllerMov;
         public Quaternion ControllerRot;
         public int ButtonPress;
-
-        public int getLength()
-        {
-            return 6;
-        }
     }
 }

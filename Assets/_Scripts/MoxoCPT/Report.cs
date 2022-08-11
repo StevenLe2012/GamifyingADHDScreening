@@ -6,17 +6,28 @@ using UnityEngine.Serialization;
 
 namespace MoxoCPT
 {
-    [Serializable]
+    
     
     public class Report
     {
-        public List<bool> Attentiveness;
-        public List<bool> Timelineess;
-        public List<bool> HyperReactiveness;
-        public List<bool> Impulsiveness;
-        public List<float> ReactionTime;
+        public bool IsTarget;
+        public float TimeShown;
+        public bool Attentiveness;
+        public bool Timelineess;
+        public bool HyperReactiveness;
+        public bool Impulsiveness;
+        public float ReactionTime;  // only for first time pressing button on a stimuli
+        public int HyperReactiveCount;
 
-        public int HyperReactiveCount = 0;
+        public void ResetReport()
+        {
+            Attentiveness = false;
+            Timelineess = false;
+            HyperReactiveness = false;
+            Impulsiveness = false;
+            ReactionTime = -1f;
+            HyperReactiveCount = 0;
+        }
     }
 }
 

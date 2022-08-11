@@ -10,7 +10,7 @@ namespace MoxoCPT
 {
     public class Cards : MonoBehaviour
     {
-        public Cards instance;
+        public static Cards Instance;
         
         // there are 6 (0.5f), 3(1f), and 1(4f), making the probabilities, 60%, 30%, and 10% respectively.
         public float[] cardDuration = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 1f, 1f, 1f, 4f};
@@ -26,12 +26,12 @@ namespace MoxoCPT
 
         private void Awake()
         {
-            if (instance == null)
+            if (Instance == null)
             {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
+                Instance = this;
+                //DontDestroyOnLoad(gameObject);
             }
-            else Destroy(instance);
+            else Destroy(Instance);
         }
 
         private void Start()
