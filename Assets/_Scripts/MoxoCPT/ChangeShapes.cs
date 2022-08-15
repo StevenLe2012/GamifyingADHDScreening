@@ -51,8 +51,6 @@ namespace MoxoCPT
             }
             
             TurnCardOff(Cards.Instance.curCard);
-            
-            MoxoCPTManager.Instance.isGameOver = true;
 
 
             foreach (var num in _counts) Debug.Log(num);

@@ -6,10 +6,12 @@ namespace MoxoCPT
 {
     public class ButtonPress : MonoBehaviour
     {
-        public void Pressed()
+        public void Update()
         {
-            Interact._buttonPressed = true;
-            Debug.Log("button was PRESSED");
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                Interact._buttonPressed = true;
+            }
         }
     }
 

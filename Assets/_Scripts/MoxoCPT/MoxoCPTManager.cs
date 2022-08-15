@@ -10,32 +10,20 @@ namespace MoxoCPT
         public static MoxoCPTManager Instance;
 
         [HideInInspector] public bool isGameOver = false;
-        
-        private LoggingReport _loggingReport;
-        
+
         private void Awake()
         {
             if (Instance == null)
             {
                 Instance = this;
-                //DontDestroyOnLoad(gameObject);
+                DontDestroyOnLoad(gameObject);
             }
-            else Destroy(Instance);
-            
-            _loggingReport = GetComponent<LoggingReport>();
+            else Destroy(gameObject);
         }
 
-        private void Update()
+        public void StartGame()
         {
-            if (isGameOver)
-            {
-                isGameOver = false;  // only plays once
-                GameOver();
-            }
-        }
-
-        private void GameOver()
-        {
+            LoggingReport.CreateReportCSV();
         }
     }
 }

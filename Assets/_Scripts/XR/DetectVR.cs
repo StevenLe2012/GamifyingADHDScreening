@@ -45,7 +45,5 @@ public class DetectVR : MonoBehaviour  //TODO: Change to Scriptable Object for i
         Debug.Log("XRLoaderSettings is NOT null");
         XROrigin.SetActive(true);
         desktopCharacter.SetActive(false);
-
-        return;
     }
 }

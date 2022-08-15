@@ -21,7 +21,6 @@ namespace MoxoCPT
             _alreadyPressed = false;
             while (timePassed <= duration)
             {
-                Debug.Log(_buttonPressed);
                 if (_buttonPressed)
                 {
                     _buttonPressed = false;
@@ -64,7 +63,6 @@ namespace MoxoCPT
 
                 yield return null;
             }
-            Debug.Log("Appending to CSV");
             LoggingReport.AppendToReportCSV(report);
         }
 

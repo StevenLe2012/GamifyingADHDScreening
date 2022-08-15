@@ -12,11 +12,6 @@ namespace MoxoCPT
     {
         private const string CSVSeperator = ",";
 
-        private void Start()
-        {
-            CreateReportCSV();
-        }
-        
         public static void AppendToReportCSV(Report report)
         {
             using (StreamWriter sw = File.AppendText(GetCSVPath()))
@@ -66,7 +61,7 @@ namespace MoxoCPT
             "HyperReactiveCount"
         };
 
-        private static void CreateReportCSV()
+        public static void CreateReportCSV()
         {
             using (StreamWriter sw = File.CreateText(GetCSVPath()))
             {
