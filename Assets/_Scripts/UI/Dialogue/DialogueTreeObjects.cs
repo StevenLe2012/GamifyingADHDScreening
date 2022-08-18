@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem.Interactions;
+using UnityEngine.UIElements;
 
 /*
- * This file has all the helperfunctions to create all the specific dialogue trees possible with all the various user options.
+ * This file has all the helper functions to create all the specific dialogue trees possible with all the various user options.
  */
 
 namespace Dialogue
 {
-    [CreateAssetMenu(fileName = "DialogueTree", menuName = "ScriptableObjects/Dialgue Tree")]
+    [CreateAssetMenu(fileName = "DialogueTree", menuName = "ScriptableObjects/Dialogue Tree")]
     public class DialogueTreeObjects : ScriptableObject
     {
+        // Editor class members
         public string npcName;
         public string defaultState;  // when we interact with NPC for the first time
         public DialogueOption defaultOption;
@@ -22,8 +25,9 @@ namespace Dialogue
         public Action continueCallback;
         public Action endDialogueCallback;
         public Dictionary<string, DialogueUnit> dialogueUnitsDict;  // will hold all the dialogue needed based on the current dialogueState
-        public Dictionary<string, Action> scriptableCallbacks = new Dictionary<string, Action>();  
-    
+        public Dictionary<string, Action> scriptableCallbacks = new Dictionary<string, Action>();
+
+
         // this function adds the state to the specific NPC's stateDictionary
         public void AddToState(string stateToAdd)
         {
@@ -64,6 +68,7 @@ namespace Dialogue
         // this function ends dialogue
         public void EndDialogue()
         {
+            Debug.Log("SHOULD END");
             endDialogueCallback();
         }
 
@@ -89,7 +94,7 @@ namespace Dialogue
         public void SetUpDialogueState(DialogueState state)
         {
             dialogueState = state;
-            // if the NPC is not in the dictionary already, add NPC and set it to teh default state.
+            // if the NPC is not in the dictionary already, add NPC and set it to the default state.
             if (!dialogueState.stateDict.ContainsKey(npcName))
             {
                 dialogueState.stateDict[npcName] = defaultState;

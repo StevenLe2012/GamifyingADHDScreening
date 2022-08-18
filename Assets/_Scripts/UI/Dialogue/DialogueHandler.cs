@@ -1,3 +1,4 @@
+using System;
 using Helpers;
 using System.Collections.Generic;
 //using Interactables;
@@ -64,8 +65,42 @@ namespace Dialogue
             // Get the UI From the UI provider
             // Populate the dialogue UI
             dialogueUI.SetAudioObjects(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
-            dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
-            dialogueUI.ContinueDialogue();
+            
+            
+            //my attempt
+            if (!string.IsNullOrEmpty(dialogueUnit.goToState))
+            {
+                dialogueUI.SetNextState(dialogueUnit.goToState);
+                dialogueUI.SetNextEvent(dialogueUnit.nextEventWithoutButton);
+                //dialogueTree.ResetState(dialogueUnit.goToState);
+                dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
+                dialogueUI.ContinueDialogue();
+            }
+            else if (!string.IsNullOrEmpty(dialogueUnit.endDialogueAndSetState))
+            {
+                dialogueUI.SetNextState(dialogueUnit.endDialogueAndSetState);
+                dialogueUI.SetNextEvent(dialogueUnit.nextEventWithoutButton);
+                //dialogueTree.ResetState(dialogueUnit.endDialogueAndSetState);
+                dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
+                dialogueUI.ContinueDialogue();
+                //dialogueUI.gameObject.SetActive(true);
+                //Invoke("EndDialogue", dialogueUI._curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?)
+                //dialogueTree.EndDialogue();
+                /*
+                 * TLDR: I can't do anything here. i need ot change dialogue UI to change what happens bruh.
+                 */
+            }
+            else
+            {
+                dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
+                dialogueUI.ContinueDialogue();
+            }
+            // set in inspector a unity event for "do automatically next" or something and we can call it in dialogue UI to then do that next automatically after it is called.
+            
+
+            //dialogueUI.SetDialogueOptions(dialogueUnit.options, dialogueTree.defaultOption);
+            //dialogueUI.SetNextState(dialogueUnit.goToState);
+            //dialogueUI.ContinueDialogue();
         }
 
     }

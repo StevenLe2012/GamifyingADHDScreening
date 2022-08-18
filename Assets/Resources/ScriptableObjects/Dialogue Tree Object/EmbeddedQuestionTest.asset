@@ -1,0 +1,326 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690b57c63a27d0346bf581998aa605bf, type: 3}
+  m_Name: EmbeddedQuestionTest
+  m_EditorClassIdentifier: 
+  npcName: Ekonn
+  defaultState: a
+  defaultOption:
+    buttonText: 
+    actionToTrigger:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 0}
+          m_TargetAssemblyTypeName: 
+          m_MethodName: 
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+  scriptableCallbackNames: []
+  dialogueUnits:
+  - requiredStateKey: a
+    audioObjects:
+    - {fileID: 11400000, guid: ebe3ef7b42ef5124baaa5f159cceaa54, type: 2}
+    - {fileID: 11400000, guid: 7dd96bedecdeba7429a48bc70f943be5, type: 2}
+    - {fileID: 11400000, guid: 95a8a53dc1b4579498a819354505f5dc, type: 2}
+    options:
+    - buttonText: 2:00PM
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: b
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: 5PM
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: c
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: 2AM
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: c
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: 5AM
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: c
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    goToState: 
+    endDialogueAndSetState: aa
+  - requiredStateKey: ab
+    audioObjects:
+    - {fileID: 11400000, guid: 1e779741af93b6347984e224ba5ccbaa, type: 2}
+    - {fileID: 11400000, guid: 7d7c0c54a5784c84d9a5014b47c0e0e4, type: 2}
+    - {fileID: 11400000, guid: ce63ad0f89004e0479737c7c0ef00efd, type: 2}
+    options:
+    - buttonText: Yes
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: a
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: No
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: b
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    goToState: 
+    endDialogueAndSetState: 
+  - requiredStateKey: aba
+    audioObjects:
+    - {fileID: 11400000, guid: bfa4eb5b43e3a0b4ea8e603a14a2c509, type: 2}
+    - {fileID: 11400000, guid: d3ef997c39e9b2c48af74b912c381076, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  - requiredStateKey: abb
+    audioObjects:
+    - {fileID: 11400000, guid: 264659f546b03004298a41d49999402a, type: 2}
+    - {fileID: 11400000, guid: 797c1b6271f68cf4abdf8e54db92f2c1, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  - requiredStateKey: ac
+    audioObjects:
+    - {fileID: 11400000, guid: 21d7b94f0eda66945b64705c455a78bf, type: 2}
+    - {fileID: 11400000, guid: d66a759d5bca4744a9f1542766db7973, type: 2}
+    - {fileID: 11400000, guid: bc69fa46abd49814e9d3d84669e78a51, type: 2}
+    options:
+    - buttonText: Yes
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: a
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: No
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: c
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    goToState: 
+    endDialogueAndSetState: 
+  - requiredStateKey: aca
+    audioObjects:
+    - {fileID: 11400000, guid: 3e25e5a825124864a9c7469dbe4fce20, type: 2}
+    - {fileID: 11400000, guid: 3e25e5a825124864a9c7469dbe4fce20, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  - requiredStateKey: acb
+    audioObjects:
+    - {fileID: 11400000, guid: b3a17230bea3bb449bfaaaba2c58c6f9, type: 2}
+    - {fileID: 11400000, guid: fffbdde6fa2fc664bbe2fd5cb2323abd, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  - requiredStateKey: acc
+    audioObjects:
+    - {fileID: 11400000, guid: 9c14a33f8b6ff5649949c791eaad5e0d, type: 2}
+    - {fileID: 11400000, guid: 6706a79a276f1cc44b8671c607c12540, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  - requiredStateKey: aa
+    audioObjects:
+    - {fileID: 11400000, guid: 7b2c5a762610fe746962b8eac9b5acc1, type: 2}
+    - {fileID: 11400000, guid: 3731db4c266d7e04f978bb09ffa3dc29, type: 2}
+    options: []
+    goToState: aa
+    endDialogueAndSetState: 
+  dialogueState: {fileID: 0}

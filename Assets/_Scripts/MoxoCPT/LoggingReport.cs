@@ -12,6 +12,11 @@ namespace MoxoCPT
     {
         private const string CSVSeperator = ",";
 
+        private void Start()
+        {
+            CreateReportCSV();
+        }
+
         public static void AppendToReportCSV(Report report)
         {
             using (StreamWriter sw = File.AppendText(GetCSVPath()))
@@ -23,7 +28,7 @@ namespace MoxoCPT
                 
                 var attentiveness = report.Attentiveness.ToString();
 
-                var timeliness =  report.Timelineess.ToString();
+                var timeliness =  report.Timeliness.ToString();
 
                 var hyperReactiveness = report.HyperReactiveness.ToString();
 

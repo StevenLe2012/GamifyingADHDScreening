@@ -13,7 +13,7 @@ namespace MoxoCPT
         public bool IsTarget;
         public float TimeShown;
         public bool Attentiveness;
-        public bool Timelineess;
+        public bool Timeliness;
         public bool HyperReactiveness;
         public bool Impulsiveness;
         public float ReactionTime;  // only for first time pressing button on a stimuli
@@ -22,7 +22,7 @@ namespace MoxoCPT
         public void ResetReport()
         {
             Attentiveness = false;
-            Timelineess = false;
+            Timeliness = false;
             HyperReactiveness = false;
             Impulsiveness = false;
             ReactionTime = -1f;

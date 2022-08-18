@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Dialogue;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 /*
@@ -17,17 +18,20 @@ namespace UIElements
 
         private Button[] _buttons;  // all buttons user can press
         private Queue<AudioObjects> _audioObjects;
-        private Queue<string> _sentences;  // all sentences that will be said one by one
+        //private Queue<string> _sentences;  // all sentences that will be said one by one
         private DialogueOption[] _dialogueOptions;  // all dialogue options applied to each button
         private DialogueOption _defaultDialogueOption; // the default dialogue option
         private AudioObjects _curAudioObject;
         private Vocals _speaker;
 
+        private string _goToState;
+        private UnityEvent _nextEvent;
+
         // initializes all private variables
         void Start()
         {
             _buttons = GetComponentsInChildren<Button>();
-            _sentences = new Queue<string>();
+            //_sentences = new Queue<string>();
             _audioObjects = new Queue<AudioObjects>();
             _speaker = GetComponent<Vocals>();
             gameObject.SetActive(false);
@@ -66,9 +70,9 @@ namespace UIElements
             gameObject.SetActive(true);
             if (GetNextAudioObject())
             {
-                for (var i = 0; i < _buttons.Length; i++)
+                foreach (var button in _buttons)
                 {
-                    _buttons[i].gameObject.SetActive(false);
+                    button.gameObject.SetActive(false);
                 }
                 SayCurDialogue();
                 Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?)
@@ -80,8 +84,20 @@ namespace UIElements
             }
             else if (_defaultDialogueOption != null)
             {
-                //SayCurDialogue();
-                DisplayDefaultDialogueOption();
+                if (_buttons.Length <= 0)
+                {
+                    return;
+                }
+
+                foreach (var button in _buttons)
+                {
+                    button.gameObject.SetActive(false);
+                }
+                
+                SayCurDialogue();
+                 Invoke("DoDefaultDialogueOption", _curAudioObject.clip.length);
+                
+                //DisplayDefaultDialogueOption();
             }
             else
             {
@@ -89,7 +105,7 @@ namespace UIElements
             }
         }
 
-        public void SayCurDialogue()
+        private void SayCurDialogue()
         {
             _speaker.Say(_curAudioObject);
         }
@@ -166,6 +182,7 @@ namespace UIElements
             }
         }
 
+        
         private void DisplayDefaultDialogueOption()
         {
             if (_buttons.Length <= 0)
@@ -188,14 +205,34 @@ namespace UIElements
                     _buttons[i].gameObject.SetActive(false);
                 }
             }
+        }
+        
+        
 
+        
+        private void DoDefaultDialogueOption()
+        {
+            Debug.Log("next event occured");
+            _nextEvent.Invoke();
         }
 
+        public void SetNextState(string nextState)
+        {
+            _goToState = nextState;
+        }
+
+        public void SetNextEvent(UnityEvent nextEvent)
+        {
+            _nextEvent = nextEvent;
+        }
+
+        /*
         public AudioObjects getAudioObject()
         {
             return _audioObjects.Dequeue();
             //Vocals.instance.Say(audioObject);  // my attempt to play the voice and subtitles when displaying sentences.
         }
+        */
 
     }
 

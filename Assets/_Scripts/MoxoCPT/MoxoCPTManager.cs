@@ -21,10 +21,12 @@ namespace MoxoCPT
             else Destroy(gameObject);
         }
 
+        /*
         public void StartGame()
         {
             LoggingReport.CreateReportCSV();
         }
+        */
     }
 }
 

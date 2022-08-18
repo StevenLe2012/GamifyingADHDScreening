@@ -1,9 +1,19 @@
 Type,Time Shown,Attentiveness,Timelineess,HyperReactiveness,Impulsiveness,ReactionTime,HyperReactiveCount
-Distractor,1,False,False,True,True,0.4419901,2
-Distractor,1,False,False,True,True,0.2583414,5
-Distractor,0.5,False,False,True,True,0.0697755,4
-Distractor,0.5,False,False,True,True,0.4722433,3
-Distractor,0.5,False,False,True,True,0.1654071,4
-Distractor,0.5,False,False,True,True,0.0237271,2
-Distractor,0.5,False,False,True,True,0.2423214,1
-Distractor,0.5,False,False,False,True,0.2449143,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,0,False,False,False,False,-1,0
+Distractor,4,False,False,True,True,0.2753339,2
+Target,0.5,True,True,False,False,0.4314947,0
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0
+Distractor,4,False,False,False,True,7.552994,0
+Distractor,4,False,False,False,False,-1,0
+Distractor,4,False,False,False,False,-1,0

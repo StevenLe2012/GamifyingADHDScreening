@@ -55,10 +55,11 @@ public class GameManager : MonoBehaviour
     }
     private void HandleCPT()
     {
-        if (Cards.Instance.numSeen == Cards.Instance.numCards)
-        {
-            UpdateGameState(GameState.Narrative);
-        }
+        
+        // if (Cards.Instance.numSeen == Cards.Instance.numCards)
+        // {
+        //     UpdateGameState(GameState.Narrative);
+        // }
     }
 }
 

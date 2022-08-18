@@ -46,7 +46,7 @@ namespace MoxoCPT
                     // Attentiveness and Timeliness
                     if (IsTargetCard() && !_alreadyPressed)
                     {
-                        if (Cards.Instance.isActive) report.Timelineess = true;
+                        if (Cards.Instance.isActive) report.Timeliness = true;
                         report.Attentiveness = true;
                         _alreadyPressed = true;
                     }
