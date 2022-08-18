@@ -20,15 +20,12 @@ namespace UIElements
         private Queue<AudioObjects> _audioObjects;
         //private Queue<string> _sentences;  // all sentences that will be said one by one
         private DialogueOption[] _dialogueOptions;  // all dialogue options applied to each button
-        private DialogueOption _defaultDialogueOption; // the default dialogue option
         private AudioObjects _curAudioObject;
         private Vocals _speaker;
-
-        private string _goToState;
         private UnityEvent _nextEvent;
 
         // initializes all private variables
-        void Start()
+        private void Start()
         {
             _buttons = GetComponentsInChildren<Button>();
             //_sentences = new Queue<string>();
@@ -36,18 +33,7 @@ namespace UIElements
             _speaker = GetComponent<Vocals>();
             gameObject.SetActive(false);
         }
-
-        /*
-        // puts all sentences into a queue
-        public void SetSentences(IEnumerable<AudioObjects> audioObjects)
-        {
-            _sentences.Clear();
-            foreach (var audioObject in audioObjects)
-            {
-                _sentences.Enqueue(audioObject.subtitle);
-            }
-        }
-        */
+        
         public void SetAudioObjects(IEnumerable<AudioObjects> audioObjects)
         {
             _audioObjects.Clear();
@@ -57,11 +43,10 @@ namespace UIElements
             }
         }
 
-        // puts dialogue options and default options into the private variables
-        public void SetDialogueOptions(DialogueOption[] dialogueOptions, DialogueOption defaultOptions)
+        // puts dialogue options into the private variables
+        public void SetDialogueOptions(DialogueOption[] dialogueOptions)
         {
             _dialogueOptions = dialogueOptions;
-            _defaultDialogueOption = defaultOptions;
         }
 
         // displays the next dialogue, and keep calling until out of options then will end dialogue.
@@ -70,39 +55,32 @@ namespace UIElements
             gameObject.SetActive(true);
             if (GetNextAudioObject())
             {
-                foreach (var button in _buttons)
-                {
-                    button.gameObject.SetActive(false);
-                }
+                DisableAllButtons();
                 SayCurDialogue();
-                Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?)
+                Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?) (plays multiple times i think)
             }
             else if (_dialogueOptions.Length > 0)
             {
                 SayCurDialogue();
                 DisplayDialogueOptions();
             }
-            else if (_defaultDialogueOption != null)
+            else if (_nextEvent != null)
             {
-                if (_buttons.Length <= 0)
-                {
-                    return;
-                }
+                if (_buttons.Length <= 0) return;
 
-                foreach (var button in _buttons)
-                {
-                    button.gameObject.SetActive(false);
-                }
-                
+                DisableAllButtons();
                 SayCurDialogue();
-                 Invoke("DoDefaultDialogueOption", _curAudioObject.clip.length);
-                
-                //DisplayDefaultDialogueOption();
+                Invoke("PlayNextEvent", _curAudioObject.clip.length);
             }
             else
             {
                 EndDialogue();
             }
+        }
+        
+        public void SetNextEvent(UnityEvent nextEvent)
+        {
+            _nextEvent = nextEvent;
         }
 
         private void SayCurDialogue()
@@ -134,34 +112,7 @@ namespace UIElements
             sentenceText.text = audioObject.subtitle;
         }
 
-        /*
-        // displays only the continue button. The rest will be turned off.
-        private void DisplayContinueDialogueButton()
-        {
-            if (_buttons.Length <= 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < _buttons.Length; i++)
-            {
-                if (i == 0)
-                {
-                    var text = _buttons[i].GetComponentInChildren<TextMeshProUGUI>();
-                    text.text = "Continue";  // TODO: make this a localized string
-                    _buttons[i].onClick.RemoveAllListeners();
-                    _buttons[i].onClick.AddListener(ContinueDialogue);
-                    _buttons[i].gameObject.SetActive(true);
-                }
-                else
-                {
-                    _buttons[i].gameObject.SetActive(false);
-                }
-            }
-        }
-        */
-
-        // displays all the dialogue options availiable and turn the rest of the buttons off.
+        // displays all the dialogue options available and turn the rest of the buttons off.
         private void DisplayDialogueOptions()
         {
             var optionsCount = _dialogueOptions.Length;
@@ -182,58 +133,16 @@ namespace UIElements
             }
         }
 
-        
-        private void DisplayDefaultDialogueOption()
+        private void PlayNextEvent()
         {
-            if (_buttons.Length <= 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < _buttons.Length; i++)
-            {
-                if (i == 0)
-                {
-                    var text = _buttons[i].GetComponentInChildren<TextMeshProUGUI>();
-                    text.text = _defaultDialogueOption.buttonText;
-                    _buttons[i].onClick.RemoveAllListeners();
-                    _buttons[i].onClick.AddListener(_defaultDialogueOption.actionToTrigger.Invoke);
-                    _buttons[i].gameObject.SetActive(true);
-                }
-                else
-                {
-                    _buttons[i].gameObject.SetActive(false);
-                }
-            }
-        }
-        
-        
-
-        
-        private void DoDefaultDialogueOption()
-        {
-            Debug.Log("next event occured");
             _nextEvent.Invoke();
         }
 
-        public void SetNextState(string nextState)
+        private void DisableAllButtons()
         {
-            _goToState = nextState;
+            foreach (var button in _buttons) button.gameObject.SetActive(false);
         }
-
-        public void SetNextEvent(UnityEvent nextEvent)
-        {
-            _nextEvent = nextEvent;
-        }
-
-        /*
-        public AudioObjects getAudioObject()
-        {
-            return _audioObjects.Dequeue();
-            //Vocals.instance.Say(audioObject);  // my attempt to play the voice and subtitles when displaying sentences.
-        }
-        */
-
+        
     }
 
 }

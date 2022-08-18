@@ -16,12 +16,11 @@ namespace Dialogue
         // Editor class members
         public string npcName;
         public string defaultState;  // when we interact with NPC for the first time
-        public DialogueOption defaultOption;
         public string[] scriptableCallbackNames;
         public DialogueUnit[] dialogueUnits;  // array of dialogue that they NPC will say
 
         // Non-editor class members
-        public DialogueState dialogueState;  // figure out where we are in the dialogue tree w/ particular NPC
+        [HideInInspector] public DialogueState dialogueState;  // figure out where we are in the dialogue tree w/ particular NPC
         public Action continueCallback;
         public Action endDialogueCallback;
         public Dictionary<string, DialogueUnit> dialogueUnitsDict;  // will hold all the dialogue needed based on the current dialogueState
@@ -48,7 +47,7 @@ namespace Dialogue
         }
 
         // this function will set the state of a particular NPC to whatever the newState is
-        public void ResetState(string newState)
+        public void GoToState(string newState)
         {
             dialogueState.stateDict[npcName] = newState;
         }
