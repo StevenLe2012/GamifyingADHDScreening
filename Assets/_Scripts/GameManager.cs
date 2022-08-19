@@ -30,6 +30,8 @@ public class GameManager : MonoBehaviour
 
     public void UpdateGameState(GameState newState)
     {
+        if (newState == State) return;
+        
         State = newState;
         
         switch (newState)
