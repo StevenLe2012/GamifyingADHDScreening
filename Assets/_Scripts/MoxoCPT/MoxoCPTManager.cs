@@ -9,7 +9,7 @@ namespace MoxoCPT
     {
         public static MoxoCPTManager Instance;
 
-        [HideInInspector] public bool isGameOver = false;
+        [HideInInspector] public bool isGameOver;
 
         private void Awake()
         {
@@ -21,12 +21,24 @@ namespace MoxoCPT
             else Destroy(gameObject);
         }
 
-        /*
-        public void StartGame()
+        public void OnGameBegin()
         {
+            isGameOver = false;
+            TurnCardsOn();
             LoggingReport.CreateReportCSV();
+            GameManager.Instance.UpdateGameState(GameManager.GameState.CPT);
         }
-        */
+        
+        public void OnGameEnd()
+        {
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
+        }
+
+        private void TurnCardsOn()
+        {
+            CardsActive tmp = gameObject.GetComponent(typeof(CardsActive)) as CardsActive;
+            tmp?.SetCardsActive(true);
+        }
     }
 }
 

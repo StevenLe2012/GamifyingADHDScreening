@@ -9,9 +9,15 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public GameState State;
-
+    [HideInInspector] public GameState State;
     public static event Action<GameState> OnGameStateChanged;
+    
+    public enum GameState {
+        Narrative,
+        Explore,
+        CPT,
+        
+    }
 
     private void Awake()
     {
@@ -25,7 +31,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        UpdateGameState(GameState.Narrative);
+        UpdateGameState(GameState.CPT);
     }
 
     public void UpdateGameState(GameState newState)
@@ -38,6 +44,9 @@ public class GameManager : MonoBehaviour
         {
             case GameState.Narrative:
                 HandleNarrative();
+                break;
+            case GameState.Explore:
+                HandleExplore();
                 break;
             case GameState.CPT:
                 HandleCPT();
@@ -53,19 +62,17 @@ public class GameManager : MonoBehaviour
 
     private void HandleNarrative()
     {
-        
+        Debug.Log("GM: Narrative"); 
+    }
+
+    private void HandleExplore()
+    {
+       Debug.Log("GM: Explore"); 
     }
     private void HandleCPT()
     {
-        
-        // if (Cards.Instance.numSeen == Cards.Instance.numCards)
-        // {
-        //     UpdateGameState(GameState.Narrative);
-        // }
+        Debug.Log("GM: CPT"); 
     }
 }
 
-public enum GameState {
-    Narrative,
-    CPT
-}
+

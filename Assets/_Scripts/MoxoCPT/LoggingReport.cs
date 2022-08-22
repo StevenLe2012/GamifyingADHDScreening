@@ -2,21 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MoxoCPT;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 namespace MoxoCPT
 {
-    public class LoggingReport : MonoBehaviour
+    public static class LoggingReport
     {
         private const string CSVSeperator = ",";
-
-        private void Start()
-        {
-            CreateReportCSV();
-        }
-
+        
         public static void AppendToReportCSV(Report report)
         {
             using (StreamWriter sw = File.AppendText(GetCSVPath()))

@@ -44,6 +44,10 @@ namespace Dialogue
             if (dialogueState == null) return;
 
             dialogueTree.SetUpDialogueState(dialogueState);
+            
+            // my code for updating GameManager to show that you are in narrative mode
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Narrative);
+            
             ContinueDialogue();
         }
 
@@ -56,6 +60,10 @@ namespace Dialogue
         // performs scriptable event when dialogue ends
         private void EndDialogue()
         {
+            // my code for updating GameManager to show that you are in now in Explore mode
+            // TODO: make it so that you can change it to any state after ending dialogue rather than just explore
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
+            
             onDialogueEnd.Invoke();
         }
 

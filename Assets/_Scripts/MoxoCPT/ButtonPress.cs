@@ -12,6 +12,12 @@ namespace MoxoCPT
             {
                 Interact._buttonPressed = true;
             }
+            
+            //TODO: Make dedicated way to turn on game
+            if (Input.GetKeyDown(KeyCode.Equals))
+            {
+                MoxoCPTManager.Instance.OnGameBegin();
+            }
         }
     }
 
