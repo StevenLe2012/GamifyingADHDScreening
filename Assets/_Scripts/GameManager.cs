@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Companion;
 using MoxoCPT;
 using UnityEngine;
 using UnityEngine.InputSystem.LowLevel;
@@ -15,6 +16,7 @@ public class GameManager : MonoBehaviour
     public enum GameState {
         Narrative,
         Explore,
+        PrepareCPT,
         CPT,
         
     }
@@ -48,9 +50,13 @@ public class GameManager : MonoBehaviour
             case GameState.Explore:
                 HandleExplore();
                 break;
+            case GameState.PrepareCPT:
+                HandlePrepareCPT();
+                break;
             case GameState.CPT:
                 HandleCPT();
                 break;
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
         }
@@ -68,6 +74,13 @@ public class GameManager : MonoBehaviour
     private void HandleExplore()
     {
        Debug.Log("GM: Explore"); 
+    }
+    private void HandlePrepareCPT()
+    {
+        var companianMovementScript = FindObjectOfType<GoToDestination>(true);
+        companianMovementScript.enabled = true;
+        
+        Debug.Log("GM: PrepareCPT");
     }
     private void HandleCPT()
     {
