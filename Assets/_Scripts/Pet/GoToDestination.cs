@@ -22,7 +22,6 @@ namespace Companion
         private void Update()
         {
             var dist = Vector3.Distance(transform.position, _jumpStart.position);
-            Debug.Log(dist);
             if (dist > 1) GoToJumpLocation();
             //transform.position = Vector3.Lerp(transform.position, _jumpStart.position, _followSpeedPercent);
             else if (!_hasJumped)

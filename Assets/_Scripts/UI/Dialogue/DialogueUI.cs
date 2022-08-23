@@ -52,6 +52,7 @@ namespace UIElements
         // displays the next dialogue, and keep calling until out of options then will end dialogue.
         public void ContinueDialogue()
         {
+            Debug.Log("v3");
             gameObject.SetActive(true);
             if (GetNextAudioObject())
             {

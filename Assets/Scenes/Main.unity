@@ -463,7 +463,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: No
+  m_text: Button
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -896,7 +896,7 @@ GameObject:
   - component: {fileID: 26651515}
   - component: {fileID: 26651514}
   m_Layer: 5
-  m_Name: DialogueOption2
+  m_Name: DialogueOption1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3892,7 +3892,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 179568945}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 20, y: 40, z: 0}
+  m_LocalPosition: {x: 20, y: 37.38, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -3914,7 +3914,7 @@ GameObject:
   - component: {fileID: 180986480}
   - component: {fileID: 180986479}
   m_Layer: 5
-  m_Name: DialogueOption1
+  m_Name: DialogueOption2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7378,7 +7378,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1656192865}
         m_TargetAssemblyTypeName: MoxoCPT.MoxoCPTManager, Assembly-CSharp
-        m_MethodName: BeginCPT
+        m_MethodName: OnGameBegin
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -21318,8 +21318,8 @@ RectTransform:
   m_LocalScale: {x: 0.7595467, y: 0.7595467, z: 0.7595467}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 180986478}
   - {fileID: 26651513}
+  - {fileID: 180986478}
   - {fileID: 880781419}
   - {fileID: 871836936}
   m_Father: {fileID: 963237405}
@@ -23115,7 +23115,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &951338634
 Transform:
   m_ObjectHideFlags: 0
@@ -27268,7 +27268,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1159781437
 Transform:
   m_ObjectHideFlags: 0
@@ -28810,7 +28810,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: I dont believe you! Ekonn would never do that!
+  m_text: Button
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -28838,7 +28838,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 0.8
+  m_fontSize: 1.75
   m_fontSizeBase: 0.5
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -41750,7 +41750,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1941847448
 MonoBehaviour:
   m_ObjectHideFlags: 0

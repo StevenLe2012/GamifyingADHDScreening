@@ -72,8 +72,13 @@ public class Interactor : MonoBehaviour
 
     private Interactable GetClosestInteractable()
     {
-        
-        if (_interactablesInRange.Count <= 0) return null;
+
+        if (_interactablesInRange.Count <= 0)
+        {
+            Debug.Log("No Interactables are nearby");
+            return null;
+        }
+            
         int closestInteractableIndex = 0;
         var closestDistance = Mathf.Infinity;
         for (int i = 0; i < _interactablesInRange.Count; i++)
