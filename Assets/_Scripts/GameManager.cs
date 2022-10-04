@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        UpdateGameState(GameState.CPT);
+        UpdateGameState(GameState.Explore);
     }
 
     public void UpdateGameState(GameState newState)
@@ -77,10 +77,25 @@ public class GameManager : MonoBehaviour
     }
     private void HandlePrepareCPT()
     {
-        var companianMovementScript = FindObjectOfType<GoToDestination>(true);
-        companianMovementScript.enabled = true;
-        
         Debug.Log("GM: PrepareCPT");
+        
+        var companion = GameObject.FindGameObjectWithTag("Companion");
+        if (companion == null)
+        {
+            Debug.Log("Could not find a Companion with tag: 'Companion'");
+            return;
+        }
+
+        var companionFollowScript = companion.GetComponent<NPCFollow>();
+        companionFollowScript.enabled = false;
+                
+        var companionDestinationScript = companion.GetComponent<GoToDestination>();
+        companionDestinationScript.enabled = true;
+
+        var companionAnimator = companion.GetComponent<Animator>();
+        companionAnimator.enabled = true;
+
+
     }
     private void HandleCPT()
     {

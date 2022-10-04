@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,9 +16,17 @@ namespace Companion
         public float minDistance;
         public float maxDistance;
         public float followSpeedPercent;
-    
+
+        [SerializeField] private LayerMask _playerMask;
+        
+
         private float targetDistance;
-    
+
+        private void Start()
+        {
+            _playerMask = ~_playerMask;
+        }
+
         // Update is called once per frame
         void Update()
         {
@@ -28,7 +37,9 @@ namespace Companion
             RaycastHit hitData;
             if (Physics.Raycast(ray, out hitData))
             {
+                Debug.DrawRay(transform.position, transform.forward * 10000, Color.red);
                 targetDistance = hitData.distance;
+                Debug.Log(targetDistance);
                 if (targetDistance > minDistance)
                 {
                     //gameObject.GetComponent<Animation>().Play("running");  //TODO: Change to correct name
@@ -39,15 +50,13 @@ namespace Companion
                     //gameObject.GetComponent<Animation>().Play("idle");  //TODO: Change to correct name
     
                 }
-    
+                
                 // checks for too far from player
                 if (targetDistance > maxDistance)
                 {
                     transform.position = Player.transform.position;
                 }
             }
-    
-    
         }
     }
 }

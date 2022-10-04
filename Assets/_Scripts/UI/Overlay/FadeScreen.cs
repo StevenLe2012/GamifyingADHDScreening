@@ -33,7 +33,7 @@ public class FadeScreen : MonoBehaviour
 
     private IEnumerator FadeRoutine(float startAlpha, float endAlpha)
     {
-        float timer = 0f;
+        var timer = 0f;
         
         while (timer <= _fadeDuration)
         {
