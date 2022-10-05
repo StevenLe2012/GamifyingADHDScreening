@@ -8,7 +8,6 @@ namespace Companion
     {
         [SerializeField] private Transform _jumpStart;
         [SerializeField] private Transform _jumpDestination;
-        //[SerializeField] private Transform _destination;
         [SerializeField] private float _followSpeedPercent;
         
 
@@ -35,20 +34,21 @@ namespace Companion
                 transform.position = Vector3.Lerp(transform.position, _jumpStart.position, _followSpeedPercent * Time.time);
                 yield return null;
             }
-            getPositionAndOrientationForJump();
+            GetPositionAndOrientationForJump();
             yield return null;
             PlayJumpAnimation();
+            // this is HARDCODED to make sure Kola 
+            yield return new WaitForSeconds(1.5f);
+            SetEndingPositionAndOrientation();
+
         }
 
         private void PlayJumpAnimation()
         {
-
-            //_jumpAnimator.applyRootMotion = false;
-            //_jumpAnimator.SetTrigger("jumpToChair");
-            Debug.Log("jump");
+            _jumpAnimator.SetTrigger("jumpToChair");
         }
 
-        private void getPositionAndOrientationForJump()
+        private void GetPositionAndOrientationForJump()
         {
             transform.position = _jumpStart.position;
             Vector3 targetPostition = new Vector3( _jumpDestination.position.x, 
@@ -56,6 +56,14 @@ namespace Companion
                 _jumpDestination.position.z ) ;
             transform.LookAt( targetPostition ) ;
             transform.Rotate(0f, 180f, 0f);
+        }
+
+        private void SetEndingPositionAndOrientation()
+        {
+            var newLocation = _jumpDestination.position;
+            newLocation.y += 0.45f;
+            transform.position = newLocation;
+            transform.rotation = _jumpDestination.rotation;
         }
         
         
