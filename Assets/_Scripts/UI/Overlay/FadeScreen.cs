@@ -46,6 +46,11 @@ public class FadeScreen : MonoBehaviour
 
         var amount2 = timer / _fadeDuration;
         ChangeFade(startAlpha, endAlpha, amount2);
+        // deactivate FadeScreen if you FadeIn
+        if (startAlpha >= 1)
+        {
+            FadeManager.Instance.DeactivateFaderScreen();
+        }
     }
 
     private void ChangeFade(float startAlpha, float endAlpha, float amount)
