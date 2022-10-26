@@ -1053,8 +1053,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c77e9d27b3a3e4442895bc13cb0d5382, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controllerInput: {fileID: 0}
-  _triggerAmountNeeded: 0.236
+  controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  _triggerAmountNeeded: 0.973
 --- !u!4 &27302370 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8021001004253913084, guid: b7780b7c98b41f540b0a1331af8a4c22,
@@ -23498,12 +23499,12 @@ PrefabInstance:
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Size.z
-      value: 0.0010000252
+      value: 0.001000029
       objectReference: {fileID: 0}
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Center.z
-      value: -0.000010000266
+      value: -0.000010000306
       objectReference: {fileID: 0}
     - target: {fileID: 9089301036531647249, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
@@ -48856,22 +48857,22 @@ PrefabInstance:
     - target: {fileID: 4220974657071652830, guid: 472fc5e7a2e3c2e40947815f0b128f55,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4220974657071652830, guid: 472fc5e7a2e3c2e40947815f0b128f55,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4220974657071652830, guid: 472fc5e7a2e3c2e40947815f0b128f55,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4220974657071652830, guid: 472fc5e7a2e3c2e40947815f0b128f55,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4220974657071652830, guid: 472fc5e7a2e3c2e40947815f0b128f55,
         type: 3}
