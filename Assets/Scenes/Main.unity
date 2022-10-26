@@ -1000,7 +1000,7 @@ MonoBehaviour:
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
+  m_FillMethod: 0
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
@@ -1055,7 +1055,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
-  _triggerAmountNeeded: 0.973
+  _triggerAmountNeeded: 0.775
+  _holdDur: 1.15
+  _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!4 &27302370 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8021001004253913084, guid: b7780b7c98b41f540b0a1331af8a4c22,
@@ -3980,6 +3982,7 @@ GameObject:
   - component: {fileID: 180986479}
   - component: {fileID: 180986483}
   - component: {fileID: 180986482}
+  - component: {fileID: 180986484}
   m_Layer: 5
   m_Name: DialogueOption2
   m_TagString: Untagged
@@ -4117,6 +4120,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   highlightColor: {r: 0.7058824, g: 0.7058824, b: 0.7058824, a: 1}
   animationTime: 0.1
+--- !u!114 &180986484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 180986477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c77e9d27b3a3e4442895bc13cb0d5382, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  _triggerAmountNeeded: 0.775
+  _holdDur: 1.15
+  _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!1 &183216549
 GameObject:
   m_ObjectHideFlags: 0
@@ -22596,6 +22616,7 @@ GameObject:
   - component: {fileID: 880781420}
   - component: {fileID: 880781424}
   - component: {fileID: 880781423}
+  - component: {fileID: 880781425}
   m_Layer: 5
   m_Name: DialogueOption3
   m_TagString: Untagged
@@ -22733,6 +22754,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   highlightColor: {r: 0.7058824, g: 0.7058824, b: 0.7058824, a: 1}
   animationTime: 0.1
+--- !u!114 &880781425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880781418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c77e9d27b3a3e4442895bc13cb0d5382, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  _triggerAmountNeeded: 0.775
+  _holdDur: 1.15
+  _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!4 &880929345 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2519953943485781530, guid: e3246b5e59d958447b25bee079599b42,
@@ -23499,12 +23537,12 @@ PrefabInstance:
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Size.z
-      value: 0.001000029
+      value: 0.0010000378
       objectReference: {fileID: 0}
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Center.z
-      value: -0.000010000306
+      value: -0.000010000397
       objectReference: {fileID: 0}
     - target: {fileID: 9089301036531647249, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
