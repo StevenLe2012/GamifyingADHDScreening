@@ -6,11 +6,14 @@ using UnityEngine;
 public class FadeScreen : MonoBehaviour
 {
     [SerializeField] private bool _fadeOnStart = true;
-    [SerializeField] private float  _fadeDuration = 2;
     [SerializeField] private Color _fadeColor;
+    [SerializeField] private float  _initialFadeDuration = 2f;
+    [SerializeField] private float _teleportFadeDuration = 0.25f;
+    
 
     private Renderer _rend;
     private readonly int _baseColorID = Shader.PropertyToID("_BaseColor");
+    private float _fadeDuration;
     
     private void Awake()
     {
@@ -19,6 +22,7 @@ public class FadeScreen : MonoBehaviour
 
     private void Start()
     {
+        _fadeDuration = _initialFadeDuration;
         if (_fadeOnStart) FadeIn();
     }
 
@@ -26,7 +30,13 @@ public class FadeScreen : MonoBehaviour
     {
         StartCoroutine(FadeRoutine(startAlpha, endAlpha));
     }
-    
+
+    public void TeleportFade()
+    {
+        _fadeDuration = _teleportFadeDuration / 2;
+        StartCoroutine(TeleportFadeRoutine());
+    }
+
     public void FadeIn() => Fade(1, 0);
 
     public void FadeOut() => Fade(0, 1);
@@ -46,11 +56,6 @@ public class FadeScreen : MonoBehaviour
 
         var amount2 = timer / _fadeDuration;
         ChangeFade(startAlpha, endAlpha, amount2);
-        // deactivate FadeScreen if you FadeIn
-        if (startAlpha >= 1)
-        {
-            FadeManager.Instance.DeactivateFaderScreen();
-        }
     }
 
     private void ChangeFade(float startAlpha, float endAlpha, float amount)
@@ -58,5 +63,12 @@ public class FadeScreen : MonoBehaviour
         var newColor = _fadeColor;
         newColor.a = Mathf.Lerp(startAlpha, endAlpha, amount);
         _rend.material.SetColor(_baseColorID, newColor);
+    }
+
+    private IEnumerator TeleportFadeRoutine()
+    {
+        FadeOut();
+        yield return new WaitForSeconds(_teleportFadeDuration / 2);
+        FadeIn();
     }
 }

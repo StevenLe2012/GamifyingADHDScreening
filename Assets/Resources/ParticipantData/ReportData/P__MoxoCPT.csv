@@ -1,2 +1,5 @@
 Type,Time Shown,Attentiveness,Timelineess,HyperReactiveness,Impulsiveness,ReactionTime,HyperReactiveCount
-Distractor,1,False,False,False,True,0,0
+Target,0.5,True,True,True,False,0,1
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0
+Target,0.5,False,False,False,False,-1,0

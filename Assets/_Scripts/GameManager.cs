@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
         Explore,
         PrepareCPT,
         CPT,
+        Teleport,
         
     }
 
@@ -56,6 +57,9 @@ public class GameManager : MonoBehaviour
             case GameState.CPT:
                 HandleCPT();
                 break;
+            case GameState.Teleport:
+                HandleTeleport();
+                break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
@@ -68,21 +72,22 @@ public class GameManager : MonoBehaviour
 
     private void HandleNarrative()
     {
-        Debug.Log("GM: Narrative"); 
+        print("GM: Narrative"); 
     }
 
     private void HandleExplore()
     {
-       Debug.Log("GM: Explore"); 
+       print("GM: Explore"); 
     }
     private void HandlePrepareCPT()
     {
-        Debug.Log("GM: PrepareCPT");
+        print("GM: PrepareCPT");
         
         var companion = GameObject.FindGameObjectWithTag("Companion");
+        
         if (companion == null)
         {
-            Debug.Log("Could not find a Companion with tag: 'Companion'");
+            print("Could not find a Companion with tag: 'Companion'");
             return;
         }
 
@@ -99,8 +104,26 @@ public class GameManager : MonoBehaviour
     }
     private void HandleCPT()
     {
-        Debug.Log("GM: CPT"); 
+        print("GM: CPT"); 
     }
+    
+    private void HandleTeleport()
+    {
+        print("GM: Teleport");
+        
+        var fadeScreen = GameObject.FindGameObjectWithTag("Fader");
+        
+        if (fadeScreen == null)
+        {
+            print("Could not find a FadeScreen with tag: 'Fader'");
+            return;
+        }
+
+        var fader = fadeScreen.GetComponent<FadeScreen>();
+        fader.TeleportFade();
+
+    }
+    
 }
 
 

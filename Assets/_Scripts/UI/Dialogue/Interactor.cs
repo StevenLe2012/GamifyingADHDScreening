@@ -75,7 +75,6 @@ public class Interactor : MonoBehaviour
 
         if (_interactablesInRange.Count <= 0)
         {
-            Debug.Log("No Interactables are nearby");
             return null;
         }
             

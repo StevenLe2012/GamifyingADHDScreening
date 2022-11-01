@@ -39,7 +39,7 @@ namespace Companion
             {
                 Debug.DrawRay(transform.position, transform.forward * 10000, Color.red);
                 targetDistance = hitData.distance;
-                Debug.Log(targetDistance);
+                //Debug.Log(targetDistance);
                 if (targetDistance > minDistance)
                 {
                     //gameObject.GetComponent<Animation>().Play("running");  //TODO: Change to correct name
