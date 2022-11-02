@@ -1,7 +1,7 @@
 /*
- * This script allows the user to press the trigger on the controller
- * to activate the dialogue button that they are currently looking at.
- */
+* This script allows the user to press the trigger on the controller
+* to activate the dialogue button that they are currently looking at.
+*/
 
 using System;
 using System.Threading;
@@ -12,23 +12,22 @@ using UnityEngine.InputSystem;
 
 public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
 {
-    public InputActionReference controllerInput = null;
-    
+    [SerializeField] private InputActionReference controllerInput = null;
     [Range(0, 1)]
     [SerializeField] private float _triggerAmountNeeded = 0.75f;
     [SerializeField] private float _holdDur = 2f;
     [SerializeField] private Color _targetColor;
     private Color _baseColor;
-    
+  
     private float _curTrigger;
     private float _timer;
     private Button _button;
     private Image _image;
-    
+  
     private delegate void TriggerHandler();
     private event TriggerHandler Triggered;
-    
-    
+  
+  
     public void GazeFocusChanged(bool hasFocus)
     {
         if (hasFocus) Triggered += ButtonActive;
@@ -48,12 +47,9 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
         _curTrigger = controllerInput.action.ReadValue<float>();
         if (Triggered != null)
         {
-            print("viewed");
-            print(_curTrigger);
             if (_curTrigger >= _triggerAmountNeeded)
             {
                 _timer += Time.deltaTime;
-                print(_timer);
                 _image.color = Color.Lerp(_image.color, _targetColor, Time.deltaTime * (_timer / _holdDur));;
                 if (_timer >= _holdDur)
                 {
@@ -67,7 +63,7 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
                 Reset();
             }
         }
-       
+     
     }
 
     private void ButtonActive() => _button.onClick.Invoke();

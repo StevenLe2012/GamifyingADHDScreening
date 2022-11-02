@@ -1,7 +1,7 @@
 ﻿// Copyright © 2018 – Property of Tobii AB (publ) - All Rights Reserved
 /*
- * I modified the script greatly to have it work for Buttons rather than GameObjects
- */
+* I modified the script greatly to have it work for Buttons rather than GameObjects
+*/
 
 using Tobii.G2OM;
 using UnityEngine;
@@ -24,11 +24,13 @@ public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
         //If this object received focus, fade the object's color to highlight color
         if (hasFocus)
         {
+            print("hasFocus");
             _targetColor = highlightColor;
         }
         //If this object lost focus, fade the object's color to it's original color
         else
         {
+            print("noFocus");
             _targetColor = _originalColor;
         }
     }
@@ -45,6 +47,5 @@ public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
     {
         _colorBlock.normalColor = Color.Lerp(_button.colors.normalColor, _targetColor, Time.deltaTime * (1 / animationTime));
         _button.colors = _colorBlock;
-
     }
 }

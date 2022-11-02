@@ -11,7 +11,8 @@ GameObject:
   - component: {fileID: 732821576927118679}
   - component: {fileID: 6772455161085349384}
   - component: {fileID: 1420849255732129986}
-  - component: {fileID: 454778993480867162}
+  - component: {fileID: -4738752477694506304}
+  - component: {fileID: 5798410130326533384}
   m_Layer: 0
   m_Name: Player Teleport (Blue)
   m_TagString: Untagged
@@ -26,10 +27,10 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2387331629576005960}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 26.16, y: 38.704, z: -30.6}
-  m_LocalScale: {x: 1, y: 0.1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.4999999, y: 0.15, z: 1.4999999}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -84,8 +85,24 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &454778993480867162
-CapsuleCollider:
+--- !u!114 &-4738752477694506304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2387331629576005960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 731f1c3faa86ccc49b8dd68a0fe2bc7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controllerInput: {fileID: 0}
+  _state: 0
+  code: 1
+  _triggerAmountNeeded: 0.75
+--- !u!65 &5798410130326533384
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -94,7 +111,6 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 1
   m_Enabled: 1
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+  serializedVersion: 2
+  m_Size: {x: 1.0000002, y: 4.170188, z: 1.0000004}
+  m_Center: {x: 0.000003851377, y: 1.0850952, z: -0.000007702754}

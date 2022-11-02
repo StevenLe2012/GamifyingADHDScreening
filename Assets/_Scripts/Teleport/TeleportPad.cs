@@ -1,36 +1,45 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class TeleportPad : MonoBehaviour
 {
-    public int code;
-    public float secondsTillTP;
+    [SerializeField] private InputActionReference controllerInput = null;
+    [SerializeField] private GameManager.GameState _state;
+    [SerializeField] private int code;
+    [SerializeField] private float _triggerAmountNeeded = 0.75f;
+  
+    private float _curTrigger;
 
-    private float disableTimer;
-
-    private void Update()
+    private void OnTriggerStay(Collider collider)
     {
-        if (disableTimer > 0)
+        if (collider.gameObject.CompareTag("Player"))
         {
-            disableTimer -= Time.deltaTime;
+            _curTrigger = controllerInput.action.ReadValue<float>();
+            if (_curTrigger >= _triggerAmountNeeded)
+            {
+                var newPosition = GetTeleportPosition();
+                GameManager.Instance.UpdateGameState(_state);
+                collider.gameObject.transform.position = newPosition;
+            }
         }
     }
 
-    private void OnTriggerEnter(Collider collider)
+    private Vector3 GetTeleportPosition()
     {
-        if (collider.gameObject.tag == "Player" && disableTimer <= 0)
+        foreach (TeleportPad tp in FindObjectsOfType<TeleportPad>())
         {
-            foreach(TeleportPad tp in FindObjectsOfType<TeleportPad>())
+            if (tp.code == code && tp != this)
             {
-                if (tp.code == code && tp != this)
-                {
-                    disableTimer = secondsTillTP;
-                    Vector3 newPosition = tp.transform.position;
-                    newPosition.y += 2;
-                    collider.gameObject.transform.position = newPosition;
-                }
+                var newPosition = tp.transform.position;
+                newPosition.y += 2;
+                return newPosition;
             }
         }
+
+        throw new NullReferenceException($"There are no other teleport pads with this code: {code}");
     }
 }
