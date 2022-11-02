@@ -70,5 +70,6 @@ public class FadeScreen : MonoBehaviour
         FadeOut();
         yield return new WaitForSeconds(_teleportFadeDuration / 2);
         FadeIn();
+        GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
     }
 }

@@ -12,8 +12,7 @@ using UnityEngine.InputSystem;
 
 public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
 {
-    public InputActionReference controllerInput = null;
-    
+    [SerializeField] private InputActionReference controllerInput = null;
     [Range(0, 1)]
     [SerializeField] private float _triggerAmountNeeded = 0.75f;
     [SerializeField] private float _holdDur = 2f;
@@ -48,8 +47,6 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
         _curTrigger = controllerInput.action.ReadValue<float>();
         if (Triggered != null)
         {
-            print("viewed");
-            print(_curTrigger);
             if (_curTrigger >= _triggerAmountNeeded)
             {
                 _timer += Time.deltaTime;

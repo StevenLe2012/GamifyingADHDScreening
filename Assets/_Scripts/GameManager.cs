@@ -121,6 +121,7 @@ public class GameManager : MonoBehaviour
 
         var fader = fadeScreen.GetComponent<FadeScreen>();
         fader.TeleportFade();
+        
 
     }
     

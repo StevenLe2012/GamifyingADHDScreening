@@ -33,6 +33,7 @@ namespace Companion
             transform.LookAt(Player.transform);
     
             // moves towards player
+            //TODO: Create a mask for the player only
             Ray ray = new Ray(transform.position, transform.forward);
             RaycastHit hitData;
             if (Physics.Raycast(ray, out hitData))
@@ -43,7 +44,9 @@ namespace Companion
                 if (targetDistance > minDistance)
                 {
                     //gameObject.GetComponent<Animation>().Play("running");  //TODO: Change to correct name
-                    transform.position = Vector3.Lerp(transform.position, Player.transform.position, followSpeedPercent);
+                    var newPosition = Player.transform.position;
+                    newPosition.y += 0.55f;  // padding to have NPC not in ground
+                    transform.position = Vector3.Lerp(transform.position, newPosition, followSpeedPercent);
                 }
                 else
                 {
@@ -54,7 +57,9 @@ namespace Companion
                 // checks for too far from player
                 if (targetDistance > maxDistance)
                 {
-                    transform.position = Player.transform.position;
+                    var newPosition = Player.transform.position;
+                    newPosition.y += 0.55f;
+                    transform.position = newPosition;
                 }
             }
         }
