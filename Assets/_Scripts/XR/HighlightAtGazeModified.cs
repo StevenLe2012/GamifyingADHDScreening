@@ -24,13 +24,11 @@ public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
         //If this object received focus, fade the object's color to highlight color
         if (hasFocus)
         {
-            print("hasFocus");
             _targetColor = highlightColor;
         }
         //If this object lost focus, fade the object's color to it's original color
         else
         {
-            print("noFocus");
             _targetColor = _originalColor;
         }
     }
@@ -41,15 +39,12 @@ public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
         _colorBlock = _button.colors;
         _originalColor = _button.colors.normalColor;
         _targetColor = _originalColor;
-        print(highlightColor);
-        print(_originalColor);
     }
 
     private void Update()
     {
         _colorBlock.normalColor = Color.Lerp(_button.colors.normalColor, _targetColor, Time.deltaTime * (1 / animationTime));
         _button.colors = _colorBlock;
-        //print(_colorBlock.normalColor);
 
     }
 }
