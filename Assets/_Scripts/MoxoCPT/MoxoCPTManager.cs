@@ -39,6 +39,13 @@ namespace MoxoCPT
             CardsActive tmp = gameObject.GetComponent(typeof(CardsActive)) as CardsActive;
             tmp?.SetCardsActive(true);
         }
+
+        public IEnumerator PrepareCPT(float duration)
+        {
+            yield return new WaitForSecondsRealtime(duration);
+            OnGameBegin();
+        }
+        
     }
 }
 

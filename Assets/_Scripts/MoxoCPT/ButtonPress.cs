@@ -19,11 +19,11 @@ namespace MoxoCPT
                 MoxoCPTManager.Instance.OnGameBegin();
             }
             
-            //TODO: Make dedicated way to prepare the game
-            if (Input.GetKeyDown(KeyCode.Period))
-            {
-                GameManager.Instance.UpdateGameState(GameManager.GameState.PrepareCPT);
-            }
+            
+            // if (Input.GetKeyDown(KeyCode.Period))
+            // {
+            //     GameManager.Instance.UpdateGameState(GameManager.GameState.PrepareCPT);
+            // }
         }
     }
 

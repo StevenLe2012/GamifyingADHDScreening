@@ -87,8 +87,7 @@ public class GameManager : MonoBehaviour
       
        if (companion == null)
        {
-           print("Could not find a Companion with tag: 'Companion'");
-           return;
+           throw new NullReferenceException("Could not find a Companion with tag: 'Companion");
        }
 
        var companionFollowScript = companion.GetComponent<NPCFollow>();
@@ -100,6 +99,8 @@ public class GameManager : MonoBehaviour
        var companionAnimator = companion.GetComponent<Animator>();
        companionAnimator.enabled = true;
 
+       var animationLength = companionAnimator.GetCurrentAnimatorStateInfo(0).length;
+       StartCoroutine(MoxoCPTManager.Instance.PrepareCPT(animationLength));
 
    }
    private void HandleCPT()
