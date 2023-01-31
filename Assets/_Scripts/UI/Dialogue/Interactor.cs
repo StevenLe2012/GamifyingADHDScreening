@@ -8,8 +8,8 @@ using UnityEngine.InputSystem;
 [Serializable]
 public class Interactor : MonoBehaviour
 {
-    //public InputActionReference toggleReference = null;
-
+    // public InputActionReference toggleReference = null;
+    [SerializeField] private InputActionReference controllerInput;
     [SerializeField] private float interactRadius; //floatreference
     //[SerializeField] private inputConfig interactInput;
 
@@ -24,8 +24,8 @@ public class Interactor : MonoBehaviour
 
     private void FixedUpdate()
     {
-        //if (toggleReference.action.enabled)
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (controllerInput.action.ReadValue<float>() > 0)
+        //if (Input.GetKeyDown(KeyCode.Space))
         {
             
             Interact();

@@ -1,19 +1,16 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class TeleportPad : MonoBehaviour
 {
-    [SerializeField] private InputActionReference controllerInput = null;
+    [SerializeField] private InputActionReference controllerInput;
     [SerializeField] private GameManager.GameState _state;
     [SerializeField] private int code;
     [SerializeField] private float _triggerAmountNeeded = 0.75f;
     
     private float _curTrigger;
-
+    
     private void OnTriggerStay(Collider collider)
     {
         if (collider.gameObject.CompareTag("Player"))

@@ -55,7 +55,6 @@ namespace Dialogue
         // gets the next dialogue
         private void ContinueDialogue()
         {
-            Debug.Log("v1");
             HandleDialogue(dialogueTree.GetNextDialogueUnit());
         }
 
@@ -74,7 +73,6 @@ namespace Dialogue
         {
             // Get the UI From the UI provider
             // Populate the dialogue UI
-            Debug.Log("v2");
             dialogueUI.SetAudioObjects(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
             dialogueUI.SetNextEvent(dialogueUnit.nextEventWithoutButton); // my attempt to add merging branches and ending dialogue w/o button
             dialogueUI.SetDialogueOptions(dialogueUnit.options);
