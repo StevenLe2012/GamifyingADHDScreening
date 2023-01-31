@@ -37,7 +37,7 @@ namespace Companion
             GetPositionAndOrientationForJump();
             yield return null;
             PlayJumpAnimation();
-            // this is HARDCODED to make sure Kola 
+            // this is HARDCODED to make sure Kola ends up in right position
             yield return new WaitForSeconds(1.5f);
             SetEndingPositionAndOrientation();
 
