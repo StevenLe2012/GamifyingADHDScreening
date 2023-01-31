@@ -3,11 +3,21 @@ using System.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 namespace Biometrics
 {
     public class LoggingBiometrics : MonoBehaviour
     {
+        [Header("Left Hand")]
+        [SerializeField] private InputActionReference controllerLeftTrigger;
+        [SerializeField] private InputActionReference controllerLeftGrip;
+        
+        [Header("Right Hand")]
+        [SerializeField] private InputActionReference controllerRightTrigger;
+        [SerializeField] private InputActionReference controllerRightGrip;
+        
+        
         private const string CSVSeperator = ",";
         private static int framesPassed;
         private static float startingTime;
@@ -24,6 +34,7 @@ namespace Biometrics
 
         void Start()
         {
+            print("creating biometrics");
             // Creates to the CSV file with only heading
             CreateBiometricCSV();
             // Updates and Appends the Biometric data to teh CSV
@@ -33,7 +44,7 @@ namespace Biometrics
         void Update()
         {
             // updates the button press counter for each button they press on controller.
-            if (Input.anyKeyDown)
+            if (controllerLeftTrigger.action.triggered)
             {
                 _buttonPress++;
             }
@@ -121,7 +132,7 @@ namespace Biometrics
 
         private static string GetCSVPath()
         {
-            return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "BiometricData",
+            return Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "BiometricData",
                 $"P__Biometrics.csv");
             //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "BiometricData", $"Biometrics-{DateTime.Now.ToFileTime()}.csv");
         }

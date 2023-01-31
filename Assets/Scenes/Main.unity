@@ -1127,7 +1127,7 @@ MonoBehaviour:
   controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
   _triggerAmountNeeded: 0.775
-  _holdDur: 1.15
+  _holdDur: 0.75
   _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!4 &27302370 stripped
 Transform:
@@ -4663,7 +4663,7 @@ MonoBehaviour:
   controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
   _triggerAmountNeeded: 0.775
-  _holdDur: 1.15
+  _holdDur: 0.75
   _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!1 &183216549
 GameObject:
@@ -24401,7 +24401,7 @@ MonoBehaviour:
   controllerInput: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
   _triggerAmountNeeded: 0.775
-  _holdDur: 1.15
+  _holdDur: 0.75
   _targetColor: {r: 0.38679248, g: 0.38679248, b: 0.38679248, a: 0.6}
 --- !u!4 &880929345 stripped
 Transform:
@@ -25016,12 +25016,12 @@ PrefabInstance:
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Size.z
-      value: 0.0010000842
+      value: 0.0010000884
       objectReference: {fileID: 0}
     - target: {fileID: 9089271169719922489, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
       propertyPath: m_Center.z
-      value: 0.000009999124
+      value: 0.00000999908
       objectReference: {fileID: 0}
     - target: {fileID: 9089301036531647249, guid: 6979061db2ee2a740ac154f693a435c2,
         type: 3}
@@ -32012,6 +32012,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbe2c0a9b4314634ca01d44f2b0bee85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  controllerInput: {fileID: -1758520528963094988, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
   interactRadius: 7
 --- !u!114 &1183885336
 MonoBehaviour:
@@ -42743,7 +42745,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05797c5c57c33c24f8a6a7414b26a066, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controllerInput: {fileID: -1758520528963094988, guid: c348712bda248c246b8c49b3db54643f,
+  controllerInput: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
 --- !u!114 &1656192868
 MonoBehaviour:
@@ -46779,7 +46781,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   time: 0
-  fullDayLength: 240
+  fullDayLength: 600
   startTime: 0.4
   noon: {x: 90, y: 0, z: 0}
   sun: {fileID: 410087040}
@@ -48376,11 +48378,19 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1906580870}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0aa0a5b0549c0cd4caab85de87957f3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  controllerLeftTrigger: {fileID: -5982496924579745919, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  controllerLeftGrip: {fileID: -6131295136447488360, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  controllerRightTrigger: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
+  controllerRightGrip: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f,
+    type: 3}
 --- !u!65 &1906978033
 BoxCollider:
   m_ObjectHideFlags: 0
