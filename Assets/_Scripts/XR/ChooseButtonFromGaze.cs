@@ -6,11 +6,10 @@
 using System;
 using System.Threading;
 using UnityEngine;
-using Tobii.G2OM;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
-public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
+public class ChooseButtonFromGaze : MonoBehaviour
 {
     [SerializeField] private InputActionReference controllerInput = null;
     [Range(0, 1)]
@@ -18,21 +17,21 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
     [SerializeField] private float _holdDur = 2f;
     [SerializeField] private Color _targetColor;
     private Color _baseColor;
-    
+
     private float _curTrigger;
     private float _timer;
     private Button _button;
     private Image _image;
-    
+
     private delegate void TriggerHandler();
     private event TriggerHandler Triggered;
-    
-    
-    public void GazeFocusChanged(bool hasFocus)
-    {
-        if (hasFocus) Triggered += ButtonActive;
-        else Triggered -= ButtonActive;
-    }
+
+
+    //public void GazeFocusChanged(bool hasFocus)
+    //{
+    //    if (hasFocus) Triggered += ButtonActive;
+    //    else Triggered -= ButtonActive;
+    //}
 
     private void Start()
     {
@@ -51,7 +50,7 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
             {
                 _timer += Time.deltaTime;
                 print(_timer);
-                _image.color = Color.Lerp(_image.color, _targetColor, Time.deltaTime * (_timer / _holdDur));;
+                _image.color = Color.Lerp(_image.color, _targetColor, Time.deltaTime * (_timer / _holdDur)); ;
                 if (_timer >= _holdDur)
                 {
                     _timer = float.NegativeInfinity;
@@ -64,7 +63,7 @@ public class ChooseButtonFromGaze : MonoBehaviour, IGazeFocusable
                 Reset();
             }
         }
-       
+
     }
 
     private void ButtonActive() => _button.onClick.Invoke();

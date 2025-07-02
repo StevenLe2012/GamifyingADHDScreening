@@ -3,12 +3,12 @@
  * I modified the script greatly to have it work for Buttons rather than GameObjects
  */
 
-using Tobii.G2OM;
+//using Tobii.G2OM;
 using UnityEngine;
 using UnityEngine.UI;
 
 //Monobehaviour which implements the "IGazeFocusable" interface, meaning it will be called on when the object receives focus
-public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
+public class HighlightAtGazeModified : MonoBehaviour//, IGazeFocusable
 {
     public Color highlightColor;
     public float animationTime = 0.1f;
@@ -18,20 +18,20 @@ public class HighlightAtGazeModified : MonoBehaviour, IGazeFocusable
     private Color _targetColor;
     private ColorBlock _colorBlock;
 
-    //The method of the "IGazeFocusable" interface, which will be called when this object receives or loses focus
-    public void GazeFocusChanged(bool hasFocus)
-    {
-        //If this object received focus, fade the object's color to highlight color
-        if (hasFocus)
-        {
-            _targetColor = highlightColor;
-        }
-        //If this object lost focus, fade the object's color to it's original color
-        else
-        {
-            _targetColor = _originalColor;
-        }
-    }
+    ////The method of the "IGazeFocusable" interface, which will be called when this object receives or loses focus
+    //public void GazeFocusChanged(bool hasFocus)
+    //{
+    //    //If this object received focus, fade the object's color to highlight color
+    //    if (hasFocus)
+    //    {
+    //        _targetColor = highlightColor;
+    //    }
+    //    //If this object lost focus, fade the object's color to it's original color
+    //    else
+    //    {
+    //        _targetColor = _originalColor;
+    //    }
+    //}
 
     private void Start()
     {
