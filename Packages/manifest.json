@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.tobii.xr.sdk": "file:C:/Users/steve/Downloads/TobiiXRSDK_3.0.1.179",
     "com.unity.animation.rigging": "1.1.1",
     "com.unity.collab-proxy": "1.17.6",
     "com.unity.ext.nunit": "1.0.6",

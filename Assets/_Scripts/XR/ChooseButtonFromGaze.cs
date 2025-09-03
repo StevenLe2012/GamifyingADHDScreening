@@ -6,10 +6,18 @@
 using System;
 using System.Threading;
 using UnityEngine;
+<<<<<<< Updated upstream
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 public class ChooseButtonFromGaze : MonoBehaviour
+=======
+//using Tobii.G2OM;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
+
+public class ChooseButtonFromGaze : MonoBehaviour//, IGazeFocusable
+>>>>>>> Stashed changes
 {
     [SerializeField] private InputActionReference controllerInput = null;
     [Range(0, 1)]
@@ -25,8 +33,13 @@ public class ChooseButtonFromGaze : MonoBehaviour
 
     private delegate void TriggerHandler();
     private event TriggerHandler Triggered;
+<<<<<<< Updated upstream
 
 
+=======
+    
+    
+>>>>>>> Stashed changes
     //public void GazeFocusChanged(bool hasFocus)
     //{
     //    if (hasFocus) Triggered += ButtonActive;
