@@ -22,12 +22,26 @@ public class Interactor : MonoBehaviour
         _interactablesInRange = new List<Interactable>();
     }
 
-    private void FixedUpdate()
+    //private void FixedUpdate()
+    //{
+    //    //if (toggleReference.action.enabled)
+    //    if (Input.GetKeyDown(KeyCode.Space))
+    //    {
+
+    //        Interact();
+    //        Debug.Log("Interacting!");
+    //    }
+    //}
+
+    // CHANGED: use Update(), not FixedUpdate()
+    private void Update()
     {
-        //if (toggleReference.action.enabled)
+        // Keep targets up to date even without triggers/Rigidbodies
+        UpdateInteractables();
+
+        // Keyboard: Space to interact
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            
             Interact();
             Debug.Log("Interacting!");
         }
@@ -37,7 +51,7 @@ public class Interactor : MonoBehaviour
     {
         if(_closestInteractable != null)
         {
-            //Debug.Log(_closestInteractable.gameObject.name);
+            Debug.Log(_closestInteractable.gameObject.name);
             _closestInteractable.Interact();
         }
     }

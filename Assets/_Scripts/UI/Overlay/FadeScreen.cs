@@ -1,75 +1,66 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Renderer))]
 public class FadeScreen : MonoBehaviour
 {
-    [SerializeField] private bool _fadeOnStart = true;
-    [SerializeField] private Color _fadeColor;
-    [SerializeField] private float  _initialFadeDuration = 2f;
+    [SerializeField] private Color _fadeColor = Color.black;     // color of fade (RGB matters, alpha controlled in code)
     [SerializeField] private float _teleportFadeDuration = 0.25f;
-    
 
     private Renderer _rend;
     private readonly int _baseColorID = Shader.PropertyToID("_BaseColor");
-    private float _fadeDuration;
-    
+
     private void Awake()
     {
         _rend = GetComponent<Renderer>();
+
+        // Important: duplicate material so we don’t overwrite the shared one
+        _rend.material = Instantiate(_rend.material);
+
+        // Start transparent (alpha = 0), so scene is visible by default
+        SetAlpha(0f);
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        _fadeDuration = _initialFadeDuration;
-        if (_fadeOnStart) FadeIn();
+        // Safety: if object is toggled back on, keep it clear unless told otherwise
+        SetAlpha(0f);
     }
 
-    private void Fade(float startAlpha, float endAlpha)
+    // --- Public helpers ---
+    public void SetBlack() => SetAlpha(1f);
+    public void SetClear() => SetAlpha(0f);
+    public IEnumerator FadeIn(float duration) => Fade(1f, 0f, duration);  // black -> clear
+    public IEnumerator FadeOut(float duration) => Fade(0f, 1f, duration); // clear -> black
+    public void TeleportFade() => StartCoroutine(TeleportFadeRoutine());
+
+    // --- Internals ---
+    private IEnumerator Fade(float startA, float endA, float duration)
     {
-        StartCoroutine(FadeRoutine(startAlpha, endAlpha));
-    }
+        if (duration <= 0f) { SetAlpha(endA); yield break; }
 
-    public void TeleportFade()
-    {
-        _fadeDuration = _teleportFadeDuration / 2;
-        StartCoroutine(TeleportFadeRoutine());
-    }
-
-    public void FadeIn() => Fade(1, 0);
-
-    public void FadeOut() => Fade(0, 1);
-
-    private IEnumerator FadeRoutine(float startAlpha, float endAlpha)
-    {
-        var timer = 0f;
-        
-        while (timer <= _fadeDuration)
+        float t = 0f;
+        while (t < duration)
         {
-            var amount = timer / _fadeDuration;
-            ChangeFade(startAlpha, endAlpha, amount);
-            
-            timer += Time.deltaTime;
+            SetAlpha(Mathf.Lerp(startA, endA, t / duration));
+            t += Time.deltaTime;
             yield return null;
         }
-
-        var amount2 = timer / _fadeDuration;
-        ChangeFade(startAlpha, endAlpha, amount2);
+        SetAlpha(endA);
     }
 
-    private void ChangeFade(float startAlpha, float endAlpha, float amount)
+    private void SetAlpha(float a)
     {
-        var newColor = _fadeColor;
-        newColor.a = Mathf.Lerp(startAlpha, endAlpha, amount);
-        _rend.material.SetColor(_baseColorID, newColor);
+        var c = _fadeColor;
+        c.a = Mathf.Clamp01(a);
+        _rend.material.SetColor(_baseColorID, c);
     }
 
     private IEnumerator TeleportFadeRoutine()
     {
-        FadeOut();
-        yield return new WaitForSeconds(_teleportFadeDuration / 2);
-        FadeIn();
+        float half = _teleportFadeDuration * 0.5f;
+        yield return FadeOut(half);
+        yield return FadeIn(half);
         GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
     }
 }

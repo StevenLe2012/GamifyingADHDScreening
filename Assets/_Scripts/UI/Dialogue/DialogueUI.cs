@@ -50,38 +50,101 @@ namespace UIElements
         }
 
         // displays the next dialogue, and keep calling until out of options then will end dialogue.
+
+
+        //public void ContinueDialogue()
+        //{
+        //    gameObject.SetActive(true);
+        //    if (GetNextAudioObject())
+        //    {
+        //        DisableAllButtons();
+        //        SayCurDialogue();
+
+        //        Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?) (plays multiple times i think)
+        //    }
+        //    else if (_dialogueOptions.Length > 0)
+        //    {
+        //        SayCurDialogue();
+        //        DisplayDialogueOptions();
+        //    }
+        //    else if (_nextEvent != null)
+        //    {
+        //        if (_buttons.Length <= 0) return;
+
+
+        //        DisableAllButtons();
+        //        SayCurDialogue();
+
+        //        Invoke("PlayNextEvent", _curAudioObject.clip.length);
+
+        //        Debug.Log("Reach hereeeeeee");
+        //    }
+        //    else
+        //    {
+        //        EndDialogue();
+        //    }
+        //}
+
+
+
+        //Hami's update:
         public void ContinueDialogue()
         {
             gameObject.SetActive(true);
+
             if (GetNextAudioObject())
             {
                 DisableAllButtons();
                 SayCurDialogue();
-                Invoke("ContinueDialogue", _curAudioObject.clip.length); //SOMETIMES SKIPS (BUGGY?) (plays multiple times i think)
+                float delay = (_curAudioObject != null && _curAudioObject.clip != null)
+                                ? _curAudioObject.clip.length
+                                : 0f;
+                if (delay > 0f) Invoke(nameof(ContinueDialogue), delay);
+                else ContinueDialogue(); // no clip -> advance immediately
+                return;
             }
-            else if (_dialogueOptions.Length > 0)
+
+            if (_dialogueOptions.Length > 0)
             {
                 SayCurDialogue();
                 DisplayDialogueOptions();
+                return;
             }
-            else if (_nextEvent != null)
+
+            if (_nextEvent != null)
             {
                 if (_buttons.Length <= 0) return;
-
                 DisableAllButtons();
                 SayCurDialogue();
-                Invoke("PlayNextEvent", _curAudioObject.clip.length);
+                float delay = (_curAudioObject != null && _curAudioObject.clip != null)
+                                ? _curAudioObject.clip.length
+                                : 0f;
+                if (delay > 0f) Invoke(nameof(PlayNextEvent), delay);
+                else PlayNextEvent();
+                return;
             }
-            else
-            {
-                EndDialogue();
-            }
+
+            EndDialogue();
         }
-        
+        //End updates
+
+
+
+
+
+
+
+
+
+
         public void SetNextEvent(UnityEvent nextEvent)
         {
             _nextEvent = nextEvent;
         }
+
+
+
+
 
         private void SayCurDialogue()
         {

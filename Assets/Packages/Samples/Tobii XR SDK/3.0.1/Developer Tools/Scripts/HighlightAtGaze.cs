@@ -1,10 +1,11 @@
 ﻿//// Copyright © 2018 – Property of Tobii AB (publ) - All Rights Reserved
-<<<<<<< Updated upstream
+
 ///*
 // * I modified the script greatly to have it work for Buttons rather than GameObjects
 // */
 
 //using Tobii.G2OM;
+
 //using UnityEngine;
 //using UnityEngine.UI;
 
@@ -47,7 +48,6 @@
 //        _colorBlock.normalColor = Color.Lerp(_button.colors.normalColor, _targetColor, Time.deltaTime * (1 / animationTime));
 //        _button.colors = _colorBlock;
 
-=======
 
 //using Tobii.G2OM;
 //using UnityEngine;
@@ -99,6 +99,5 @@
 //                _renderer.material.color = Color.Lerp(_renderer.material.color, _targetColor, Time.deltaTime * (1 / animationTime));
 //            }
 //        }
->>>>>>> Stashed changes
 //    }
 //}

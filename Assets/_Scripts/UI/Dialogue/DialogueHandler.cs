@@ -74,12 +74,37 @@ namespace Dialogue
         {
             // Get the UI From the UI provider
             // Populate the dialogue UI
-            Debug.Log("v2");
+            if (dialogueUnit == null)
+            {
+                Debug.LogError("[Dialogue] HandleDialogue called with NULL DialogueUnit!");
+                return;
+            }
+
+            // Add this log
+            Debug.Log($"[Dialogue] v2 then Showing DialogueUnit: {dialogueUnit.requiredStateKey}");
+
             dialogueUI.SetAudioObjects(dialogueUnit.audioObjects);  // my attempt to add in subtitles and voice
             dialogueUI.SetNextEvent(dialogueUnit.nextEventWithoutButton); // my attempt to add merging branches and ending dialogue w/o button
             dialogueUI.SetDialogueOptions(dialogueUnit.options);
             dialogueUI.ContinueDialogue();
+           
         }
+
+
+        public void StartDialogueFor(DialogueState state)
+        {
+            
+            dialogueTree.SetUpDialogueState(state);
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Narrative);
+
+
+            // Kick the first line
+            var method = typeof(DialogueHandler).GetMethod("ContinueDialogue",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            method?.Invoke(this, null);
+            Debug.Log("Reach here5");
+        }
+
 
     }
 

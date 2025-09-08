@@ -1,6 +1,10 @@
 fileFormatVersion: 2
+<<<<<<<< Updated upstream:Assets/XR/Loaders.meta
 guid: 3340bda5f6596534ba81c7f7970e8a56
 folderAsset: yes
+========
+guid: 4d30f2fb9e9232a44bc654918a8e6606
+>>>>>>>> Stashed changes:Assets/Samples/Varjo XR Plugin/3.7.3/HDRP Samples/ControllerInput/Scenes/ControllerInput.unity.meta
 DefaultImporter:
   externalObjects: {}
   userData: 

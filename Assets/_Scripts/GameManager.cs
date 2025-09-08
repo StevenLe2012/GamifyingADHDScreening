@@ -30,6 +30,8 @@ public class GameManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
         else Destroy(gameObject);
+
+
     }
 
     private void Start()

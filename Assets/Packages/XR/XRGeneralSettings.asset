@@ -44,9 +44,7 @@ MonoBehaviour:
   m_RequiresSettingsUpdate: 0
   m_AutomaticLoading: 0
   m_AutomaticRunning: 0
-<<<<<<< Updated upstream
-  m_Loaders:
-  - {fileID: 11400000, guid: 2a7dedea14b318740ba9c532061d78f5, type: 2}
-=======
   m_Loaders: []
->>>>>>> Stashed changes
+  - {fileID: 11400000, guid: c32878dcabe0711439558ff1c83f5086, type: 2}
+  - {fileID: 11400000, guid: 2a7dedea14b318740ba9c532061d78f5, type: 2}
+
