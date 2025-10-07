@@ -1,0 +1,11 @@
+Model Information:
+* title:	Fancy Chair Throne
+* source:	https://sketchfab.com/3d-models/fancy-chair-throne-e119898bf2774db98bc8f83102e01dae
+* author:	Timothy Ahene (https://sketchfab.com/timothyahene)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Fancy Chair Throne" (https://sketchfab.com/3d-models/fancy-chair-throne-e119898bf2774db98bc8f83102e01dae) by Timothy Ahene (https://sketchfab.com/timothyahene) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
