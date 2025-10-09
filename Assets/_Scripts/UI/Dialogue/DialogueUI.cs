@@ -17,11 +17,12 @@ namespace UIElements
         // this is where we will add the npc name and text they say
         [SerializeField] private TextMeshProUGUI sentenceText;
 
-        // >>> Hami - ADD: configurable colors
+        // >>> Hami - ADD: configurable colors + stick pad
         [SerializeField] private Color npcColor = Color.white;
         [SerializeField] private Color playerColor = Color.yellow;
         [SerializeField] private Color systemColor = Color.gray;
         [SerializeField] private string playerCharacterName = "You";
+        [SerializeField] private StickOptionSelector stickSelector; // NEW
         private string _currentCharacter;
         //>>>>>>>>>>>>>>>>>>>>>
 
@@ -193,7 +194,10 @@ namespace UIElements
                 {
                     _buttons[i].gameObject.SetActive(false);
                 }
+                
             }
+            
+            if (stickSelector != null) stickSelector.SyncAndSelectFirst(); // NEW
         }
 
         //>>>>>>>>>>>>>>>>>>>>>

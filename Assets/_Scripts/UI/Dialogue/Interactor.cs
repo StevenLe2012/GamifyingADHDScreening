@@ -22,10 +22,17 @@ public class Interactor : MonoBehaviour
         _interactablesInRange = new List<Interactable>();
     }
 
-    private void FixedUpdate()
+    //Hami: Switch to gamepad stick
+    //private void FixedUpdate()
+    private void Update()
     {
         //if (controllerInput.action.ReadValue<float>() > 0)
-        if (Input.GetKeyDown(KeyCode.Space))
+        //if (Input.GetKeyDown(KeyCode.Space))
+
+        // A (buttonSouth) OR Space (kept for easy switch-back)
+        if ( (UnityEngine.InputSystem.Gamepad.current != null 
+                && UnityEngine.InputSystem.Gamepad.current.buttonSouth.wasPressedThisFrame) 
+                || Input.GetKeyDown(KeyCode.Space) )
         {
             
             Interact();

@@ -31,8 +31,15 @@ namespace Dialogue
                     () => scriptableEvent.unityEvent.Invoke());
             }
             dialogueTree.SetUpDialogueUnitsDict();
-            dialogueTree.continueCallback += dialogueUI.ContinueDialogue;
-            dialogueTree.continueCallback += ContinueDialogue;
+
+            //Hami: Add a delay
+            // ✨ Delay continue by one frame to avoid chaining through multiple auto-advance nodes
+            dialogueTree.continueCallback += () => StartCoroutine(CoContinueNextFrame());
+
+            //dialogueTree.continueCallback += dialogueUI.ContinueDialogue;
+            //dialogueTree.continueCallback += ContinueDialogue;
+
+
             dialogueTree.endDialogueCallback += dialogueUI.EndDialogue;
             dialogueTree.endDialogueCallback += EndDialogue;
         }
@@ -51,6 +58,21 @@ namespace Dialogue
             
             ContinueDialogue();
         }
+
+
+
+        
+
+                // ----Hami- NEW: delayed continue ----
+        private System.Collections.IEnumerator CoContinueNextFrame()
+        {
+            // wait 1 frame so GoToState() has applied and UI can render current node
+            yield return null; // or: yield return new WaitForEndOfFrame();
+            ContinueDialogue();
+        }
+
+
+
 
         // gets the next dialogue
         private void ContinueDialogue()
