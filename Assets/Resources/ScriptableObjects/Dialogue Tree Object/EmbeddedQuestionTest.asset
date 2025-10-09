@@ -190,28 +190,206 @@ MonoBehaviour:
   - requiredStateKey: Q1done
     character: You
     audioObjects:
-    - {fileID: 11400000, guid: effb06f3cf454c44d8741b21b7d39009, type: 2}
+    - {fileID: 11400000, guid: f6321d51cbe1ec24291e8fbfe8cd3971, type: 2}
+    - {fileID: 11400000, guid: 9180cc733df3c914c9a3877254803cc9, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 11400000}
           m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
-          m_MethodName: EndDialogue
+          m_MethodName: GoToState
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Q2
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: Continue
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument: Q2
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: Q1b
+  - requiredStateKey: Q2
     character: 
     audioObjects:
-    - {fileID: 11400000, guid: 7b2c5a762610fe746962b8eac9b5acc1, type: 2}
+    - {fileID: 11400000, guid: a350b7716c43f5248977f13cdc175849, type: 2}
+    - {fileID: 11400000, guid: d2378bc1c098cd94db25ab70622eed3a, type: 2}
+    options:
+    - buttonText: Yeah, I do actually.
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: done
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: done
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: Sort of, I guess?
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: b
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: b
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: No, not really.
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: AddToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: done
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: done
+              m_BoolArgument: 0
+            m_CallState: 2
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls: []
+    onEnterEventName: 
+  - requiredStateKey: Q2b
+    character: 
+    audioObjects:
+    - {fileID: 11400000, guid: d2378bc1c098cd94db25ab70622eed3a, type: 2}
+    options:
+    - buttonText: 'Now that you put it that way, I do feel like that. '
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: GoToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Q2done
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+    - buttonText: Not exactly.
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: GoToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Q2done
+              m_BoolArgument: 0
+            m_CallState: 2
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: Continue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Q2done
+              m_BoolArgument: 0
+            m_CallState: 2
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls: []
+    onEnterEventName: 
+  - requiredStateKey: Q2done
+    character: 
+    audioObjects:
+    - {fileID: 11400000, guid: 62cb966259338234b8da6c4a6e6ea82d, type: 2}
+    - {fileID: 11400000, guid: 89855e63d972d774fbc231f83f395e62, type: 2}
+    - {fileID: 11400000, guid: 53ea89d54ace1e643b0a950ae0ae6fa8, type: 2}
+    - {fileID: 11400000, guid: 952141f950c844e47b7f664bc0921606, type: 2}
+    - {fileID: 11400000, guid: 13fd7c997f0028a42ad53d33cead3dca, type: 2}
+    - {fileID: 11400000, guid: e4d0b8b746b0a4443b0eb14b5f026cfb, type: 2}
+    - {fileID: 11400000, guid: d8748f3f45d9d1646b3a7b2fb8cc3139, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
@@ -658,28 +836,6 @@ MonoBehaviour:
         - m_Target: {fileID: 11400000}
           m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
           m_MethodName: Continue
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    onEnterEventName: 
-  - requiredStateKey: aa
-    character: 
-    audioObjects:
-    - {fileID: 11400000, guid: 7b2c5a762610fe746962b8eac9b5acc1, type: 2}
-    - {fileID: 11400000, guid: 3731db4c266d7e04f978bb09ffa3dc29, type: 2}
-    options: []
-    nextEventWithoutButton:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 11400000}
-          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
-          m_MethodName: EndDialogue
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
