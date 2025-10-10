@@ -53,10 +53,29 @@ namespace Dialogue
         }
 
         // this function calls the scriptable action to happen
+        // public void CallScriptableAction(string actionName)
+        // {
+        //     scriptableCallbacks[actionName]();
+        // }
+        //Hami: Update call scriptable action
         public void CallScriptableAction(string actionName)
         {
-            scriptableCallbacks[actionName]();
+            if (string.IsNullOrWhiteSpace(actionName)) return;
+
+            if (scriptableCallbacks.TryGetValue(actionName, out var action))
+            {
+                Debug.Log($"[DialogueTree] Calling scriptable action: {actionName}");
+                action?.Invoke();
+            }
+            else
+            {
+                Debug.LogWarning($"[DialogueTree] No scriptable action registered for '{actionName}'. " +
+                                $"Did you add it to DialogueHandler.scriptableEvents and spell it exactly?");
+            }
         }
+        //Hami: End change
+
+        
 
         // this function continues dialogue
         public void Continue()
@@ -70,6 +89,9 @@ namespace Dialogue
             Debug.Log("SHOULD END");
             endDialogueCallback();
         }
+
+
+        
 
         // this function goes from the scriptable callback array to the actual dictionary for scriptableCallbacks
         public void RegisterScriptableCallback(string callbackName, Action action)
@@ -114,5 +136,7 @@ namespace Dialogue
             // the dialogueState.stateDict[npcName] gets what state we are in with that particular NPC
             return dialogueUnitsDict.TryGetValue(dialogueState.stateDict[npcName], out var value) ? value : null;
         }
+
+        
     }
 }

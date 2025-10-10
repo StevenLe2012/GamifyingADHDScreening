@@ -29,6 +29,7 @@ public class Interactor : MonoBehaviour
         //if (controllerInput.action.ReadValue<float>() > 0)
         //if (Input.GetKeyDown(KeyCode.Space))
 
+        UpdateInteractables(); 
         // A (buttonSouth) OR Space (kept for easy switch-back)
         if ( (UnityEngine.InputSystem.Gamepad.current != null 
                 && UnityEngine.InputSystem.Gamepad.current.buttonSouth.wasPressedThisFrame) 

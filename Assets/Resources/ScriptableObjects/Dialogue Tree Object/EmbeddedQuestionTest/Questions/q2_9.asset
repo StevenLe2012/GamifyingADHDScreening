@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: q2_9
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: a70979a7b714fdd408208301c4dfe7c4, type: 3}
-  subtitle: "Wizard: Guess you won\u2019t be. Not sure if that\u2019s a good thing
-    or bad thing."
+  subtitle: "Wizard: Feel free to explore the cabin with Kola. Come talk to me again
+    after.\r"
   character: Ekonn
