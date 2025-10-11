@@ -1,41 +1,102 @@
-using UnityEngine;
+using System.Collections;
 using TMPro;
+using UnityEngine;
+using UnityEngine.UI;   // <- for Image progress bar
 
 public class ExploreHintUI : MonoBehaviour
 {
-    [SerializeField] private CanvasGroup canvasGroup;
-    [SerializeField] private TextMeshProUGUI label;
-    [SerializeField] private float fadeInSpeed = 10f;
-    [SerializeField] private float visibleSeconds = 3f;
-    [SerializeField] private float fadeOutSpeed = 6f;
+    [Header("UI References")]
+    [SerializeField] private CanvasGroup group;              // root with CanvasGroup
+    [SerializeField] private TextMeshProUGUI mainText;       // "Explore the cabin on your left"
+    [SerializeField] private TextMeshProUGUI timerText;      // "59s"
+    [SerializeField] private TextMeshProUGUI endText;        // "Return to the wizard..."
+    
+    [Header("Optional Progress Bar")]
+    [SerializeField] private bool useProgressBar = true;     // toggle in Inspector
+    [SerializeField] private Image progressFill;             // Image.type = Filled (Radial360 or Horizontal)
+    [SerializeField] private bool invertFill = false;        // if your bar fills up instead of down
 
-    private Coroutine _co;
+    [Header("Settings")]
+    [SerializeField] private float fadeDuration = 0.3f;      // fade in/out seconds
+    [SerializeField] private float endMessageSeconds = 4f;   // how long to show end text
 
-    public void ShowExploreHint()    => Show("Explore for about 2 minutes.");
-    public void ShowReturnToNPCHint()=> Show("Return to the NPC and press A");
+    
 
-    public void Show(string message)
+    private Coroutine countdownCo;
+
+    /// <summary>
+    /// Show countdown hint with fully inspector-controlled texts.
+    /// </summary>
+    public void ShowExploreHint(float durationSeconds, string startMessage, string endMessage)
     {
-        if (label) label.text = message;
-        if (_co != null) StopCoroutine(_co);
-        _co = StartCoroutine(CoShow());
+        if (countdownCo != null) StopCoroutine(countdownCo);
+        countdownCo = StartCoroutine(CoShowHint(durationSeconds, startMessage, endMessage));
     }
 
-    private System.Collections.IEnumerator CoShow()
+    private IEnumerator CoShowHint(float seconds, string startMessage, string endMessage)
     {
-        gameObject.SetActive(true);
-        while (canvasGroup.alpha < 1f)
-        { canvasGroup.alpha += Time.unscaledDeltaTime * fadeInSpeed; yield return null; }
-        canvasGroup.alpha = 1f;
+        group.gameObject.SetActive(true);
+        yield return StartCoroutine(CoFade(1f));
 
-        float t = visibleSeconds;
-        while (t > 0f) { t -= Time.unscaledDeltaTime; yield return null; }
+        float duration = Mathf.Max(0f, seconds);
+        float t = duration;
 
-        while (canvasGroup.alpha > 0f)
-        { canvasGroup.alpha -= Time.unscaledDeltaTime * fadeOutSpeed; yield return null; }
-        canvasGroup.alpha = 0f;
+        // initial text
+       
+        mainText.text = startMessage;
+        endText.text  = "";
+        timerText.text = Mathf.CeilToInt(t) + "s";
 
-        gameObject.SetActive(false);
-        _co = null;
+        // init progress
+        if (useProgressBar && progressFill != null)
+        {
+            float startFill = invertFill ? 0f : 1f;
+            progressFill.fillAmount = startFill;
+        }
+
+        while (t > 0f)
+        {
+            t -= Time.deltaTime;
+            // countdown text
+            timerText.text = Mathf.Max(0, Mathf.CeilToInt(t)) + "s";
+
+            // progress update
+            if (useProgressBar && progressFill != null && duration > 0f)
+            {
+                float pct = Mathf.Clamp01(t / duration);        // 1 -> 0 as time passes
+                progressFill.fillAmount = invertFill ? (1f - pct) : pct;
+            }
+
+            yield return null;
+        }
+
+        // time's up
+        timerText.text = "";
+        mainText.text  = "";
+        endText.text   = endMessage;
+
+        // snap progress to end state
+        if (useProgressBar && progressFill != null)
+        {
+            progressFill.fillAmount = invertFill ? 1f : 0f;
+        }
+
+        yield return new WaitForSeconds(endMessageSeconds);
+        yield return StartCoroutine(CoFade(0f));
+        group.gameObject.SetActive(false);
+    }
+
+    private IEnumerator CoFade(float targetAlpha)
+    {
+        float start = group.alpha;
+        float time = 0f;
+        while (time < fadeDuration)
+        {
+            time += Time.deltaTime;
+            group.alpha = Mathf.Lerp(start, targetAlpha, time / fadeDuration);
+            yield return null;
+        }
+        group.alpha = targetAlpha;
+        Debug.Log("here");
     }
 }

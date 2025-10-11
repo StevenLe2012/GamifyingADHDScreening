@@ -41,15 +41,39 @@ public class Interactor : MonoBehaviour
         }
     }
 
-    private void Interact()
-    {
-        if(_closestInteractable != null)
-        {
-            //Debug.Log(_closestInteractable.gameObject.name);
-            _closestInteractable.Interact();
-        }
+    // private void Interact()
+    // {
+    //     if(_closestInteractable != null)
+    //     {
+    //         //Debug.Log(_closestInteractable.gameObject.name);
+    //         _closestInteractable.Interact();
+    //     }
 
+    // }
+    //Hami: Update Interact
+
+    private void Interact()
+{
+    if (_closestInteractable == null) return;
+
+    // Try dialogue first (cleanest route)
+    var handler = _closestInteractable.GetComponentInParent<Dialogue.TestHandler>();
+    var dlgState = _closestInteractable.GetComponentInParent<Dialogue.DialogueState>();
+
+    if (handler != null && dlgState != null)
+    {
+        handler.TryStartConversationFromState(dlgState);
+        return;
     }
+
+    // Fallback to the legacy interactable behavior
+    _closestInteractable.Interact();
+}
+
+
+    //Hami: Change end
+
+
 
     private void OnTriggerEnter(Collider other)
     {

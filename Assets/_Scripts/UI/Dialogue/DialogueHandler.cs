@@ -23,6 +23,12 @@ namespace Dialogue
 
 
         //Hami: Handoff to resume narrative after explore
+
+        // --- NEW: hard gate for re-talk ---
+        [SerializeField] private Interactor npcInteractor;   // drag the NPC’s Interactor here
+        [SerializeField] private float inputDebounceSeconds = 0.25f;
+
+
         // === Add near other serialized fields ===
         [SerializeField] private float exploreDurationSeconds = 120f; // default 2 min
         [SerializeField] private UnityEngine.Events.UnityEvent onExploreBegin;    // show "Explore..." hint
@@ -54,10 +60,13 @@ namespace Dialogue
             dialogueUI.EndDialogue();
             GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
 
-            _blockInputUntilTime = Time.time + 0.25f; // debounce
-
+            // --- NEW: hard-disable re-interaction + debounce ---
+            _blockInputUntilTime = Time.time + inputDebounceSeconds;
             // 3) gate re-talk until Explore is done
             _nextDialogueUnlocked = false;
+            if (npcInteractor) npcInteractor.enabled = false;
+
+
 
             if (_exploreCo != null) StopCoroutine(_exploreCo);
             float dur = (exploreSeconds > 0f) ? exploreSeconds : exploreDurationSeconds;
@@ -72,6 +81,9 @@ namespace Dialogue
             _nextDialogueUnlocked = true;
             Debug.Log("[Handler] Explore unlocked — re-talk allowed.");
             onExploreUnlocked?.Invoke();
+
+            // --- NEW: re-enable interactor when explore ends ---
+            if (npcInteractor) npcInteractor.enabled = true;
         }
 
 

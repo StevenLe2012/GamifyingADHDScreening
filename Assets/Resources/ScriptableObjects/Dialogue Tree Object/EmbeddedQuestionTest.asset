@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EmbeddedQuestionTest
   m_EditorClassIdentifier: 
   npcName: Ekonn
-  defaultState: Q2done
+  defaultState: Intro
   scriptableCallbackNames: []
   dialogueUnits:
   - requiredStateKey: Intro
@@ -61,7 +61,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Intro2
+            m_StringArgument: Q2done
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 11400000}
@@ -395,7 +395,19 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 11400000}
           m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
-          m_MethodName: EndDialogue
+          m_MethodName: GoToState
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Explore
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: Continue
           m_Mode: 1
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -405,19 +417,58 @@ MonoBehaviour:
             m_StringArgument: Explore
             m_BoolArgument: 0
           m_CallState: 2
-    onEnterEventName: GoExplore
+    onEnterEventName: 
   - requiredStateKey: Explore
     character: 
     audioObjects: []
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
-        m_Calls: []
-    onEnterEventName: 
+        m_Calls:
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: EndDialogue
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+    onEnterEventName: GoExplore
   - requiredStateKey: AfterExplore
     character: 
     audioObjects:
-    - {fileID: 11400000, guid: effb06f3cf454c44d8741b21b7d39009, type: 2}
+    - {fileID: 11400000, guid: 8496e72d2ea97e241b844681fcde5a93, type: 2}
+    - {fileID: 11400000, guid: e7e4433d40e3bdf4c8fab6c3900354c6, type: 2}
+    - {fileID: 11400000, guid: 788c794ca3bac8f42a4d5f00711068d9, type: 2}
+    - {fileID: 11400000, guid: bbb589f1a8ddf584e878b55f4db93e0a, type: 2}
+    - {fileID: 11400000, guid: 23035e5e24d1f3d41b6e8a9d60126f4d, type: 2}
+    - {fileID: 11400000, guid: 054fa9546fe85cf438c05f5737891632, type: 2}
+    - {fileID: 11400000, guid: 5f46a23aa31e8ee4c824dd9e7bb82522, type: 2}
+    - {fileID: 11400000, guid: 7a1063f944d6d6541b007421df4a3fed, type: 2}
+    - {fileID: 11400000, guid: 24fe6461c98efc449add768fc1dc26d5, type: 2}
+    - {fileID: 11400000, guid: 53f12938f29e3244f96502d39cc84d1a, type: 2}
+    - {fileID: 11400000, guid: f55a930787c019f43959089f063b8fbb, type: 2}
+    - {fileID: 11400000, guid: edd1ef41bbf9fc44aad872ae442edc29, type: 2}
+    - {fileID: 11400000, guid: 918d9d85b21637b48b75adb5fd80526e, type: 2}
+    - {fileID: 11400000, guid: a0ba5dec42554d1459c945f074b72d26, type: 2}
+    - {fileID: 11400000, guid: 2cf931387f85b294b9cd0def3692fbca, type: 2}
+    - {fileID: 11400000, guid: 035c8d0d7b7cf7547b2ce9b84f7c2ecb, type: 2}
+    - {fileID: 11400000, guid: f14c796115dc26a409bec054208dad00, type: 2}
+    - {fileID: 11400000, guid: c03e3ecccb05f8a4792522faa08c6f16, type: 2}
+    - {fileID: 11400000, guid: 2b3e1f334ea55b4438b09236b5b1ec38, type: 2}
+    - {fileID: 11400000, guid: 7ba73f96a2cd05742a7b2bdc76613e12, type: 2}
+    - {fileID: 11400000, guid: 6b8e5a1b639875d43b4a29f6079e0098, type: 2}
+    - {fileID: 11400000, guid: 70ebcc295e87846469a97ae7903c92f1, type: 2}
+    - {fileID: 11400000, guid: 33e74c819c0bdf342afa2f211cc35cfe, type: 2}
+    - {fileID: 11400000, guid: 6f8b9bd443e35914cac6cab2c8faca81, type: 2}
+    - {fileID: 11400000, guid: d00fbbd8dfac1544d9bb8f0b7efe331d, type: 2}
+    - {fileID: 11400000, guid: 796fd040556625141afd5f2ab0769465, type: 2}
+    - {fileID: 11400000, guid: 796fd040556625141afd5f2ab0769465, type: 2}
+    - {fileID: 11400000, guid: 16c385f828e219a48b5639457b3cbbd7, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
