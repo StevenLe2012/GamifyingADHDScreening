@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: ae1
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: d49e0753291e5d94d9a2aec00c21cdc8, type: 3}
+  clip: {fileID: 8300000, guid: fd763238d0289c64db3e95392f90d81b, type: 3}
   subtitle: 'Wizard: It seems like you remember how to move!'
   character: Ekonn

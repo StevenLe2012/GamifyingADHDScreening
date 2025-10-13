@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: ae22
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: d49e0753291e5d94d9a2aec00c21cdc8, type: 3}
+  clip: {fileID: 8300000, guid: 1145e973c56a3dc4c9af22ac2313eb82, type: 3}
   subtitle: "Wizard: Even though I\u2019m done with my apprenticeship, he has still
     yet to let me free.\r\r\r\r\r"
   character: Ekonn

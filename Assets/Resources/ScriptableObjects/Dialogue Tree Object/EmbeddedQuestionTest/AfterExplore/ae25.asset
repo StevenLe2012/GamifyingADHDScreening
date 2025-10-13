@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: ae25
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: d49e0753291e5d94d9a2aec00c21cdc8, type: 3}
+  clip: {fileID: 8300000, guid: 1020e8dfacb01d74da78dabeef856ced, type: 3}
   subtitle: "You: And then we can get out of here together.\r\n\r\r"
   character: You

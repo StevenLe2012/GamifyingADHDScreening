@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UIElements;
-using Helpers;   // <-- add this at the top with your other using lines
+using Helpers;
 
 namespace Dialogue
 {
@@ -12,15 +12,13 @@ namespace Dialogue
         [SerializeField] private DialogueTreeObjects dialogueTree;
         [SerializeField] private DialogueUI dialogueUI;
 
-        // NEW: wire ScriptableObject events (APPEAR_KOALA, etc.)
         [Header("Scriptable Events")]
-        [SerializeField] private ScriptableEvent[] scriptableEvents; 
-        // ScriptableEvent = { string eventName; UnityEvent unityEvent; } (same type you already use)
+        [SerializeField] private ScriptableEvent[] scriptableEvents;
 
         [Header("Keys")]
-        [SerializeField] private string introStartKey   = "Intro";
+        [SerializeField] private string introStartKey = "Intro";
         [SerializeField] private string afterExploreKey = "AfterExplore";
-        [SerializeField] private string exploreSignal   = "GoExplore"; // node that triggers the Explore phase
+        [SerializeField] private string exploreSignal = "GoExplore";
 
         [Header("Explore Phase")]
         [SerializeField] private float exploreSeconds = 60f;
@@ -31,26 +29,28 @@ namespace Dialogue
         [SerializeField] private string exploreStartText = "Explore the cabin on your left";
         [SerializeField] private string exploreEndText = "Time’s up — return to the wizard to learn more about this magical world!";
 
+        // ---- NEW: 1-frame delay control ----
+        [Header("Dialogue Pacing")]
+        [SerializeField] private int continueDelayFrames = 1; // Wait N frames before advancing
+        private bool _advanceQueued;
+        private Coroutine _advanceCo;
 
         // ---- internal ----
         private bool locked;
         private float debounceUntil;
         private Coroutine exploreCo;
-        private Action _continueThunk;
 
         private void Awake()
         {
-            // Isolate callbacks so multiple NPCs don’t share the same SO callback list
             if (dialogueTree != null) dialogueTree = Instantiate(dialogueTree);
         }
 
         private void Start()
         {
-            // fresh callback slate
             dialogueTree.ResetCallbacks();
             dialogueTree.SetUpDialogueUnitsDict();
 
-            // REGISTER your ScriptableEvents (APPEAR_KOALA, etc.)
+            // Register scriptable events (APPEAR_KOALA, etc.)
             if (scriptableEvents != null)
             {
                 foreach (var se in scriptableEvents)
@@ -60,8 +60,8 @@ namespace Dialogue
                 }
             }
 
-            _continueThunk = () => StartCoroutine(CoNextFrame());
-            dialogueTree.continueCallback    += _continueThunk;
+            // === NEW: Queue advance for next frame instead of instant chain ===
+            dialogueTree.continueCallback += QueueAdvanceNextFrame;
             dialogueTree.endDialogueCallback += HandleEndDialogue;
         }
 
@@ -69,14 +69,32 @@ namespace Dialogue
         {
             if (dialogueTree != null)
             {
-                if (_continueThunk != null) dialogueTree.continueCallback -= _continueThunk;
+                dialogueTree.continueCallback -= QueueAdvanceNextFrame;
                 dialogueTree.endDialogueCallback -= HandleEndDialogue;
             }
         }
 
-        private IEnumerator CoNextFrame() { yield return null; Continue(); }
+        // === NEW: Queue / coalesced advance ===
+        private void QueueAdvanceNextFrame()
+        {
+            if (_advanceQueued) return;
+            _advanceQueued = true;
 
-        // ==== PUBLIC ENTRY (from your Player's Interactor) ====
+            if (_advanceCo != null) StopCoroutine(_advanceCo);
+            _advanceCo = StartCoroutine(CoAdvanceAfterFrames(continueDelayFrames));
+        }
+
+        private IEnumerator CoAdvanceAfterFrames(int frames)
+        {
+            for (int i = 0; i < Mathf.Max(1, frames); i++)
+                yield return null;
+
+            _advanceQueued = false;
+            _advanceCo = null;
+            Continue();
+        }
+
+        // ==== PUBLIC ENTRY ====
         public void TryStartConversationFromState(DialogueState dialogueState)
         {
             if (locked) return;
@@ -85,7 +103,7 @@ namespace Dialogue
 
             dialogueTree.SetUpDialogueState(dialogueState);
 
-            // ensure first-time default
+            // Ensure default intro state
             if (!dialogueTree.dialogueState.stateDict.ContainsKey(dialogueTree.npcName) ||
                 string.IsNullOrEmpty(dialogueTree.dialogueState.stateDict[dialogueTree.npcName]))
             {
@@ -102,22 +120,21 @@ namespace Dialogue
             if (locked) return;
             if (unit == null) { End(); return; }
 
-            // 1) Fire on-enter scriptable event (e.g., APPEAR_KOALA)
+            // Fire on-enter event (e.g. APPEAR_KOALA)
             if (!string.IsNullOrWhiteSpace(unit.onEnterEventName))
             {
-                // Safe invocation: only fires if registered
                 dialogueTree.CallScriptableAction(unit.onEnterEventName);
             }
 
-            // 2) If this is the Explore trigger node, hand off immediately
+            // Explore trigger
             if (!string.IsNullOrEmpty(unit.onEnterEventName) &&
                 unit.onEnterEventName == exploreSignal)
             {
                 HandoffToExplore(afterExploreKey, exploreSeconds);
-                return; // do NOT render this node; we just closed the UI
+                return;
             }
 
-            // 3) Normal node
+            // Normal line
             dialogueUI.BindDialogueUnit(unit);
             dialogueUI.ContinueDialogue();
         }
@@ -135,31 +152,28 @@ namespace Dialogue
         // ==== EXPLORE PHASE ====
         private void HandoffToExplore(string nextKey, float seconds)
         {
-            // checkpoint for the next talk
             dialogueTree.GoToState(nextKey);
 
-            // close UI -> Explore
             dialogueUI.EndDialogue();
             GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
 
-            // hard lock + debounce
             locked = true;
             debounceUntil = Time.time + inputDebounceSeconds;
 
-            // timer
             if (exploreCo != null) StopCoroutine(exploreCo);
             exploreCo = StartCoroutine(CoExplore(seconds));
 
-            //UIHint
             if (hintUI) hintUI.ShowExploreHint(seconds, exploreStartText, exploreEndText);
-
-
         }
 
         private IEnumerator CoExplore(float seconds)
         {
             float t = seconds;
-            while (t > 0f) { t -= Time.deltaTime; yield return null; }
+            while (t > 0f)
+            {
+                t -= Time.deltaTime;
+                yield return null;
+            }
             locked = false; // allow re-talk
         }
     }

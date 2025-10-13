@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: ae12
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: d49e0753291e5d94d9a2aec00c21cdc8, type: 3}
+  clip: {fileID: 8300000, guid: 2243907bcbb3a4748bb4e842f1993361, type: 3}
   subtitle: "Wizard: I just want to go back to the other world, where I can entertain
     people. \r\r\r"
   character: Ekonn
