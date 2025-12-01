@@ -7,6 +7,8 @@ TagManager:
   - NonTarget
   - Target
   - Companion
+  - Fader
+  - Distractor
   layers:
   - Default
   - TransparentFX
@@ -15,9 +17,9 @@ TagManager:
   - Water
   - UI
   - Cube
-  - 
-  - 
-  - 
+  - Ground
+  - GazeHit
+  - Cards
   - 
   - 
   - 

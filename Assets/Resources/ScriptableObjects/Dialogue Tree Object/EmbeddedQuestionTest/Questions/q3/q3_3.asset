@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: q3_3
   m_EditorClassIdentifier: 
-  clip: {fileID: 0}
+  clip: {fileID: 8300000, guid: f1e29d04def8bd34cb60c816dec1b43a, type: 3}
   subtitle: "You: Why wouldn\u2019t I be?\r\n\r\r"
   character: You

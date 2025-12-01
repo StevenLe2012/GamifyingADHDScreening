@@ -16,9 +16,13 @@ namespace Dialogue
         [SerializeField] private ScriptableEvent[] scriptableEvents;
 
         [Header("Keys")]
-        [SerializeField] private string introStartKey = "Intro";
-        [SerializeField] private string afterExploreKey = "AfterExplore";
-        [SerializeField] private string exploreSignal = "GoExplore";
+        [SerializeField] private string introStartKey    = "Intro";
+        [SerializeField] private string afterExploreKey  = "AfterExplore";
+        [SerializeField] private string startMoxoKey     = "StartMOXO";      
+
+        [Header("Signals (DialogueUnit.onEnterEventName)")]
+        [SerializeField] private string exploreSignal    = "GoExplore";
+        [SerializeField] private string startMoxoSignal  = "GoStartMOXO";    
 
         [Header("Explore Phase")]
         [SerializeField] private float exploreSeconds = 60f;
@@ -27,13 +31,12 @@ namespace Dialogue
         [Header("UI Hint")]
         [SerializeField] private ExploreHintUI hintUI;
         [SerializeField] private string exploreStartText = "Explore the cabin on your left";
-        [SerializeField] private string exploreEndText = "Time’s up — return to the wizard to learn more about this magical world!";
+        [SerializeField] private string exploreEndText   = "Time’s up — return to the wizard to learn more about this magical world!";
+        [SerializeField] private string startMoxoText    = "Turn right and press the button to travel to the next island."; 
 
-        // ---- NEW: 1-frame delay control ----
-        [Header("Dialogue Pacing")]
-        [SerializeField] private int continueDelayFrames = 1; // Wait N frames before advancing
-        private bool _advanceQueued;
-        private Coroutine _advanceCo;
+        [Header("After Game")]
+        [SerializeField] private string afterGameKey  = "AfterGame";                
+        [SerializeField] private string afterGameText = "Press A to talk to the wizard."; 
 
         // ---- internal ----
         private bool locked;
@@ -42,6 +45,7 @@ namespace Dialogue
 
         private void Awake()
         {
+            // make sure each NPC has its own dialogueTree instance
             if (dialogueTree != null) dialogueTree = Instantiate(dialogueTree);
         }
 
@@ -50,7 +54,7 @@ namespace Dialogue
             dialogueTree.ResetCallbacks();
             dialogueTree.SetUpDialogueUnitsDict();
 
-            // Register scriptable events (APPEAR_KOALA, etc.)
+            // register scriptable events
             if (scriptableEvents != null)
             {
                 foreach (var se in scriptableEvents)
@@ -60,8 +64,11 @@ namespace Dialogue
                 }
             }
 
-            // === NEW: Queue advance for next frame instead of instant chain ===
-            dialogueTree.continueCallback += QueueAdvanceNextFrame;
+            // delay continue by one frame (prevents lines overlapping)
+            dialogueTree.continueCallback += () => StartCoroutine(CoContinueNextFrame());
+
+            // end dialogue bindings
+            dialogueTree.endDialogueCallback += dialogueUI.EndDialogue;
             dialogueTree.endDialogueCallback += HandleEndDialogue;
         }
 
@@ -69,28 +76,15 @@ namespace Dialogue
         {
             if (dialogueTree != null)
             {
-                dialogueTree.continueCallback -= QueueAdvanceNextFrame;
+                dialogueTree.continueCallback    -= () => StartCoroutine(CoContinueNextFrame());
+                dialogueTree.endDialogueCallback -= dialogueUI.EndDialogue;
                 dialogueTree.endDialogueCallback -= HandleEndDialogue;
             }
         }
 
-        // === NEW: Queue / coalesced advance ===
-        private void QueueAdvanceNextFrame()
+        private IEnumerator CoContinueNextFrame()
         {
-            if (_advanceQueued) return;
-            _advanceQueued = true;
-
-            if (_advanceCo != null) StopCoroutine(_advanceCo);
-            _advanceCo = StartCoroutine(CoAdvanceAfterFrames(continueDelayFrames));
-        }
-
-        private IEnumerator CoAdvanceAfterFrames(int frames)
-        {
-            for (int i = 0; i < Mathf.Max(1, frames); i++)
-                yield return null;
-
-            _advanceQueued = false;
-            _advanceCo = null;
+            yield return null;  // wait one frame so UI can update cleanly
             Continue();
         }
 
@@ -103,7 +97,7 @@ namespace Dialogue
 
             dialogueTree.SetUpDialogueState(dialogueState);
 
-            // Ensure default intro state
+            // ensure default start
             if (!dialogueTree.dialogueState.stateDict.ContainsKey(dialogueTree.npcName) ||
                 string.IsNullOrEmpty(dialogueTree.dialogueState.stateDict[dialogueTree.npcName]))
             {
@@ -120,21 +114,27 @@ namespace Dialogue
             if (locked) return;
             if (unit == null) { End(); return; }
 
-            // Fire on-enter event (e.g. APPEAR_KOALA)
+            // fire on-enter scriptable event if any
             if (!string.IsNullOrWhiteSpace(unit.onEnterEventName))
             {
                 dialogueTree.CallScriptableAction(unit.onEnterEventName);
             }
 
-            // Explore trigger
-            if (!string.IsNullOrEmpty(unit.onEnterEventName) &&
-                unit.onEnterEventName == exploreSignal)
+            // Signal: hand off to Explore
+            if (!string.IsNullOrEmpty(unit.onEnterEventName) && unit.onEnterEventName == exploreSignal)
             {
                 HandoffToExplore(afterExploreKey, exploreSeconds);
-                return;
+                return; // stop showing this node
             }
 
-            // Normal line
+            // Signal: show StartMOXO instruction (no timer; show end text + button)
+            if (!string.IsNullOrEmpty(unit.onEnterEventName) && unit.onEnterEventName == startMoxoSignal)
+            {
+                HandoffToStartMOXO(startMoxoKey, startMoxoText);
+                return; // stop showing this node
+            }
+
+            // display dialogue normally
             dialogueUI.BindDialogueUnit(unit);
             dialogueUI.ContinueDialogue();
         }
@@ -169,12 +169,51 @@ namespace Dialogue
         private IEnumerator CoExplore(float seconds)
         {
             float t = seconds;
-            while (t > 0f)
-            {
-                t -= Time.deltaTime;
-                yield return null;
-            }
-            locked = false; // allow re-talk
+            while (t > 0f) { t -= Time.deltaTime; yield return null; }
+            locked = false; // re-enable talking
         }
+
+        // ==== START MOXO HANDOFF (no timer) ====
+        private void HandoffToStartMOXO(string nextKey, string instructionText)
+        {
+            // Move state forward so next time we talk we continue from StartMOXO
+            dialogueTree.GoToState(nextKey);
+
+            // Close dialogue UI; keep world interactive
+            dialogueUI.EndDialogue();
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
+
+            // Debounce NPC re-trigger for a short moment
+            debounceUntil = Time.time + inputDebounceSeconds;
+
+            // Show instruction as an immediate "end" message with Start button (A/Space)
+            if (hintUI != null)
+            {
+                // duration=0 → your ExploreHintUI immediately shows end text + Start button and waits for A / Space
+                hintUI.ShowExploreHint(0f, "", instructionText);
+            }
+        }
+        
+        public void HandoffToAfterGame(string nextKey, string instructionText)
+        {
+            // move dialogue state forward so next talk starts at AfterGame
+            dialogueTree.GoToState(nextKey);
+
+            // close dialogue UI (safe even if not active) and keep world interactive
+            dialogueUI.EndDialogue();
+            GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
+
+            // small debounce so NPC isn't re-triggered instantly
+            debounceUntil = Time.time + inputDebounceSeconds;
+
+            // show the instruction immediately, with Start button (A/Space)
+            if (hintUI != null)
+            {
+                // duration = 0 → shows end text + Start button and waits for A / Space
+                hintUI.ShowExploreHint(0f, "", instructionText);
+            }
+        }
+
+
     }
 }

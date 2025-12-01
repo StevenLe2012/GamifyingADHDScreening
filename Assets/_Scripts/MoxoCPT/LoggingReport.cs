@@ -16,7 +16,7 @@ namespace MoxoCPT
             using (StreamWriter sw = File.AppendText(GetCSVPath()))
             {
                 // Casts all Biometrics to 
-                var isTarget = report.IsTarget ? "Target" : "Distractor";
+                var isTarget = report.IsTarget ? "Target" : "NonTarget";
 
                 var timeShown = report.TimeShown.ToString();
                 
@@ -53,7 +53,7 @@ namespace MoxoCPT
             "Type",
             "Time Shown",
             "Attentiveness",
-            "Timelineess",
+            "Timeliness",
             "HyperReactiveness",
             "Impulsiveness",
             "ReactionTime",

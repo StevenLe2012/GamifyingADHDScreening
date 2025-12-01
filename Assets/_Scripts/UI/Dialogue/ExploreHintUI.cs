@@ -41,13 +41,10 @@ public class ExploreHintUI : MonoBehaviour
         float duration = Mathf.Max(0f, seconds);
         float t = duration;
 
-        // initial text
-       
-        mainText.text = startMessage;
-        endText.text  = "";
+        mainText.text  = startMessage;   // e.g., "Get ready…"
+        endText.text   = "";             // ensure hidden
         timerText.text = Mathf.CeilToInt(t) + "s";
 
-        // init progress
         if (useProgressBar && progressFill != null)
         {
             float startFill = invertFill ? 0f : 1f;
@@ -57,29 +54,38 @@ public class ExploreHintUI : MonoBehaviour
         while (t > 0f)
         {
             t -= Time.deltaTime;
-            // countdown text
             timerText.text = Mathf.Max(0, Mathf.CeilToInt(t)) + "s";
 
-            // progress update
             if (useProgressBar && progressFill != null && duration > 0f)
             {
-                float pct = Mathf.Clamp01(t / duration);        // 1 -> 0 as time passes
+                float pct = Mathf.Clamp01(t / duration);        // 1 -> 0
                 progressFill.fillAmount = invertFill ? (1f - pct) : pct;
             }
-
             yield return null;
         }
 
-        // time's up
+        // --- changed block ---
+        // If endMessage is empty/null, just hide immediately.
+        if (string.IsNullOrEmpty(endMessage))
+        {
+            timerText.text = "";
+            mainText.text  = "";
+            if (useProgressBar && progressFill != null)
+                progressFill.fillAmount = invertFill ? 1f : 0f;
+
+            yield return StartCoroutine(CoFade(0f));
+            group.gameObject.SetActive(false);
+            yield break;
+        }
+        // ---------------------
+
+        // original end-message path
         timerText.text = "";
         mainText.text  = "";
         endText.text   = endMessage;
 
-        // snap progress to end state
         if (useProgressBar && progressFill != null)
-        {
             progressFill.fillAmount = invertFill ? 1f : 0f;
-        }
 
         yield return new WaitForSeconds(endMessageSeconds);
         yield return StartCoroutine(CoFade(0f));
@@ -97,6 +103,5 @@ public class ExploreHintUI : MonoBehaviour
             yield return null;
         }
         group.alpha = targetAlpha;
-        Debug.Log("here");
     }
 }

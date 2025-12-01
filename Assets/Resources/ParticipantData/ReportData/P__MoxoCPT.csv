@@ -1,0 +1,20 @@
+Type,Time Shown,Attentiveness,Timeliness,HyperReactiveness,Impulsiveness,ReactionTime,HyperReactiveCount
+Target,0.5,True,False,False,False,0.622116,0
+Target,1,True,True,False,False,0.3776752,0
+Target,1,False,False,False,False,-1,0
+Target,0.5,True,False,False,False,0.5255384,0
+Target,0.5,True,True,False,False,0.5104906,0
+Target,0.5,True,True,False,False,0.4674703,0
+Target,0.5,False,False,False,False,-1,0
+Target,1,True,True,False,False,0.3247164,0
+Target,3,True,True,True,False,0.3435969,1
+Target,3,False,False,False,False,-1,0
+Target,0.5,True,True,False,False,0.4324328,0
+Target,3,True,True,False,False,0.4995698,0
+Target,3,False,False,False,False,-1,0
+NonTarget,0.5,False,False,False,True,0.3771486,0
+Target,1,True,True,False,False,0.4575619,0
+Target,0.5,True,True,False,False,0.4151559,0
+NonTarget,0.5,False,False,False,True,0.3769699,0
+Target,0.5,True,True,False,False,0.3774316,0
+Target,0.5,False,False,False,False,-1,0

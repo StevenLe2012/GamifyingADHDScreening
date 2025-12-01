@@ -113,6 +113,10 @@ namespace Dialogue
             // Delay continue by one frame to avoid chaining through multiple auto-advance nodes
             dialogueTree.continueCallback += () => StartCoroutine(CoContinueNextFrame());
 
+
+
+            
+
             //dialogueTree.continueCallback += dialogueUI.ContinueDialogue;
             //dialogueTree.continueCallback += ContinueDialogue;
 

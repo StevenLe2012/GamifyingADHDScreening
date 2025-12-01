@@ -18,12 +18,17 @@ namespace MoxoCPT
         {
             var timePassed = 0f;
             _alreadyPressed = false;
+            //Hami:
+            bool hadPress = false;
+
             while (timePassed <= duration)
             {
                 if (_buttonPressed)
                 {
                     _buttonPressed = false;
-                    Debug.Log("Button Pressed!");
+                    //Hami:
+                    hadPress = true;
+                    Debug.Log($"[Interact] Press seen at t={timePassed:0.000}s (isTarget={IsTargetCard()})");
                     
                     
                     // Hyper Reactiveness
@@ -62,6 +67,10 @@ namespace MoxoCPT
 
                 yield return null;
             }
+            
+            if (!hadPress)
+                Debug.Log("[Interact] No press during this trial.");
+
             LoggingReport.AppendToReportCSV(report);
         }
 
