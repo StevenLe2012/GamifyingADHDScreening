@@ -239,6 +239,16 @@ public class IntroScreen : MonoBehaviour
     [SerializeField] private bool allowPressAtoStart = true;
     [SerializeField] private float fadeSpeed = 10f;
 
+    [Header("Results (Inspector configurable)")]
+    [SerializeField] private string resultsTitle = "Results";
+    [SerializeField]
+    [TextArea]
+    private string resultsBodyTemplate =
+        "You correctly identified {HIT} out of {TOTAL} target cards.";
+
+    [SerializeField] private string resultsButtonLabel = "Continue";
+    [SerializeField] private TextMeshProUGUI startButtonLabel;
+
     // Preset content
     [System.Serializable]
     public class PanelPreset
@@ -283,6 +293,9 @@ public class IntroScreen : MonoBehaviour
 
         if (showWelcomeOnAwake) ShowWelcome();
         else ShowInstant(false);
+
+        if (!startButtonLabel)
+        startButtonLabel = startButton.GetComponentInChildren<TextMeshProUGUI>();
     }
 
     public void Hide()
@@ -320,6 +333,10 @@ public class IntroScreen : MonoBehaviour
 
     public void ShowMoxo(string titleOverride = null, string bodyOverride = null)
     {
+        
+        if (startButtonLabel)
+        startButtonLabel.text = "Start";
+
         ApplyPreset(moxoPreset, titleOverride, bodyOverride);
 
         // Ensure the game will actually begin when Start is clicked (or A/Space is pressed)
@@ -424,6 +441,25 @@ public class IntroScreen : MonoBehaviour
             canvasGroup.interactable   = visible;
         }
         _starting = false;
+    }
+
+    public void ShowResults(int hit, int total)
+    {
+        // Build body text from template
+        string body = resultsBodyTemplate
+            .Replace("{HIT}", hit.ToString())
+            .Replace("{TOTAL}", total.ToString());
+
+        ApplyPreset(moxoPreset, resultsTitle, body);
+
+        // Change button label to "Continue"
+        if (startButtonLabel)
+            startButtonLabel.text = resultsButtonLabel;
+
+        // IMPORTANT: clicking Continue only closes the panel
+        _currentStart = null;
+
+        ShowInstant(true);
     }
 
     

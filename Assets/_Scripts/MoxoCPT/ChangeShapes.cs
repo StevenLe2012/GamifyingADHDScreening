@@ -174,6 +174,15 @@ namespace MoxoCPT
 
         private IEnumerator CoStart()
         {
+            if (countdownUI == null)
+            {
+                countdownUI = FindObjectOfType<ExploreHintUI>(true);
+                Debug.Log($"[ChangeShapes] Auto-found countdownUI = {(countdownUI ? countdownUI.name : "NULL")}");
+            }
+            
+
+
+
             if (totalTargets + totalNonTargets != totalTrials)
             {
                 Debug.LogError($"ChangeShapes: totalTargets({totalTargets}) + totalNonTargets({totalNonTargets}) != totalTrials({totalTrials}).");
@@ -229,8 +238,10 @@ namespace MoxoCPT
         private IEnumerator Change()
         {
             // Show countdown
+            
             if (countdownUI != null)
             {
+                Debug.Log($"[ChangeShapes] countdownUI={(countdownUI ? countdownUI.name : "NULL")}");
                 countdownUI.ShowExploreHint(_secondsTillGameStarts, countdownStartText, "");
             }
 
@@ -240,6 +251,9 @@ namespace MoxoCPT
             // …then wait a small grace so the UI can fade out and not cover Trial 0
             if (postCountdownDelay > 0f)
                 yield return new WaitForSeconds(postCountdownDelay);
+
+            
+            Debug.Log($"[ChangeShapes] Starting countdown. countdownUI={(countdownUI ? "OK" : "NULL")}");
 
             // Start distractors exactly with Trial 0 (optional; keep if you want them aligned)
             if (distractors != null)
@@ -280,6 +294,21 @@ namespace MoxoCPT
 
             if (distractors != null)
                 distractors.StopSystem();
+
+            //Hami: Add results
+            var tracker = CPTScoreRuntime.I;
+
+            if (tracker != null)
+            {
+                var intro = FindObjectOfType<IntroScreen>(true);
+                if (intro != null)
+                {
+                    intro.ShowResults(
+                        tracker.CorrectTargetsHit,
+                        tracker.TotalTargets
+                    );
+                }
+            }
         }
 
         private float GetCardDuration()

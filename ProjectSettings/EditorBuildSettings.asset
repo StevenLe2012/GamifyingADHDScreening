@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/BootVideo.unity
+    guid: e9a0e82d8f1e4a9409cbee088d4b8c98
+  - enabled: 1
+    path: Assets/Scenes/Core.unity
+    guid: 53e7d26a3971ade43bfeadceb4df0eb9
+  - enabled: 1
+    path: Assets/Scenes/CardIsland_Solo.unity
+    guid: 939293085e4293941a8c227baec97471
+  - enabled: 0
     path: Assets/Scenes/Main.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

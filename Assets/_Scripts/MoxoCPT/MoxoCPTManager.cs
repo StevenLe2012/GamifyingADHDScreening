@@ -89,11 +89,20 @@ namespace MoxoCPT
 
         public void OnGameBegin()
         {
+            Debug.Log("[MoxoCPTManager] OnGameBegin() called.");
+            Debug.Log($"[MoxoCPTManager] GameManager.Instance = {(GameManager.Instance ? "OK" : "NULL")}");
             
             isGameOver = false;
+
+            var cards = GetComponent<CardsActive>();
+            Debug.Log($"[MoxoCPTManager] CardsActive on same object = {(cards ? "OK" : "NULL")}");
+
             TurnCardsOn();
             LoggingReport.CreateReportCSV();
-            GameManager.Instance.UpdateGameState(GameManager.GameState.CPT);
+            if (GameManager.Instance != null)
+                GameManager.Instance.UpdateGameState(GameManager.GameState.CPT);
+            else
+                Debug.LogError("[MoxoCPTManager] Cannot set state: GameManager.Instance is null.");
 
             // Hami:Eyetracking - start gaze logging with ParticipantId from GameManager
             var pid = GameManager.Instance != null ? GameManager.Instance.ParticipantId : "";

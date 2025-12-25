@@ -35,6 +35,8 @@ public class ExploreHintUI : MonoBehaviour
 
     private IEnumerator CoShowHint(float seconds, string startMessage, string endMessage)
     {
+        GetComponent<XRCountdownSnapToWorldAnchor>()?.SnapToAnchor();
+        
         group.gameObject.SetActive(true);
         yield return StartCoroutine(CoFade(1f));
 

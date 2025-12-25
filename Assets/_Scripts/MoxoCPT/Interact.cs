@@ -71,6 +71,7 @@ namespace MoxoCPT
             if (!hadPress)
                 Debug.Log("[Interact] No press during this trial.");
 
+            CPTScoreRuntime.I?.RegisterTrial(report.IsTarget, report.Attentiveness);
             LoggingReport.AppendToReportCSV(report);
         }
 

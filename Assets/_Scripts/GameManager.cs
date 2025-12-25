@@ -118,6 +118,7 @@ public class GameManager : MonoBehaviour
         }
 
         UpdateGameState(GameState.Explore);
+
     }
 
     public void UpdateGameState(GameState newState)
