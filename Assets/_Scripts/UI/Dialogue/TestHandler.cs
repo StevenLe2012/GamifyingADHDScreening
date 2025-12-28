@@ -18,7 +18,9 @@ namespace Dialogue
         [Header("Keys")]
         [SerializeField] private string introStartKey    = "Intro";
         [SerializeField] private string afterExploreKey  = "AfterExplore";
-        [SerializeField] private string startMoxoKey     = "StartMOXO";      
+        [SerializeField] private string startMoxoKey     = "StartMOXO";
+        // Add Picker
+        [SerializeField] private string showIslandPickerSignal = "ShowIslandPicker";      
 
         [Header("Signals (DialogueUnit.onEnterEventName)")]
         [SerializeField] private string exploreSignal    = "GoExplore";
@@ -133,6 +135,23 @@ namespace Dialogue
                 HandoffToStartMOXO(startMoxoKey, startMoxoText);
                 return; // stop showing this node
             }
+
+            //Dec 26: Add Picker:
+            if (!string.IsNullOrEmpty(unit.onEnterEventName) &&
+                unit.onEnterEventName == showIslandPickerSignal)
+            {
+                dialogueUI.EndDialogue();
+                GameManager.Instance.UpdateGameState(GameManager.GameState.Explore);
+
+                // Show picker
+                var picker = IslandSelectionUI.I ?? FindObjectOfType<IslandSelectionUI>(true);
+                if (picker != null) picker.ShowRemaining();
+
+                // Small debounce so the NPC can’t be re-triggered immediately
+                debounceUntil = Time.time + inputDebounceSeconds;
+                return;
+            }
+            // END CHANGE
 
             // display dialogue normally
             dialogueUI.BindDialogueUnit(unit);

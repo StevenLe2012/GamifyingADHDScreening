@@ -1291,7 +1291,7 @@ MonoBehaviour:
             m_StringArgument: BeforeGame
             m_BoolArgument: 0
           m_CallState: 2
-    onEnterEventName: StartMOXO
+    onEnterEventName: ShowIslandPicker
   - requiredStateKey: AfterGame
     character: 
     audioObjects:

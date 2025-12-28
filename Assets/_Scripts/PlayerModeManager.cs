@@ -11,8 +11,21 @@ public class PlayerModeManager : MonoBehaviour
     public GameObject desktopRig;
     public GameObject vrRig;
 
+    public PlayerMode CurrentMode => _currentMode;
     private PlayerMode _currentMode;
     private bool _isSwitching;
+
+    public Transform CurrentPlayerRoot
+    {
+        get
+        {
+            // Prefer whichever rig is currently active in the hierarchy
+            if (vrRig   && vrRig.activeInHierarchy)    return vrRig.transform;
+            if (desktopRig && desktopRig.activeInHierarchy) return desktopRig.transform;
+            // Fallback to the configured startMode
+            return (startMode == PlayerMode.VR ? vrRig : desktopRig)?.transform;
+        }
+    }
 
     private void Start()
     {
