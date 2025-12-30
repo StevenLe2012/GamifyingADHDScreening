@@ -121,6 +121,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI; // Canvas
 using Random = UnityEngine.Random;
 
 namespace MoxoCPT
@@ -135,9 +136,15 @@ namespace MoxoCPT
         [SerializeField] private string countdownStartText = "Get ready…";
         [SerializeField] private string countdownEndText   = "Go!";
 
+        [Header("Countdown UI Placement")]
+        [Tooltip("Sorting order for the world-space countdown canvas.")]
+        [SerializeField] private int countdownSortingOrder = 90;
+        [Tooltip("If true, rotate countdown to face the player; otherwise use anchor rotation.")]
+        [SerializeField] private bool countdownFacePlayer = false;
+
         [Header("UI Timing")]
         [Tooltip("Extra delay after the countdown UI ends, before the first card appears.")]
-        [SerializeField] private float postCountdownDelay = 0.35f;   // <-- NEW
+        [SerializeField] private float postCountdownDelay = 0.35f;
 
         [Header("Exact counts")]
         [SerializeField] private int totalTrials  = 59;
@@ -155,9 +162,7 @@ namespace MoxoCPT
 
         //Hami:Eyetracking
         private static EyeTrackLogger GetLogger()
-        {
-            return EyeTrackLogger.I ?? FindObjectOfType<EyeTrackLogger>(true);
-        }
+            => EyeTrackLogger.I ?? FindObjectOfType<EyeTrackLogger>(true);
         //End
 
         private void Update()
@@ -174,14 +179,19 @@ namespace MoxoCPT
 
         private IEnumerator CoStart()
         {
+            // --- Adopt island-specific countdown (IslandData.countdownSeconds) ---
+            var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
+            if (island != null && island.countdownSeconds > 0f)
+                _secondsTillGameStarts = island.countdownSeconds;
+
             if (countdownUI == null)
             {
                 countdownUI = FindObjectOfType<ExploreHintUI>(true);
                 Debug.Log($"[ChangeShapes] Auto-found countdownUI = {(countdownUI ? countdownUI.name : "NULL")}");
             }
-            
 
-
+            // --- Apply anchor override + place countdown UI ---
+            ApplyCountdownAnchorAndPlace(island);
 
             if (totalTargets + totalNonTargets != totalTrials)
             {
@@ -226,6 +236,7 @@ namespace MoxoCPT
             for (int i = 0; i < totalNonTargets; i++)
                 _schedule.Add(nontargets[Random.Range(0, nontargets.Length)]);
 
+            // Fisher–Yates
             for (int i = 0; i < _schedule.Count; i++)
             {
                 int j = Random.Range(i, _schedule.Count);
@@ -235,27 +246,31 @@ namespace MoxoCPT
             return true;
         }
 
+        // Keep for external control if needed
+        public void SetCountdown(float seconds)
+        {
+            if (seconds > 0f) _secondsTillGameStarts = seconds;
+        }
+
         private IEnumerator Change()
         {
-            // Show countdown
-            
+            // Show countdown (with end text)
             if (countdownUI != null)
             {
                 Debug.Log($"[ChangeShapes] countdownUI={(countdownUI ? countdownUI.name : "NULL")}");
-                countdownUI.ShowExploreHint(_secondsTillGameStarts, countdownStartText, "");
+                countdownUI.ShowExploreHint(_secondsTillGameStarts, countdownStartText, countdownEndText);
             }
 
             // Wait main countdown…
             yield return new WaitForSeconds(_secondsTillGameStarts);
 
-            // …then wait a small grace so the UI can fade out and not cover Trial 0
+            // small grace so UI can fade before Trial 0
             if (postCountdownDelay > 0f)
                 yield return new WaitForSeconds(postCountdownDelay);
 
-            
-            Debug.Log($"[ChangeShapes] Starting countdown. countdownUI={(countdownUI ? "OK" : "NULL")}");
+            Debug.Log($"[ChangeShapes] Starting trials. countdownUI={(countdownUI ? "OK" : "NULL")}");
 
-            // Start distractors exactly with Trial 0 (optional; keep if you want them aligned)
+            // Start distractors exactly with Trial 0 (optional)
             if (distractors != null)
                 distractors.StartSystem();
 
@@ -264,10 +279,9 @@ namespace MoxoCPT
             TurnCardOn(firstCard);
             Cards.Instance.UpdateCurCard(firstCard);
 
-            //Hami:Eyetracking
+            // Eyetracking – mark trial 0
             var logger = GetLogger();
             if (logger != null && logger.IsLogging) logger.MarkNewTrial(0);
-            //End
 
             for (int trial = 1; trial < totalTrials; trial++)
             {
@@ -284,10 +298,8 @@ namespace MoxoCPT
                 TurnCardOn(nextCard);
                 Cards.Instance.UpdateCurCard(nextCard);
 
-                // Hami: Eyetracking - mark trial as soon as the new card becomes visible
                 logger = GetLogger();
                 if (logger != null && logger.IsLogging) logger.MarkNewTrial(trial);
-                //End
             }
 
             TurnCardOff(Cards.Instance.curCard);
@@ -295,9 +307,8 @@ namespace MoxoCPT
             if (distractors != null)
                 distractors.StopSystem();
 
-            //Hami: Add results
+            // Results
             var tracker = CPTScoreRuntime.I;
-
             if (tracker != null)
             {
                 var intro = FindObjectOfType<IntroScreen>(true);
@@ -326,6 +337,74 @@ namespace MoxoCPT
             card.gameObject.SetActive(false);
             Cards.Instance.isActive = false;
         }
+
+        // ---------- Countdown Anchor placement ----------
+
+        private void ApplyCountdownAnchorAndPlace(IslandData island)
+        {
+            if (!countdownUI) return;
+
+            // Try to find matching CountdownAnchor by islandId
+            CountdownAnchor anchor = null;
+            var islandId = island != null ? island.islandId?.Trim().ToUpperInvariant() : null;
+            if (!string.IsNullOrEmpty(islandId))
+            {
+                anchor = FindObjectsOfType<CountdownAnchor>(true)
+                    .FirstOrDefault(a => a.islandId == islandId);
+
+                // If anchor defines per-island override for seconds, apply it
+                if (anchor && anchor.overrideCountdownSeconds > 0f)
+                    _secondsTillGameStarts = anchor.overrideCountdownSeconds;
+            }
+
+            // Select placement target
+            Transform target = null;
+            if (anchor) target = anchor.transform;
+            else
+            {
+                var pm = FindObjectOfType<PlayerModeManager>(true);
+                target = pm && pm.CurrentPlayerRoot
+                    ? pm.CurrentPlayerRoot
+                    : (Camera.main ? Camera.main.transform : null);
+            }
+            if (!target) return;
+
+            // Place/rotate the countdown UI (world-space canvas assumed)
+            var t = countdownUI.transform;
+            t.position = target.position;
+            t.rotation = target.rotation;
+
+            if (countdownFacePlayer)
+            {
+                var pm = FindObjectOfType<PlayerModeManager>(true);
+                var player = pm && pm.CurrentPlayerRoot
+                    ? pm.CurrentPlayerRoot
+                    : (Camera.main ? Camera.main.transform : target);
+
+                t.LookAt(player.position, Vector3.up);
+                t.Rotate(0f, 180f, 0f, Space.Self); // face player
+            }
+
+            // Ensure canvas uses active rig camera + proper sorting order
+            var canvas = countdownUI.GetComponentInChildren<Canvas>(true);
+            if (canvas && canvas.renderMode == RenderMode.WorldSpace)
+            {
+                var cam = GetActiveRigCamera();
+                if (cam) canvas.worldCamera = cam;
+                canvas.sortingOrder = Mathf.Max(canvas.sortingOrder, countdownSortingOrder);
+            }
+        }
+
+        private Camera GetActiveRigCamera()
+        {
+            var pm = FindObjectOfType<PlayerModeManager>(true);
+            if (pm && pm.CurrentPlayerRoot)
+            {
+                var cam = pm.CurrentPlayerRoot.GetComponentInChildren<Camera>(true);
+                if (cam) return cam;
+            }
+            if (Camera.main) return Camera.main;
+            return FindObjectsOfType<Camera>(true).FirstOrDefault();
+        }
     }
 }
-

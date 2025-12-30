@@ -429,7 +429,6 @@ public class IntroScreen : MonoBehaviour
             Debug.LogWarning("[IntroScreen] No onStart action wired in the preset. Panel closed, doing nothing.");
     }
 
-
     private void ShowInstant(bool visible)
     {
         _isVisible = visible;

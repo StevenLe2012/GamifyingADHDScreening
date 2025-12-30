@@ -5,11 +5,30 @@ using System;
 using System.IO;
 using Varjo.XR; // Varjo SDK
 
-
 /// Add this to a single GameObject (same scene as MOXO).
 public class EyeTrackLogger : MonoBehaviour
 {
     public static EyeTrackLogger I { get; private set; }
+
+    [Header("Mode gating")]
+    [Tooltip("If OFF, no Varjo calls and no CSV logging happen (desktop mode, etc).")]
+    [SerializeField] private bool eyeTrackingEnabled = true;
+
+    [Tooltip("If true, logger follows PlayerModeManager: on in VR, off on Desktop.")]
+    [SerializeField] private bool autoFollowPlayerMode = true;
+
+    [Tooltip("Optional: assign your PlayerModeManager in the scene.")]
+    [SerializeField] private PlayerModeManager playerModeManager;
+
+    public bool EyeTrackingEnabled
+    {
+        get => eyeTrackingEnabled;
+        set
+        {
+            eyeTrackingEnabled = value;
+            if (!eyeTrackingEnabled) EndSession(); // stop cleanly if turned off
+        }
+    }
 
     [Header("HMD / Raycasting")]
     [SerializeField] private Transform hmd;                 // XR Origin's Camera (HMD)
@@ -27,8 +46,8 @@ public class EyeTrackLogger : MonoBehaviour
     private float _trialTime;            // time since current trial began
     private int   _trialIndex = -1;
     private int   _pressCount = 0;
-    private string _lastKey = "N";// U/D/L/R/A/Space/etc.
-    private int   _newTrialFlag = 0;// 1 on SOA, 2 on stimulus-on, then reset to 0 by writer
+    private string _lastKey = "N";       // U/D/L/R/A/Space/etc.
+    private int   _newTrialFlag = 0;     // 1 on SOA, reset to 0 by writer
 
     // CSV writers
     private StreamWriter _writer;
@@ -40,7 +59,7 @@ public class EyeTrackLogger : MonoBehaviour
         "Frame","CaptureTimeNs","LogTimeMs","TrialTimeMs","GazeStatus",
         "GazeForward_X","GazeForward_Y","GazeForward_Z",
         "GazeOrigin_X","GazeOrigin_Y","GazeOrigin_Z",
-        "InterPupillaryDistanceInMM",       
+        "InterPupillaryDistanceInMM",
         "LeftEyeStatus","LeftEyeForward_X","LeftEyeForward_Y","LeftEyeForward_Z","LeftEyeOrigin_X","LeftEyeOrigin_Y","LeftEyeOrigin_Z","LeftPupilIrisDiameterRatio","LeftPupilDiameterInMM","LeftIrisDiameterInMM",
         "RightEyeStatus","RightEyeForward_X","RightEyeForward_Y","RightEyeForward_Z","RightEyeOrigin_X","RightEyeOrigin_Y","RightEyeOrigin_Z","RightPupilIrisDiameterRatio","RightPupilDiameterInMM","RightIrisDiameterInMM",
         "FocusDistance","FocusStability",
@@ -55,17 +74,39 @@ public class EyeTrackLogger : MonoBehaviour
 
         if (!hmd)
         {
-            // Best-effort auto-find main camera
             var cam = Camera.main;
             if (cam) hmd = cam.transform;
         }
+    }
+
+    private void Start()
+    {
+        // Optional: auto-follow PlayerModeManager if assigned
+        if (autoFollowPlayerMode && playerModeManager != null)
+        {
+            EyeTrackingEnabled = (playerModeManager.CurrentMode == PlayerMode.VR);
+            playerModeManager.OnModeChanged -= HandleModeChanged;
+            playerModeManager.OnModeChanged += HandleModeChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (playerModeManager != null)
+            playerModeManager.OnModeChanged -= HandleModeChanged;
+    }
+
+    private void HandleModeChanged(PlayerMode mode)
+    {
+        EyeTrackingEnabled = (mode == PlayerMode.VR);
     }
 
     private float _diagTimer = 0f;
 
     private void Update()
     {
-        if (!_logging) return;
+        // If disabled or not logging, do nothing (prevents any Varjo calls)
+        if (!eyeTrackingEnabled || !_logging) return;
 
         _taskTime  += Time.deltaTime;
         _trialTime += Time.deltaTime;
@@ -75,24 +116,18 @@ public class EyeTrackLogger : MonoBehaviour
         if (_diagTimer >= 1f)
         {
             _diagTimer = 0f;
-            Debug.Log($"[EyeTrack] isAllowed={Varjo.XR.VarjoEyeTracking.IsGazeAllowed()} " +
-                    $"isAvailable={Varjo.XR.VarjoEyeTracking.IsGazeAvailable()} " +
-                    $"isCalibrated={Varjo.XR.VarjoEyeTracking.IsGazeCalibrated()} " +
-                    $"logging={_logging} goActive={gameObject.activeInHierarchy}");
+            Debug.Log($"[EyeTrack] isAllowed={VarjoEyeTracking.IsGazeAllowed()} " +
+                      $"isAvailable={VarjoEyeTracking.IsGazeAvailable()} " +
+                      $"isCalibrated={VarjoEyeTracking.IsGazeCalibrated()} " +
+                      $"logging={_logging} goActive={gameObject.activeInHierarchy}");
         }
 
         // Pull latest gaze buffer
-        List<Varjo.XR.VarjoEyeTracking.GazeData> g;
-        List<Varjo.XR.VarjoEyeTracking.EyeMeasurements> m;
-        int count = Varjo.XR.VarjoEyeTracking.GetGazeList(out g, out m);
+        List<VarjoEyeTracking.GazeData> g;
+        List<VarjoEyeTracking.EyeMeasurements> m;
+        int count = VarjoEyeTracking.GetGazeList(out g, out m);
 
-        // --- DIAG: show how many samples per frame ---
-        if (count == 0)
-        {
-            // No data this frame; this is the #1 reason for "header only".
-            return;
-        }
-        // Debug.Log($"[EyeTrack] samples this frame: {count}");
+        if (count == 0) return;
 
         for (int i = 0; i < count; i++)
             LogOne(g[i], m[i]);
@@ -100,7 +135,7 @@ public class EyeTrackLogger : MonoBehaviour
 
     // -------- Public API (call from your game) --------
 
-    //Prepare to record:
+    // Prepare to record:
     private (string num, string last, string date, string id) GetMetaFromGM()
     {
         var gm = GameManager.Instance;
@@ -114,7 +149,7 @@ public class EyeTrackLogger : MonoBehaviour
     private static string Sanitize(string s)
     {
         if (string.IsNullOrWhiteSpace(s)) return "";
-        foreach (var c in System.IO.Path.GetInvalidFileNameChars())
+        foreach (var c in Path.GetInvalidFileNameChars())
             s = s.Replace(c, '_');
         return s.Trim();
     }
@@ -122,11 +157,10 @@ public class EyeTrackLogger : MonoBehaviour
     private string BuildDataPathFromGM()
     {
         var (num, last, date, id) = GetMetaFromGM();
-        // Prefer the composed ID for file name; keeps your folder layout unchanged
         var fileName = $"{filePrefix}_{id}.csv";
-        var folder   = System.IO.Path.Combine(Environment.CurrentDirectory, "Logs", "EyeTrack");
-        System.IO.Directory.CreateDirectory(folder);
-        return System.IO.Path.Combine(folder, fileName);
+        var folder   = Path.Combine(Environment.CurrentDirectory, "Logs", "EyeTrack");
+        Directory.CreateDirectory(folder);
+        return Path.Combine(folder, fileName);
     }
 
     private string[] BuildHeaderWithMeta(string[] originalHeader)
@@ -135,7 +169,6 @@ public class EyeTrackLogger : MonoBehaviour
         return metaHeader.Concat(originalHeader).ToArray();
     }
 
-    // Call this whenever you write a data row:
     private string[] PrependMeta(string[] row)
     {
         var (num, last, date, _) = GetMetaFromGM();
@@ -145,11 +178,14 @@ public class EyeTrackLogger : MonoBehaviour
     /// Call when MOXO begins (from MoxoCPTManager.OnGameBegin).
     public void BeginSession(string participantIdOverride = null)
     {
-        if (_logging) EndSession(); // safety
+        // Respect the toggle: when OFF, don't start or touch Varjo
+        if (!eyeTrackingEnabled)
+        {
+            Debug.Log("[EyeTrack] BeginSession skipped (eye tracking disabled).");
+            return;
+        }
 
-        // If someone still passes an override, respect it by temporarily
-        // appending it to the composed ID in the filename only.
-        string manualSuffix = string.IsNullOrWhiteSpace(participantIdOverride) ? "" : $"_{Sanitize(participantIdOverride)}";
+        if (_logging) EndSession(); // safety
 
         // Varjo stream config
         VarjoEyeTracking.SetGazeOutputFilterType(VarjoEyeTracking.GazeOutputFilterType.Standard);
@@ -164,30 +200,31 @@ public class EyeTrackLogger : MonoBehaviour
         _newTrialFlag = 0;
 
         // Paths
+        string manualSuffix = string.IsNullOrWhiteSpace(participantIdOverride) ? "" : $"_{Sanitize(participantIdOverride)}";
         var mainPath = BuildDataPathFromGM();
         if (!string.IsNullOrEmpty(manualSuffix))
             mainPath = mainPath.Replace(".csv", manualSuffix + ".csv");
 
         _livePath = mainPath;
-        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_livePath));
-        _writer = new System.IO.StreamWriter(_livePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(_livePath));
+        _writer = new StreamWriter(_livePath);
 
         // Write header (now with meta cols in front)
         WriteCsvRow(BuildHeaderWithMeta(Header));
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         if (alsoWriteEditorCopy)
         {
             var (num, last, date, id) = GetMetaFromGM();
-            _editorMirrorPath = System.IO.Path.Combine(
+            _editorMirrorPath = Path.Combine(
                 Application.dataPath, "Resources", "ParticipantData", "EyeTrack",
                 $"{filePrefix}_{id}.csv"
             );
 
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_editorMirrorPath));
-            System.IO.File.WriteAllLines(_editorMirrorPath, new[] { string.Join(",", BuildHeaderWithMeta(Header)) });
+            Directory.CreateDirectory(Path.GetDirectoryName(_editorMirrorPath));
+            File.WriteAllLines(_editorMirrorPath, new[] { string.Join(",", BuildHeaderWithMeta(Header)) });
         }
-    #endif
+#endif
 
         _logging = true;
         Debug.Log($"[EyeTrack] Session started → {_livePath}");
@@ -260,7 +297,6 @@ public class EyeTrackLogger : MonoBehaviour
                 hitName = hit.collider.name;
                 hitTag  = hit.collider.tag;
                 hitPoint = hit.point;
-                // Convention: tag your target card with "Target" and distractors with "Distractor"
                 isTarget = (hitTag == "Target") ? "1" : "0";
             }
         }
@@ -271,7 +307,7 @@ public class EyeTrackLogger : MonoBehaviour
         // 0..3 frame/capture/log/trial times
         row.Add(d.frameNumber.ToString());
         row.Add(d.captureTime.ToString());
-        row.Add(( _taskTime * 1000f).ToString("F3"));
+        row.Add((_taskTime * 1000f).ToString("F3"));
         row.Add((_trialTime * 1000f).ToString("F3"));
 
         // Combined gaze status + vectors (HMD space)
@@ -317,10 +353,10 @@ public class EyeTrackLogger : MonoBehaviour
         row.Add(invalid ? "" : d.focusStability.ToString("F5"));
 
         // Trial flags & response
-        row.Add(_newTrialFlag.ToString());         // NewTrial
-        row.Add(_trialIndex.ToString());           // Trial
-        row.Add(_lastKey);                         // LastKey
-        row.Add(_pressCount.ToString());           // PressCount
+        row.Add(_newTrialFlag.ToString());   // NewTrial
+        row.Add(_trialIndex.ToString());     // Trial
+        row.Add(_lastKey);                   // KeyPressed
+        row.Add(_pressCount.ToString());     // PressCount
 
         // Hit info
         row.Add(hitName);

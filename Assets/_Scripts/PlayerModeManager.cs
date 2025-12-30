@@ -1,15 +1,24 @@
+using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Management;
-using System.Collections;
 
 public enum PlayerMode { Desktop, VR }
 
 public class PlayerModeManager : MonoBehaviour
 {
+    [Header("Startup")]
     public PlayerMode startMode = PlayerMode.Desktop;
+    [Tooltip("Persist last used mode across play sessions.")]
+    [SerializeField] private bool rememberLastMode = false;
+
+    [Header("Rigs")]
     public GameObject desktopRig;
     public GameObject vrRig;
+
+    // Event so other systems can react (EyeTrackLogger, etc.)
+    public event Action<PlayerMode> OnModeChanged;
 
     public PlayerMode CurrentMode => _currentMode;
     private PlayerMode _currentMode;
@@ -19,60 +28,87 @@ public class PlayerModeManager : MonoBehaviour
     {
         get
         {
-            // Prefer whichever rig is currently active in the hierarchy
-            if (vrRig   && vrRig.activeInHierarchy)    return vrRig.transform;
+            if (vrRig && vrRig.activeInHierarchy) return vrRig.transform;
             if (desktopRig && desktopRig.activeInHierarchy) return desktopRig.transform;
-            // Fallback to the configured startMode
             return (startMode == PlayerMode.VR ? vrRig : desktopRig)?.transform;
         }
     }
 
+    private const string kPrefsKey = "PlayerMode.Last";
+
     private void Start()
     {
-        StartCoroutine(SetModeCoroutine(startMode));
+        // Optional: restore last mode
+        var initial = startMode;
+        if (rememberLastMode && PlayerPrefs.HasKey(kPrefsKey))
+        {
+            initial = (PlayerMode)PlayerPrefs.GetInt(kPrefsKey, (int)startMode);
+        }
+
+        StartCoroutine(SetModeCoroutine(initial));
     }
 
     private void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame && !_isSwitching)
+        var kb = Keyboard.current;
+        if (kb != null && kb.f1Key.wasPressedThisFrame && !_isSwitching)
         {
-            var next = _currentMode == PlayerMode.VR ? PlayerMode.Desktop : PlayerMode.VR;
-            StartCoroutine(SetModeCoroutine(next));
+            ToggleMode();
         }
+    }
+
+    public void ToggleMode()
+    {
+        var next = _currentMode == PlayerMode.VR ? PlayerMode.Desktop : PlayerMode.VR;
+        StartCoroutine(SetModeCoroutine(next));
+    }
+
+    // Public imperative switch (use this from other scripts/UI)
+    public void SetMode(PlayerMode mode)
+    {
+        if (!_isSwitching && mode != _currentMode)
+            StartCoroutine(SetModeCoroutine(mode));
     }
 
     private IEnumerator SetModeCoroutine(PlayerMode mode)
     {
         _isSwitching = true;
-        _currentMode = mode;
 
-        var xrManager = XRGeneralSettings.Instance.Manager;
+        // Cache manager once
+        var xrManager = XRGeneralSettings.Instance != null ? XRGeneralSettings.Instance.Manager : null;
 
         if (mode == PlayerMode.VR)
         {
-            // Enable XR
-            if (!xrManager.isInitializationComplete)
+            // Enable XR if needed
+            if (xrManager != null && !xrManager.isInitializationComplete)
             {
                 yield return xrManager.InitializeLoader();
                 xrManager.StartSubsystems();
             }
 
-            desktopRig.SetActive(false);
-            vrRig.SetActive(true);
+            if (desktopRig) desktopRig.SetActive(false);
+            if (vrRig) vrRig.SetActive(true);
         }
         else // Desktop
         {
-            // Disable XR
-            if (xrManager.isInitializationComplete)
+            // Disable XR if active
+            if (xrManager != null && xrManager.isInitializationComplete)
             {
                 xrManager.StopSubsystems();
                 xrManager.DeinitializeLoader();
             }
 
-            vrRig.SetActive(false);
-            desktopRig.SetActive(true);
+            if (vrRig) vrRig.SetActive(false);
+            if (desktopRig) desktopRig.SetActive(true);
         }
 
+        _currentMode = mode;
         _isSwitching = false;
+
+        if (rememberLastMode) PlayerPrefs.SetInt(kPrefsKey, (int)_currentMode);
+
+        // Notify listeners
+        try { OnModeChanged?.Invoke(_currentMode); }
+        catch (Exception e) { Debug.LogException(e); }
     }
 }

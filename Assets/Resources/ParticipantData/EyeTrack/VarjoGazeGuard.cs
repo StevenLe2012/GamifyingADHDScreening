@@ -23,6 +23,11 @@ public class VarjoGazeGuard : MonoBehaviour
     /// Call this from PrepareCPT. Returns when gaze is usable or we hit timeout.
     public IEnumerator EnsureGazeReady(float? timeoutOverride = null)
     {
+        if (EyeTrackLogger.I != null && !EyeTrackLogger.I.EyeTrackingEnabled)
+        {
+            Debug.Log("[GazeGuard] Skipped (eye tracking disabled).");
+            yield break;
+        }
         float timeout = timeoutOverride ?? timeoutPrepareSeconds;
         float t = 0f;
 

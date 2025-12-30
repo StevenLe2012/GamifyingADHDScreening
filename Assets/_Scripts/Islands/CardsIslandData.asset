@@ -15,4 +15,7 @@ MonoBehaviour:
   islandId: CARDS
   displayName: Cards Island
   icon: {fileID: 0}
+  introTitle: Welcome to Cards Island!
+  introBody: Get ready!
+  countdownSeconds: 10
   startsMoxoOnArrival: 1

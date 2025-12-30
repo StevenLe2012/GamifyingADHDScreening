@@ -15,4 +15,7 @@ MonoBehaviour:
   islandId: SKULL
   displayName: Skull Island
   icon: {fileID: 0}
+  introTitle: Welcome to Skull Island!
+  introBody: "Rules:\n\u2022 Press on TARGETS only\n\u2022 Ignore non-targets & distractions"
+  countdownSeconds: 5
   startsMoxoOnArrival: 1
