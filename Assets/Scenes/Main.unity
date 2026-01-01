@@ -2906,14 +2906,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 77373605}
-  m_LocalRotation: {x: -0.02756581, y: 0.71056455, z: -0.030724231, w: -0.70242023}
-  m_LocalPosition: {x: -1.01, y: 0.46, z: -0.23}
+  m_LocalRotation: {x: -0.00059492094, y: 0.7112202, z: -0.0034385396, w: -0.7029607}
+  m_LocalPosition: {x: -1.78, y: 0.93, z: -0.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1715809107}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 4.726, y: 269.349, z: 0.229}
+  m_LocalEulerAnglesHint: {x: 0.328, y: 269.331, z: 0.229}
 --- !u!114 &77373607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10790,7 +10790,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh30346
+  m_Name: pb_Mesh30358
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2
@@ -17014,6 +17014,55 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 478992579}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &480790491
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 480790492}
+  - component: {fileID: 480790493}
+  m_Layer: 0
+  m_Name: Countdown_Cards_Anchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &480790492
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480790491}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.15, y: 27.15, z: 1.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 210100977}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &480790493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480790491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58303efe52497694b9148734c409036d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  islandId: CARDS
+  forwardOffset: 1.25
+  heightOffset: 0
+  uiScale: 1
+  overrideCountdownSeconds: 0
 --- !u!1001 &481216374
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24184,14 +24233,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825949379}
-  m_LocalRotation: {x: -0, y: 0.70277286, z: -0, w: -0.71141434}
-  m_LocalPosition: {x: -0.02, y: 21.920004, z: 14.69}
+  m_LocalRotation: {x: -0, y: 0.6614334, z: -0, w: -0.75000393}
+  m_LocalPosition: {x: -1.28, y: 21.920004, z: 14.99}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 210100977}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 270.7, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 277.181, z: 0}
 --- !u!114 &825949381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24233,7 +24282,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 826422657}
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0}
   m_LocalScale: {x: 0.7500002, y: 0.75, z: 0.7500002}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -24244,7 +24293,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 8, y: 37.37}
+  m_AnchoredPosition: {x: 6.57, y: 37.37}
   m_SizeDelta: {x: 15, y: 8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &826422659
@@ -24990,6 +25039,7 @@ GameObject:
   - component: {fileID: 856385494}
   - component: {fileID: 856385493}
   - component: {fileID: 856385492}
+  - component: {fileID: 856385497}
   m_Layer: 5
   m_Name: ExploreHintsCanvas
   m_TagString: Untagged
@@ -25047,7 +25097,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 856385490}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e365b58cf417bf4682241808dc0e47c, type: 3}
   m_Name: 
@@ -25118,6 +25168,25 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &856385497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 856385490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b52a91ed6b6e8ef448b98342441b0429, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cam: {fileID: 0}
+  distance: 5
+  xyOffset: {x: 0, y: 1.5}
+  follow: 1
+  moveLerp: 12
+  rotLerp: 12
+  keepUpright: 1
 --- !u!4 &858616604 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7815881715215101764, guid: 3b3679d4c38d8a04cb86358df7ef4bd3,
@@ -27405,6 +27474,11 @@ MonoBehaviour:
   modeManager: {fileID: 689811268}
   introCanvasSortingOrder: 100
   introFacePlayer: 0
+  countdownCanvasSortingOrder: 120
+  countdownFacePlayer: 0
+  countdownUIOverride: {fileID: 856385492}
+  uiRuntimeRoot: {fileID: 0}
+  reparentCountdownToRuntimeRoot: 1
   logVerbose: 1
 --- !u!4 &915627162 stripped
 Transform:
@@ -34930,7 +35004,7 @@ GameObject:
   - component: {fileID: 1212300151}
   - component: {fileID: 1212300152}
   m_Layer: 0
-  m_Name: Countdown_Anchor
+  m_Name: Countdown_Skull_Anchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -34964,6 +35038,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   islandId: SKULL
+  forwardOffset: 1.25
+  heightOffset: 0
+  uiScale: 1
   overrideCountdownSeconds: -1
 --- !u!1001 &1212419745
 PrefabInstance:
@@ -36149,7 +36226,7 @@ GameObject:
   - component: {fileID: 1259767098}
   - component: {fileID: 1259767099}
   m_Layer: 0
-  m_Name: Countdown_Anchor
+  m_Name: Countdown_Bread_Anchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36183,6 +36260,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   islandId: BREAD
+  forwardOffset: 1.25
+  heightOffset: 0
+  uiScale: 1
   overrideCountdownSeconds: -1
 --- !u!1 &1262093732
 GameObject:
@@ -42458,52 +42538,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1517791735}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1523465560
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1523465561}
-  - component: {fileID: 1523465562}
-  m_Layer: 0
-  m_Name: Countdown_Cards_Anchor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1523465561
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1523465560}
-  m_LocalRotation: {x: -0, y: 0.99986345, z: -0, w: 0.016527316}
-  m_LocalPosition: {x: -0.15, y: 24.16, z: 12.78}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 210100977}
-  m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: -541.894, z: 0}
---- !u!114 &1523465562
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1523465560}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 58303efe52497694b9148734c409036d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  islandId: CARDS
-  overrideCountdownSeconds: -1
 --- !u!1001 &1526476051
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51005,7 +51039,7 @@ GameObject:
   - component: {fileID: 1873718752}
   - component: {fileID: 1873718753}
   m_Layer: 0
-  m_Name: Countdown_Anchor
+  m_Name: Countdown_Poison_Anchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -51039,6 +51073,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   islandId: POISON
+  forwardOffset: 1.25
+  heightOffset: 0
+  uiScale: 1
   overrideCountdownSeconds: -1
 --- !u!1001 &1874738081
 PrefabInstance:
@@ -57801,12 +57838,12 @@ PrefabInstance:
     - target: {fileID: 7461355075478323555, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.006426779
+      value: -0.0064267796
       objectReference: {fileID: 0}
     - target: {fileID: 7461355075478323555, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.02704937
+      value: -0.027049372
       objectReference: {fileID: 0}
     - target: {fileID: 7870617442245389425, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
@@ -57831,12 +57868,12 @@ PrefabInstance:
     - target: {fileID: 9210358507531009401, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.006924956
+      value: -0.0069249566
       objectReference: {fileID: 0}
     - target: {fileID: 9210358507531009401, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.10186382
+      value: -0.101863824
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -57852,7 +57889,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2512416057761489952, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1523465561}
+      addedObject: {fileID: 480790492}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a9f366228146f294aafd18dda36fd7ad, type: 3}
 --- !u!1001 &5798410130326533378

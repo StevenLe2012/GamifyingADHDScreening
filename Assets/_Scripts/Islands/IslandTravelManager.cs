@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MoxoCPT; // for ExploreHintUI
 
 public class IslandTravelManager : MonoBehaviour
 {
@@ -10,17 +11,32 @@ public class IslandTravelManager : MonoBehaviour
     [Header("Wiring")]
     [SerializeField] private FadeScreen fader;
 
-    [Tooltip("If set, this is the transform that will be moved (XR Origin or Desktop root).")]
+    [Tooltip("If set, this transform will be moved (XR Origin or Desktop root).")]
     [SerializeField] private Transform playerRootOverride;
 
     [Tooltip("Optional. If you use PlayerModeManager to toggle Desktop/VR, assign it here.")]
     [SerializeField] private PlayerModeManager modeManager;
 
     [Header("Intro (World Space)")]
-    [Tooltip("Force the IntroScreen canvas to use the active rig camera and a high sorting order.")]
+    [Tooltip("Sorting order for the world-space Intro canvas.")]
     [SerializeField] private int introCanvasSortingOrder = 100;
-    [Tooltip("Rotate the IntroScreen to face the player root if true. If false, it uses the IntroAnchor rotation.")]
+    [Tooltip("Rotate the Intro panel to face the player root. If false, use IntroAnchor rotation.")]
     [SerializeField] private bool introFacePlayer = false;
+
+    [Header("Countdown (World Space)")]
+    [Tooltip("Sorting order for the world-space Countdown canvas.")]
+    [SerializeField] private int countdownCanvasSortingOrder = 120;
+    [Tooltip("Rotate the Countdown panel to face the player root. If false, use CountdownAnchor rotation.")]
+    [SerializeField] private bool countdownFacePlayer = false;
+
+    // Point directly at your countdown if you want (else we’ll auto-find)
+    //[SerializeField] private MoxoCPT.ExploreHintUI countdownUIOverride = null;
+    [SerializeField] private ExploreHintUI countdownUIOverride = null;
+
+    // Where to re-parent world-space UIs so island hierarchies don’t affect them
+    [SerializeField] private Transform uiRuntimeRoot = null;
+    [SerializeField] private bool reparentCountdownToRuntimeRoot = true;
+
 
     [Header("Debug")]
     [SerializeField] private bool logVerbose = true;
@@ -29,6 +45,8 @@ public class IslandTravelManager : MonoBehaviour
     private readonly Dictionary<string, Transform> _anchorById = new();
     // Intro anchors (where the world-space intro panel is placed)
     private readonly Dictionary<string, Transform> _introAnchorById = new();
+    // Countdown anchors (where the world-space countdown panel is placed)
+    private readonly Dictionary<string, Transform> _countdownAnchorById = new();
 
     public IslandData CurrentIsland { get; private set; }
 
@@ -65,6 +83,7 @@ public class IslandTravelManager : MonoBehaviour
     {
         _anchorById.Clear();
         _introAnchorById.Clear();
+        _countdownAnchorById.Clear();
 
         // Teleport destinations
         foreach (var a in FindObjectsOfType<IslandAnchor>(true))
@@ -82,8 +101,16 @@ public class IslandTravelManager : MonoBehaviour
             _introAnchorById[key] = ia.transform;
         }
 
+        // Countdown (UI) anchors
+        foreach (var ca in FindObjectsOfType<CountdownAnchor>(true))
+        {
+            if (string.IsNullOrWhiteSpace(ca.islandId)) continue;
+            var key = ca.islandId.Trim().ToUpperInvariant();
+            _countdownAnchorById[key] = ca.transform;
+        }
+
         if (logVerbose)
-            Debug.Log($"[IslandTravel] Found {_anchorById.Count} island anchors, {_introAnchorById.Count} intro anchors.");
+            Debug.Log($"[IslandTravel] Found {_anchorById.Count} island anchors, {_introAnchorById.Count} intro anchors, {_countdownAnchorById.Count} countdown anchors.");
     }
 
     public void TravelTo(IslandData island)
@@ -136,11 +163,14 @@ public class IslandTravelManager : MonoBehaviour
         if (logVerbose)
             Debug.Log($"[IslandTravel] Moved '{root.name}' to {island.displayName} ({id}) @ {dest.position}");
 
-        // Enter MOXO flow
+        // State: we’re preparing to start an island’s task
         var gm = GameManager.Instance;
         if (gm) gm.UpdateGameState(GameManager.GameState.PrepareCPT);
 
-        // Try to place/show the world-space intro
+        // Place COUNTDOWN (world-space)
+        PlaceCountdownForIsland(id, root);
+
+        // Place/Show INTRO (world-space)
         var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
         if (!intro)
         {
@@ -150,10 +180,15 @@ public class IslandTravelManager : MonoBehaviour
             yield break;
         }
 
-        // Position the intro in world space for this island
         PlaceIntroScreenForIsland(id, root, intro);
 
-        // Use island-specific copy (fallback to preset if fields are empty)
+        // Island-specific content (requires extra fields on IslandData; see note below)
+        if (island.countdownSeconds > 0f)
+        {
+            var changer = FindObjectOfType<MoxoCPT.ChangeShapes>(true);
+            if (changer) changer.SetCountdown(island.countdownSeconds);
+        }
+
         if (island.startsMoxoOnArrival)
         {
             var title = string.IsNullOrWhiteSpace(island.introTitle) ? null : island.introTitle;
@@ -166,43 +201,32 @@ public class IslandTravelManager : MonoBehaviour
         }
     }
 
-    // ---------- INTRO PLACEMENT ----------
+    // ---------- INTRO / COUNTDOWN PLACEMENT ----------
     private void PlaceIntroScreenForIsland(string islandId, Transform playerRoot, IntroScreen intro)
     {
-        // Pick anchor; fall back to player if missing
         _introAnchorById.TryGetValue(islandId, out var anchor);
         var target = anchor ? anchor : playerRoot;
 
-        // Move/rotate the world-space UI
         var t = intro.transform;
         t.position = target.position;
         t.rotation = target.rotation;
 
         if (introFacePlayer && playerRoot)
         {
-            // Face the player while keeping 'up' world-up
-            Vector3 lookPos = playerRoot.position;
-            t.LookAt(lookPos, Vector3.up);
-            t.Rotate(0f, 180f, 0f, Space.Self); // so canvas front faces player
+            t.LookAt(playerRoot.position, Vector3.up);
+            t.Rotate(0f, 180f, 0f, Space.Self);
         }
 
-        // Ensure world-space canvas uses the active rig camera and sorts on top
         var canvas = intro.GetComponentInChildren<Canvas>(true);
         if (canvas && canvas.renderMode == RenderMode.WorldSpace)
         {
             var cam = playerRoot.GetComponentInChildren<Camera>(true);
             if (cam) canvas.worldCamera = cam;
-
             canvas.sortingOrder = Mathf.Max(canvas.sortingOrder, introCanvasSortingOrder);
         }
 
-        // Make sure it can receive input when shown
         var cg = intro.GetComponent<CanvasGroup>();
-        if (cg)
-        {
-            cg.blocksRaycasts = true;
-            cg.interactable   = true;
-        }
+        if (cg) { cg.blocksRaycasts = true; cg.interactable = true; }
 
         if (logVerbose)
         {
@@ -210,6 +234,77 @@ public class IslandTravelManager : MonoBehaviour
                       $"Canvas worldCamera={(canvas ? (canvas.worldCamera ? canvas.worldCamera.name : "null") : "n/a")}");
         }
     }
+    
+    private void PlaceCountdownForIsland(string islandId, Transform playerRoot)
+    {
+        // Prefer the serialized one; fallback to find the single instance
+        var countdown = countdownUIOverride ? countdownUIOverride
+                        : FindObjectOfType<ExploreHintUI>(true);
+
+        // (Optional ultra-robust fallback if ExploreHintUI is in a different asmdef/namespace)
+        if (!countdown)
+        {
+            // Try to find by name even if it lives in a different namespace
+            foreach (var mb in FindObjectsOfType<MonoBehaviour>(true))
+            {
+                if (mb && mb.GetType().Name == "ExploreHintUI")
+                {
+                    countdown = (ExploreHintUI)mb; // will be null-cast if truly different type
+                    if (countdown) break;
+                }
+            }
+        }
+
+        if (!countdown)
+        {
+            if (logVerbose) Debug.Log("[IslandTravel] No ExploreHintUI found.");
+            return;
+        }
+
+        // Move the ROOT transform so parents can't drag it back
+        var t = countdown.transform;
+
+        if (reparentCountdownToRuntimeRoot)
+        {
+            var newParent = uiRuntimeRoot ? uiRuntimeRoot : playerRoot;
+            if (t.parent != newParent) t.SetParent(newParent, true);
+        }
+
+        // Choose anchor: CountdownAnchor → IntroAnchor → playerRoot
+        _countdownAnchorById.TryGetValue(islandId, out var anchor);
+        if (!anchor) _introAnchorById.TryGetValue(islandId, out anchor);
+        if (!anchor) anchor = playerRoot;
+
+        t.position = anchor.position;
+        t.rotation = anchor.rotation;
+
+        if (countdownFacePlayer && playerRoot)
+        {
+            t.LookAt(playerRoot.position, Vector3.up);
+            t.Rotate(0f, 180f, 0f, Space.Self);
+        }
+
+        var canvas = countdown.GetComponentInChildren<Canvas>(true);
+        if (canvas && canvas.renderMode == RenderMode.WorldSpace)
+        {
+            var cam = playerRoot.GetComponentInChildren<Camera>(true);
+            if (!cam && Camera.main) cam = Camera.main;
+            if (cam) canvas.worldCamera = cam;
+
+            if (canvas.sortingOrder < countdownCanvasSortingOrder)
+                canvas.sortingOrder = countdownCanvasSortingOrder;
+        }
+
+        var cg = countdown.GetComponent<CanvasGroup>();
+        if (cg) { cg.blocksRaycasts = true; cg.interactable = true; }
+
+        if (!countdown.gameObject.activeSelf) countdown.gameObject.SetActive(true);
+
+        if (logVerbose)
+            Debug.Log($"[IslandTravel] Positioned Countdown '{countdown.name}' for '{islandId}', parent={(t.parent ? t.parent.name : "null")}.");
+    }
+
+
 
     // ---------- HELPERS ----------
     private Transform GetPlayerRoot()

@@ -106,4 +106,7 @@ public class ExploreHintUI : MonoBehaviour
         }
         group.alpha = targetAlpha;
     }
+
+
+    
 }

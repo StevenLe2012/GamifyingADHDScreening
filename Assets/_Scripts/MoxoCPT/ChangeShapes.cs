@@ -160,10 +160,9 @@ namespace MoxoCPT
 
         private void Start() { /* wait for CPT state */ }
 
-        //Hami:Eyetracking
+        // Eyetracking
         private static EyeTrackLogger GetLogger()
             => EyeTrackLogger.I ?? FindObjectOfType<EyeTrackLogger>(true);
-        //End
 
         private void Update()
         {
@@ -179,7 +178,7 @@ namespace MoxoCPT
 
         private IEnumerator CoStart()
         {
-            // --- Adopt island-specific countdown (IslandData.countdownSeconds) ---
+            // Adopt island-specific countdown (IslandData.countdownSeconds)
             var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
             if (island != null && island.countdownSeconds > 0f)
                 _secondsTillGameStarts = island.countdownSeconds;
@@ -190,7 +189,7 @@ namespace MoxoCPT
                 Debug.Log($"[ChangeShapes] Auto-found countdownUI = {(countdownUI ? countdownUI.name : "NULL")}");
             }
 
-            // --- Apply anchor override + place countdown UI ---
+            // Place countdown UI using anchors
             ApplyCountdownAnchorAndPlace(island);
 
             if (totalTargets + totalNonTargets != totalTrials)
@@ -257,6 +256,7 @@ namespace MoxoCPT
             // Show countdown (with end text)
             if (countdownUI != null)
             {
+                if (!countdownUI.gameObject.activeSelf) countdownUI.gameObject.SetActive(true);
                 Debug.Log($"[ChangeShapes] countdownUI={(countdownUI ? countdownUI.name : "NULL")}");
                 countdownUI.ShowExploreHint(_secondsTillGameStarts, countdownStartText, countdownEndText);
             }
@@ -264,13 +264,16 @@ namespace MoxoCPT
             // Wait main countdown…
             yield return new WaitForSeconds(_secondsTillGameStarts);
 
-            // small grace so UI can fade before Trial 0
+            // Hide countdown BEFORE Trial 0 begins
+            HideCountdownUI();
+
+            // Small grace so the hide fully applies / fades
             if (postCountdownDelay > 0f)
                 yield return new WaitForSeconds(postCountdownDelay);
 
             Debug.Log($"[ChangeShapes] Starting trials. countdownUI={(countdownUI ? "OK" : "NULL")}");
 
-            // Start distractors exactly with Trial 0 (optional)
+            // Start distractors aligned with Trial 0 (optional)
             if (distractors != null)
                 distractors.StartSystem();
 
@@ -339,7 +342,6 @@ namespace MoxoCPT
         }
 
         // ---------- Countdown Anchor placement ----------
-
         private void ApplyCountdownAnchorAndPlace(IslandData island)
         {
             if (!countdownUI) return;
@@ -352,7 +354,7 @@ namespace MoxoCPT
                 anchor = FindObjectsOfType<CountdownAnchor>(true)
                     .FirstOrDefault(a => a.islandId == islandId);
 
-                // If anchor defines per-island override for seconds, apply it
+                // Per-island override for seconds
                 if (anchor && anchor.overrideCountdownSeconds > 0f)
                     _secondsTillGameStarts = anchor.overrideCountdownSeconds;
             }
@@ -405,6 +407,21 @@ namespace MoxoCPT
             }
             if (Camera.main) return Camera.main;
             return FindObjectsOfType<Camera>(true).FirstOrDefault();
+        }
+
+        // ---------- Hide helper ----------
+        private void HideCountdownUI()
+        {
+            if (!countdownUI) return;
+
+            var cg = countdownUI.GetComponent<CanvasGroup>();
+            if (cg)
+            {
+                cg.alpha = 0f;
+                cg.blocksRaycasts = false;
+                cg.interactable = false;
+            }
+            countdownUI.gameObject.SetActive(false);
         }
     }
 }
