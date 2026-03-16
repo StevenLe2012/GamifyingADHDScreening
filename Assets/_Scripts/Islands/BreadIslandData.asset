@@ -14,5 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   islandId: BREAD
   displayName: Bread Island
-  icon: {fileID: 0}
-  startsMoxoOnArrival: 1
+  icon: {fileID: 21300000, guid: cdc9ddcff9f34264a8952145891c8454, type: 3}
+  introTitle: Welcome to Sweet Factory!
+  introBody: "Your mission is to press SPACE as quickly as possible to collect only
+    the card with THREE DONUTS. \r\n\r\nAll other cards are sugar traps - leave them
+    alone and keep your focus on the red cross.\r\n\r\nWhen you\u2019re ready, press
+    SPACE to begin a training round."
+  countdownSeconds: 5
+  hasMoxoGame: 1
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonHandler
+  trainingIntroTitle: Welcome to Sweet Factory!
+  trainingIntroBody: "Your mission is to press SPACE as quickly as possible to collect
+    only the card with THREE DONUTS. \r\n\r\nAll other cards are sugar traps - leave
+    them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
+    ready, press SPACE to begin a training round."
+  readyIntroTitle: Focus
+  readyIntroBody: "\rRandom visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.\r\n\r\nAt the end of the round, you\u2019ll
+    collect a gem. More correct cards mean a stronger gem and a faster way home.\r\n\r\nPress
+    SPACE to begin the real mission. Good luck!"
+  nonMoxoIntroVoice: {fileID: 0}
+  trainingIntroVoice: {fileID: 8300000, guid: 6d4e288ab343bd74eb26c72be611d5c0, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  lockCptToGlobalDefaults: 1
+  totalTrialsOverride: 53
+  totalTargetsOverride: 33
+  totalNonTargetsOverride: 20
+  cardDurationsOverride: []

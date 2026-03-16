@@ -1,103 +1,96 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
-[Serializable]
 public class Interactor : MonoBehaviour
 {
-    // public InputActionReference toggleReference = null;
-    [SerializeField] private InputActionReference controllerInput;
-    [SerializeField] private float interactRadius; //floatreference
-    //[SerializeField] private inputConfig interactInput;
+    [Header("Input (Space only)")]
+    [Tooltip("Only SPACE will confirm/interact. Gamepad/Enter are ignored.")]
+    [SerializeField] private bool spaceToInteract = true;
+
+    [Header("Range")]
+    [SerializeField] private float interactRadius = 2.0f;
+
+    [Header("UI Gating (Block Interact during dialogue UI)")]
+    [SerializeField] private GameObject dialogueOptionsRoot;
+    [SerializeField] private GameObject dialogueSubtitleRoot;
+
+    [Header("State Gating")]
+    [Tooltip("If true, SPACE will only trigger Interact() when GameManager is in EXPLORE state.")]
+    [SerializeField] private bool requireExploreStateToInteract = true;
+
+    [Header("Debounce / Suppression")]
+    [Tooltip("General debounce between world Interact presses (unscaled).")]
+    [SerializeField] private float interactDebounceSeconds = 0.15f;
 
     private Collider[] _collidersInRange;
-    private List<Interactable> _interactablesInRange;
+    private readonly List<Interactable> _interactablesInRange = new List<Interactable>();
     private Interactable _closestInteractable;
 
-    private void Start()
-    {
-        _interactablesInRange = new List<Interactable>();
-    }
+    private float _debounceUntilUnscaled = 0f;
 
-    //Hami: Switch to gamepad stick
-    //private void FixedUpdate()
     private void Update()
     {
-        //if (controllerInput.action.ReadValue<float>() > 0)
-        //if (Input.GetKeyDown(KeyCode.Space))
+        // Global block: Narrative (and any other UI that called UIInputFocus.Push) disables world space.
+        if (UIInputFocus.IsBlocked || UIInputFocus.SuppressNow) return;
 
-        UpdateInteractables(); 
-        // A (buttonSouth) OR Space (kept for easy switch-back)
-        if ( (UnityEngine.InputSystem.Gamepad.current != null 
-                && UnityEngine.InputSystem.Gamepad.current.buttonSouth.wasPressedThisFrame) 
-                || Input.GetKeyDown(KeyCode.Space) )
-        {
-            
-            Interact();
-            Debug.Log("Interacting!");
-        }
+        // Optional: hard gate by state (prevents space during Narrative/PrepareCPT/CPT)
+        if (requireExploreStateToInteract && GameManager.Instance != null &&
+            GameManager.Instance.State != GameManager.GameState.Explore)
+            return;
+
+        // If any dialogue widgets are visible, do not interact with world.
+        if ((dialogueOptionsRoot != null && dialogueOptionsRoot.activeInHierarchy) ||
+            (dialogueSubtitleRoot != null && dialogueSubtitleRoot.activeInHierarchy))
+            return;
+
+        // Input + debounce
+        if (!spaceToInteract || Keyboard.current == null) return;
+        if (Time.unscaledTime < _debounceUntilUnscaled) return;
+        if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
+
+        _debounceUntilUnscaled = Time.unscaledTime + interactDebounceSeconds;
+
+        UpdateInteractables();
+        Interact();
+        Debug.Log("[Interactor] SPACE pressed → Interact()");
     }
-
-    // private void Interact()
-    // {
-    //     if(_closestInteractable != null)
-    //     {
-    //         //Debug.Log(_closestInteractable.gameObject.name);
-    //         _closestInteractable.Interact();
-    //     }
-
-    // }
-    //Hami: Update Interact
 
     private void Interact()
-{
-    if (_closestInteractable == null) return;
-
-    // Try dialogue first (cleanest route)
-    var handler = _closestInteractable.GetComponentInParent<Dialogue.TestHandler>();
-    var dlgState = _closestInteractable.GetComponentInParent<Dialogue.DialogueState>();
-
-    if (handler != null && dlgState != null)
     {
-        handler.TryStartConversationFromState(dlgState);
-        return;
+        if (_closestInteractable == null) return;
+
+        var handler  = _closestInteractable.GetComponentInParent<Dialogue.TestHandler>();
+        var dlgState = _closestInteractable.GetComponentInParent<Dialogue.DialogueState>();
+
+        if (handler != null && dlgState != null)
+        {
+            handler.TryStartConversationFromState(dlgState);
+            return;
+        }
+
+        _closestInteractable.Interact();
     }
 
-    // Fallback to the legacy interactable behavior
-    _closestInteractable.Interact();
-}
-
-
-    //Hami: Change end
-
-
-
-    private void OnTriggerEnter(Collider other)
-    {
-        UpdateInteractables();
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        UpdateInteractables();
-    }
+    private void OnTriggerEnter(Collider other) => UpdateInteractables();
+    private void OnTriggerExit(Collider other)  => UpdateInteractables();
 
     private void UpdateInteractables()
     {
-        _collidersInRange = Physics.OverlapSphere(transform.position, interactRadius); //interactradius.Value
+        _collidersInRange = Physics.OverlapSphere(transform.position, interactRadius);
         _interactablesInRange.Clear();
-        if (_collidersInRange == null || _collidersInRange.Length == 0) return;
-        foreach (var colliderInRange in _collidersInRange)
+
+        if (_collidersInRange == null || _collidersInRange.Length == 0)
         {
-            //Debug.Log(colliderInRange);
-            var interactable = colliderInRange.GetComponent<Interactable>();
+            _closestInteractable = null;
+            return;
+        }
+
+        foreach (var col in _collidersInRange)
+        {
+            var interactable = col.GetComponent<Interactable>();
             if (interactable != null)
-            {
                 _interactablesInRange.Add(interactable);
-            }
         }
 
         _closestInteractable = GetClosestInteractable();
@@ -105,25 +98,29 @@ public class Interactor : MonoBehaviour
 
     private Interactable GetClosestInteractable()
     {
-        
-        if (_interactablesInRange.Count <= 0)
-        {
-            return null;
-        }
-            
-        int closestInteractableIndex = 0;
-        var closestDistance = Mathf.Infinity;
+        if (_interactablesInRange.Count == 0) return null;
+
+        int closestIndex = 0;
+        float closestDist = Mathf.Infinity;
+
         for (int i = 0; i < _interactablesInRange.Count; i++)
         {
-            var distance = Vector3.Distance(_interactablesInRange[i].transform.position, transform.position);
-            if (distance < closestDistance)
+            float d = Vector3.Distance(_interactablesInRange[i].transform.position, transform.position);
+            if (d < closestDist)
             {
-                closestDistance = distance;
-                closestInteractableIndex = i;
+                closestDist = d;
+                closestIndex = i;
             }
         }
-        return _interactablesInRange[closestInteractableIndex];
+
+        return _interactablesInRange[closestIndex];
     }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(0.1f, 0.6f, 1f, 0.35f);
+        Gizmos.DrawSphere(transform.position, interactRadius);
+    }
+#endif
 }
-
-

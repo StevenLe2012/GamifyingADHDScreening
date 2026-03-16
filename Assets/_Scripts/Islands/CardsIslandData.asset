@@ -14,8 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   islandId: CARDS
   displayName: Cards Island
-  icon: {fileID: 0}
-  introTitle: Welcome to Cards Island!
-  introBody: Get ready!
-  countdownSeconds: 10
-  startsMoxoOnArrival: 1
+  icon: {fileID: 21300000, guid: 9f7524c330caee8439cedfc4719c0673, type: 3}
+  introTitle: Welcome to Cards Kingdom!
+  introBody: "Your mission is to press SPACE as quickly as possible to collect only
+    the card with THREE HEARTS. \n\nAll other cards are traps - ignore them and keep
+    your focus on the red cross.\n\nKeep your focus on the red cross and avoid distractions.\n\nPress
+    SPACE to start. Good luck! "
+  countdownSeconds: 5
+  hasMoxoGame: 1
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonHandler
+  trainingIntroTitle: Welcome to Cards Kingdom!
+  trainingIntroBody: "Your task is to press SPACE as quickly and accurately as possible
+    to collect only the card with THREE hearts.\n\nAll other cards are traps - ignore
+    them and keep your focus on the red plus sign.\n\nWhen you\u2019re ready, press
+    SPACE to begin a training round."
+  readyIntroTitle: Focus
+  readyIntroBody: "Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.\n\nAt the end of the round, you\u2019ll
+    collect a gem. More correct cards mean a stronger gem and a faster way home.\n\nPress
+    SPACE to begin the real mission. Good luck!"
+  nonMoxoIntroVoice: {fileID: 0}
+  trainingIntroVoice: {fileID: 8300000, guid: 45498c24085b7154f9bb02aba4850d35, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  lockCptToGlobalDefaults: 1
+  totalTrialsOverride: 53
+  totalTargetsOverride: 33
+  totalNonTargetsOverride: 20
+  cardDurationsOverride: []

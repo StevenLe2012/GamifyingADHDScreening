@@ -9,6 +9,7 @@ TagManager:
   - Companion
   - Fader
   - Distractor
+  - NPC_Flynn
   layers:
   - Default
   - TransparentFX
@@ -20,7 +21,7 @@ TagManager:
   - Ground
   - GazeHit
   - Cards
-  - 
+  - NPC_Flynn
   - 
   - 
   - 

@@ -67,6 +67,8 @@ public class EyeTrackLogger : MonoBehaviour
         "HitName","HitTag","HitX","HitY","HitZ","IsTarget"
     };
 
+
+
     private void Awake()
     {
         if (I != null && I != this) { Destroy(gameObject); return; }
@@ -163,17 +165,23 @@ public class EyeTrackLogger : MonoBehaviour
         return Path.Combine(folder, fileName);
     }
 
+
+    //Hami: Add Island Name
     private string[] BuildHeaderWithMeta(string[] originalHeader)
     {
-        var metaHeader = new[] { "ParticipantNumber", "LastName", "SessionDate" };
+        var metaHeader = new[] { "ParticipantNumber", "LastName", "SessionDate", "IslandId", "IslandName" };
         return metaHeader.Concat(originalHeader).ToArray();
     }
 
     private string[] PrependMeta(string[] row)
     {
         var (num, last, date, _) = GetMetaFromGM();
-        return new[] { num, last, date }.Concat(row).ToArray();
+        var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
+        string iid = island ? island.islandId : "";
+        string iname = island ? island.displayName : "";
+        return new[] { num, last, date, iid, iname }.Concat(row).ToArray();
     }
+    //END CHANGE
 
     /// Call when MOXO begins (from MoxoCPTManager.OnGameBegin).
     public void BeginSession(string participantIdOverride = null)

@@ -14,8 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   islandId: SKULL
   displayName: Skull Island
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 43df567e7befc6644878e5b51ce7f0b0, type: 3}
   introTitle: Welcome to Skull Island!
-  introBody: "Rules:\n\u2022 Press on TARGETS only\n\u2022 Ignore non-targets & distractions"
+  introBody: "Your mission is to press SPACE as quickly and accurately as possible
+    to collect only the RED skull.\r\n\r\nAll other skulls are cursed impostors -
+    leave them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
+    ready, press SPACE to begin a training round."
   countdownSeconds: 5
-  startsMoxoOnArrival: 1
+  hasMoxoGame: 1
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonHandler
+  trainingIntroTitle: Welcome to Skull Island!
+  trainingIntroBody: "Your mission is to press SPACE as quickly as possible to collect
+    only the card with THREE SKULLS. \r\n\r\nAll other cards are cursed impostors
+    - leave them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
+    ready, press SPACE to begin a training round."
+  readyIntroTitle: Focus
+  readyIntroBody: "Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.\r\n\r\nAt the end of the round, you\u2019ll
+    collect a gem. More correct cards mean a stronger gem and a faster way home.\r\n\r\nPress
+    SPACE to begin the real mission. Good luck!"
+  nonMoxoIntroVoice: {fileID: 0}
+  trainingIntroVoice: {fileID: 8300000, guid: 513f70232fc737d49975d0bfa76003bc, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  lockCptToGlobalDefaults: 1
+  totalTrialsOverride: 53
+  totalTargetsOverride: 33
+  totalNonTargetsOverride: 20
+  cardDurationsOverride: []

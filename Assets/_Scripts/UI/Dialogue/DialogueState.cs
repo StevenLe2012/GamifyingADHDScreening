@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /*
- * This code is to make a dictionary with the NPC name and state.
+ * Holds a dictionary of per-NPC dialogue states in this scene.
  */
-
 namespace Dialogue
 {
     public class DialogueState : MonoBehaviour
@@ -12,12 +11,23 @@ namespace Dialogue
         // Dict(npcName, dialogueTreeState)
         public Dictionary<string, string> stateDict;  // gets the NPC we are talking to and what state we are in with that NPC
 
-        // maybe TODO: Add save/load methods (serilazation), so player doesn't have to go through dialogue tree each time they start
-
-        private void Start()
+        private void Awake()
         {
-            stateDict = new Dictionary<string, string>();
+            if (stateDict == null)
+            {
+                stateDict = new Dictionary<string, string>();
+                Debug.Log("[DialogueState] Initialized stateDict in Awake().");
+            }
+        }
+
+        // Optional: call this if you're ever unsure the dict exists.
+        public void EnsureInitialized()
+        {
+            if (stateDict == null)
+            {
+                stateDict = new Dictionary<string, string>();
+                Debug.Log("[DialogueState] EnsureInitialized() created new dictionary.");
+            }
         }
     }
-
 }

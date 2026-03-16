@@ -12,9 +12,16 @@ public class DesktopArrowController : MonoBehaviour
     public float mouseSensitivity = 2f;
     public float verticalLookLimit = 80f;
 
+    [Header("Toggles")]
+    [Tooltip("If OFF, arrow-key movement (forward/back/strafe) is disabled. Mouse look still works.")]
+    public bool allowMovement = true;
+
     private CharacterController _cc;
     private float _verticalVelocity;
     private float _pitch = 0f;
+
+    // Optional: flip at runtime
+    public void SetMovementEnabled(bool on) => allowMovement = on;
 
     void Awake()
     {
@@ -50,25 +57,31 @@ public class DesktopArrowController : MonoBehaviour
         // Pitch camera with mouse Y
         _pitch -= mouseY;
         _pitch = Mathf.Clamp(_pitch, -verticalLookLimit, verticalLookLimit);
-        playerCamera.transform.localEulerAngles = new Vector3(_pitch, 0f, 0f);
+        if (playerCamera)
+            playerCamera.transform.localEulerAngles = new Vector3(_pitch, 0f, 0f);
     }
 
     void HandleMovement()
     {
+        // Planar input
         float forward = 0f;
         float strafe  = 0f;
 
-        // Forward / back with Up / Down arrows
-        if (Input.GetKey(KeyCode.UpArrow))
-            forward = 1f;
-        else if (Input.GetKey(KeyCode.DownArrow))
-            forward = -1f;
+        if (allowMovement)
+        {
+            // Forward / back with Up / Down arrows
+            if (Input.GetKey(KeyCode.UpArrow))
+                forward = 1f;
+            else if (Input.GetKey(KeyCode.DownArrow))
+                forward = -1f;
 
-        // Strafe left/right with Left / Right arrows
-        if (Input.GetKey(KeyCode.RightArrow))
-            strafe = 1f;
-        else if (Input.GetKey(KeyCode.LeftArrow))
-            strafe = -1f;
+            // Strafe left/right with Left / Right arrows
+            if (Input.GetKey(KeyCode.RightArrow))
+                strafe = 1f;
+            else if (Input.GetKey(KeyCode.LeftArrow))
+                strafe = -1f;
+        }
+        // else: keep forward/strafe at 0 → fixed position (no planar translation)
 
         // Combine into world-space movement
         Vector3 moveDir = (transform.forward * forward + transform.right * strafe);
@@ -78,7 +91,7 @@ public class DesktopArrowController : MonoBehaviour
 
         // Gravity
         if (_cc.isGrounded && _verticalVelocity < 0f)
-            _verticalVelocity = -2f;
+            _verticalVelocity = -2f; // stick to ground
 
         _verticalVelocity += gravity * Time.deltaTime;
         moveDir.y = _verticalVelocity;

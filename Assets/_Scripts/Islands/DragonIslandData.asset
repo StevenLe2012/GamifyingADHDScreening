@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb8e0160ab262aa448e6729f9f83b059, type: 3}
+  m_Name: DragonIslandData
+  m_EditorClassIdentifier: 
+  islandId: DRAGON
+  displayName: Dragon Island
+  icon: {fileID: 21300000, guid: f61d6b395bf69a542861556f31e9cf4c, type: 3}
+  introTitle: Congratulations!
+  introBody: "You\u2019ve unlocked all four gems and restored the Navigation Ring.\n\nBut
+    your victory has not gone unnoticed\u2026 The Dragon Lord, ancient guardian of
+    the ring, has awakened.\n\nWhat does he want? There\u2019s only one way to find
+    out.\n\nPress SPACE to continue."
+  countdownSeconds: 5
+  hasMoxoGame: 0
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonLordDialogueHandler
+  trainingIntroTitle: 
+  trainingIntroBody: 
+  readyIntroTitle: Ready to start?
+  readyIntroBody: Press Space to begin the real test.
+  nonMoxoIntroVoice: {fileID: 8300000, guid: 93e40c2082c909b4bafa58f57fd92da8, type: 3}
+  trainingIntroVoice: {fileID: 0}
+  readyIntroVoice: {fileID: 0}
+  lockCptToGlobalDefaults: 1
+  totalTrialsOverride: 0
+  totalTargetsOverride: 0
+  totalNonTargetsOverride: 0
+  cardDurationsOverride: []

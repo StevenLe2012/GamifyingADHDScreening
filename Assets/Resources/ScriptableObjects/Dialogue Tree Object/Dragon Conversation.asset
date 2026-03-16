@@ -1,0 +1,297 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690b57c63a27d0346bf581998aa605bf, type: 3}
+  m_Name: Dragon Conversation
+  m_EditorClassIdentifier: 
+  npcName: DragonLord
+  defaultState: Talk
+  scriptableCallbackNames: []
+  dialogueUnits:
+  - requiredStateKey: Talk
+    character: DragonLord
+    audioObjects:
+    - {fileID: 11400000, guid: f5c89e4a42d1e844c824d000866a3463, type: 2}
+    - {fileID: 11400000, guid: bb5157bb6e2233540886373117fb2f4c, type: 2}
+    - {fileID: 11400000, guid: 24c122e6bc88dbb4794b90749a7320f1, type: 2}
+    options: []
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: GoToState
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Talk2
+            m_BoolArgument: 0
+          m_CallState: 1
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: ContinueFromOption
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Talk2
+            m_BoolArgument: 0
+          m_CallState: 1
+    onEnterEventName: 
+  - requiredStateKey: Talk2
+    character: DragonLord
+    audioObjects:
+    - {fileID: 11400000, guid: ce80b704c5bb9ad49b5677b0f1f3c6dc, type: 2}
+    options:
+    - buttonText: "That sounds\u2026 like a bad math problem."
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: GoToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: ContinueFromOption
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+      nextStateKey: Talk3
+    - buttonText: 'Great. The part where I nod confidently and hope no one asks me
+        to explain it. '
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: GoToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: ContinueFromOption
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+      nextStateKey: Talk3
+    - buttonText: Perfect. Right between now and later - my favorite place to get
+        confused.
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: GoToState
+            m_Mode: 5
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: ContinueFromOption
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: Talk3
+              m_BoolArgument: 0
+            m_CallState: 1
+      nextStateKey: Talk3
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls: []
+    onEnterEventName: 
+  - requiredStateKey: Talk3
+    character: DragonLord
+    audioObjects:
+    - {fileID: 11400000, guid: d589c225104b0e749896cffbba86f7f3, type: 2}
+    - {fileID: 11400000, guid: 976a1372c75d25f4bba793128688040c, type: 2}
+    - {fileID: 11400000, guid: 683a9f6a6fb26be41839600f77a2501b, type: 2}
+    - {fileID: 11400000, guid: 37cb798123c005b4383bf8c21e2a9038, type: 2}
+    - {fileID: 11400000, guid: b87020734bb478847bed13e9a62ae27f, type: 2}
+    - {fileID: 11400000, guid: c98dfe8e35019314685375e3b9e484f2, type: 2}
+    options: []
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: GoToState
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Talk4
+            m_BoolArgument: 0
+          m_CallState: 1
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: ContinueFromOption
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Talk4
+            m_BoolArgument: 0
+          m_CallState: 1
+    onEnterEventName: 
+  - requiredStateKey: Talk4
+    character: DragonLord
+    audioObjects:
+    - {fileID: 11400000, guid: 6dc2fd72f557144429e5dbb6414e63ec, type: 2}
+    - {fileID: 11400000, guid: 84a7d008b6842eb478abc2988db06bd1, type: 2}
+    - {fileID: 11400000, guid: 32dc6249e334c3d4e8abd76dc2a11906, type: 2}
+    - {fileID: 11400000, guid: ec95abe781260ce419bcc5137c6f7e58, type: 2}
+    options: []
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: GoToState
+          m_Mode: 5
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Decision
+            m_BoolArgument: 0
+          m_CallState: 1
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+          m_MethodName: ContinueFromOption
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Talk4
+            m_BoolArgument: 0
+          m_CallState: 1
+    onEnterEventName: MagicGate
+  - requiredStateKey: Decision
+    character: DragonLord
+    audioObjects:
+    - {fileID: 11400000, guid: 9b045f8ca030c1949a68fd6ba023b5e7, type: 2}
+    options:
+    - buttonText: STEP THROUGH NOW
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: EndDialogue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+          - m_Target: {fileID: 11400000, guid: e5c881669c1e5744ab14ca7a03fcfc28, type: 2}
+            m_TargetAssemblyTypeName: EndGameOptionBridge, Assembly-CSharp
+            m_MethodName: PlayEnding1
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      nextStateKey: 
+    - buttonText: WAIT FOR THE WIZARD
+      actionToTrigger:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 11400000}
+            m_TargetAssemblyTypeName: Dialogue.DialogueTreeObjects, Assembly-CSharp
+            m_MethodName: EndDialogue
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+          - m_Target: {fileID: 11400000, guid: e5c881669c1e5744ab14ca7a03fcfc28, type: 2}
+            m_TargetAssemblyTypeName: EndGameOptionBridge, Assembly-CSharp
+            m_MethodName: PlayEnding2
+            m_Mode: 1
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 1
+      nextStateKey: 
+    nextEventWithoutButton:
+      m_PersistentCalls:
+        m_Calls: []
+    onEnterEventName: 
+  dialogueState: {fileID: 0}
+  disableManualContinue: 1
+  logBlockedManualContinue: 1
+  returnLastValidUnitWhenMissingKey: 1
+  logMissingStateKeys: 1

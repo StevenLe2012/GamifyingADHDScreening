@@ -70,3 +70,11 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Large source/raw files exceeding GitHub's 100MB limit
+"Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx"
+"Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx.meta"
+
+# Zip archives in source folders (large, not needed for runtime)
+Assets/Downloaded Assets/**/source/*.zip
+Assets/Downloaded Assets/**/source/*.zip.meta

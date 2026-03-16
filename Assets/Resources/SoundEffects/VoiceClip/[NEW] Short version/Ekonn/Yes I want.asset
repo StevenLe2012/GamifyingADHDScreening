@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
+  m_Name: Yes I want
+  m_EditorClassIdentifier: 
+  clip: {fileID: 8300000, guid: 655b1c9713aca1d4bbb65a5988eea3aa, type: 3}
+  subtitle: 'Ekonn: Yes. I want to return home and make people smile with my magic
+    again. But the Dragon Lord bound me here.'
+  character: Ekonn

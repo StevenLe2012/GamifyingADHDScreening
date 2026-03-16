@@ -14,5 +14,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   islandId: POISON
   displayName: Poison Island
-  icon: {fileID: 0}
-  startsMoxoOnArrival: 1
+  icon: {fileID: 21300000, guid: a483df3be161a3d4fa9d6dbbda299a27, type: 3}
+  introTitle: Welcome to Poison Garden!
+  introBody: 'Your mission is to press SPACE as quickly as possible to collect only
+    the card with THREE MUSHROOMS. '
+  countdownSeconds: 5
+  hasMoxoGame: 1
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonHandler
+  trainingIntroTitle: Welcome to Poison Garden!
+  trainingIntroBody: "Your mission is to press SPACE as quickly as possible to collect
+    only the card with THREE MUSHROOMS. \r\n\r\nAll other cards are traps - leave
+    them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
+    ready, press SPACE to begin a training round."
+  readyIntroTitle: Focus
+  readyIntroBody: "Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.\r\n\r\nAt the end of the round, you\u2019ll
+    collect a gem. More correct cards mean a stronger gem and a faster way home.\r\n\r\nPress
+    SPACE to begin the real mission. Good luck!"
+  nonMoxoIntroVoice: {fileID: 0}
+  trainingIntroVoice: {fileID: 8300000, guid: 1cef4156d82caff4c940f9c053295813, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  lockCptToGlobalDefaults: 1
+  totalTrialsOverride: 53
+  totalTargetsOverride: 33
+  totalNonTargetsOverride: 20
+  cardDurationsOverride: []

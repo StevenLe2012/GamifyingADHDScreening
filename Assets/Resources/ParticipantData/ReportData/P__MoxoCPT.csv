@@ -1,3 +1,20 @@
-Type,Time Shown,Attentiveness,Timeliness,HyperReactiveness,Impulsiveness,ReactionTime,HyperReactiveCount
-NonTarget,0,False,False,False,False,-1,0
-NonTarget,0,False,False,False,False,-1,0
+IslandId,IslandName,Type,Time Shown,Attentiveness,Timeliness,HyperReactiveness,Impulsiveness,ReactionTime,HyperReactiveCount
+SKULL,Skull Island,Target,0.5,True,True,False,False,0,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,1,True,True,False,False,0.4409783,0
+SKULL,Skull Island,Target,1,False,False,False,False,-1,0
+SKULL,Skull Island,Target,1,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,True,False,False,False,0.5464424,0
+SKULL,Skull Island,Target,3,True,True,False,False,0.3197074,0
+SKULL,Skull Island,Target,0.5,True,True,False,False,0.4342748,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,True,True,False,False,0.3429283,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,False,False,False,False,-1,0
+SKULL,Skull Island,Target,0.5,True,True,False,False,0.2794975,0
+SKULL,Skull Island,Target,1,True,True,False,False,0.5211213,0
+SKULL,Skull Island,Target,0.5,True,True,False,False,0.4355427,0
