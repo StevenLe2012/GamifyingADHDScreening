@@ -71,10 +71,18 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-# Large source/raw files exceeding GitHub's 100MB limit
-"Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx"
-"Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx.meta"
+# Large files exceeding GitHub's 100MB limit - entire Poison Garden Distractor folder
+Assets/Downloaded Assets/Poison Garden/Distractor/Muschtest22.fbx
+Assets/Downloaded Assets/Poison Garden/Distractor/Muschtest22.fbx.meta
+Assets/Downloaded Assets/Poison Garden/Distractor/alien-world-explorer.zip
+Assets/Downloaded Assets/Poison Garden/Distractor/alien-world-explorer.zip.meta
+Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir.zip
+Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir.zip.meta
+Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx
+Assets/Downloaded Assets/Poison Garden/Distractor/mushroom-187-ir/source/Muschtest22.fbx.meta
+Assets/Downloaded Assets/Poison Garden/Distractor/source/Muschtest22.fbx
+Assets/Downloaded Assets/Poison Garden/Distractor/source/Muschtest22.fbx.meta
 
-# Zip archives in source folders (large, not needed for runtime)
-Assets/Downloaded Assets/**/source/*.zip
-Assets/Downloaded Assets/**/source/*.zip.meta
+# Ignore all zip and large source archives globally
+*.zip
+*.zip.meta
