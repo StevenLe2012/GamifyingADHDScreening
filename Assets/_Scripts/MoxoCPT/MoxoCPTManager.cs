@@ -2224,19 +2224,9 @@ namespace MoxoCPT
                 // IMPORTANT: hide training button on normal results
                 intro.SetReplayTrainingVisible(false);
 
-                intro.ShowResults(hit, total, falseAlarms, totalDistractors, () =>
-                {
-                    // NOW we leave CPT.
-                    SetCptLock(false);
-                    ExitMoxoCamera();
-
-                    //Animation: Koala Talk
-                    KoalaAnimBus.BroadcastToActiveKoalas(d => d.OnResultsContinue());
-                    Debug.Log("[MOXO] Results Continue → Narrative.");
-
-                    GameManager.Instance?.UpdateGameState(GameManager.GameState.Narrative);
-                    StartKoalaAfterGameDialogue();
-                });
+                // Show island reward (if configured) then the results screen.
+                // Redo path (ShowReplayPrompt_KEEP_CPT) skips this entirely.
+                StartCoroutine(CoShowRewardThenResults(intro, hit, total, falseAlarms, totalDistractors));
             }
             else
             {
@@ -2254,6 +2244,79 @@ namespace MoxoCPT
 
         // ==================================================
         #region Helpers
+
+        // ---------- Reward helpers ----------
+
+        /// <summary>Returns the IntroAnchor that matches the currently active island, or null.</summary>
+        private IntroAnchor GetCurrentIntroAnchor()
+        {
+            string id = CurrentIslandId();
+            if (string.IsNullOrWhiteSpace(id)) return null;
+
+            foreach (var ia in FindObjectsOfType<IntroAnchor>(true))
+            {
+                if (ia && !string.IsNullOrWhiteSpace(ia.islandId) &&
+                    string.Equals(ia.islandId.Trim(), id.Trim(), System.StringComparison.OrdinalIgnoreCase))
+                    return ia;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Shows the island's reward object (if configured), waits for it to finish,
+        /// then shows the results screen. Only called on the normal (non-redo) completion path.
+        /// </summary>
+        private IEnumerator CoShowRewardThenResults(
+            IntroScreen intro, int hit, int total, int falseAlarms, int totalDistractors)
+        {
+            var anchor = GetCurrentIntroAnchor();
+
+            if (anchor != null && anchor.rewardObject != null)
+            {
+                anchor.rewardObject.SetActive(true);
+
+                // Play sound via the reward object's own AudioSource if present,
+                // otherwise fall back to a one-shot at the anchor's world position.
+                float duration = anchor.rewardDuration;
+
+                if (anchor.rewardSound != null)
+                {
+                    var src = anchor.rewardObject.GetComponent<AudioSource>();
+                    if (src != null)
+                    {
+                        src.clip = anchor.rewardSound;
+                        src.Play();
+                    }
+                    else
+                    {
+                        AudioSource.PlayClipAtPoint(anchor.rewardSound, anchor.transform.position);
+                    }
+
+                    if (duration <= 0f)
+                        duration = anchor.rewardSound.length;
+                }
+
+                if (duration <= 0f) duration = 2f; // silent reward: show for 2 s
+
+                yield return new WaitForSecondsRealtime(duration);
+
+                // Reward stays active — hide it yourself (e.g. from the results Continue callback)
+                // if you need it gone after the player continues.
+            }
+
+            // Results screen (with character enabled via ShowInstant → localCharacter.SetActive)
+            intro.ShowResults(hit, total, falseAlarms, totalDistractors, () =>
+            {
+                SetCptLock(false);
+                ExitMoxoCamera();
+
+                KoalaAnimBus.BroadcastToActiveKoalas(d => d.OnResultsContinue());
+                Debug.Log("[MOXO] Results Continue → Narrative.");
+
+                GameManager.Instance?.UpdateGameState(GameManager.GameState.Narrative);
+                StartKoalaAfterGameDialogue();
+            });
+        }
 
         // NEW: run training again then show the "Ready" panel
         private void ReplayTrainingThenShowReady()
@@ -2318,7 +2381,11 @@ namespace MoxoCPT
                 // IMPORTANT: ensure replay training button is hidden on the Ready screen
                 intro.SetReplayTrainingVisible(false);
 
-                intro.ShowReadyAfterTraining();
+                // Read island-specific ready text — same fallback logic as IslandTravelManager.
+                var currentIsland = IslandTravelManager.I?.CurrentIsland;
+                var readyTitle = IntroScreen.Fallback(currentIsland?.readyIntroTitle, "Ready to start?");
+                var readyBody  = IntroScreen.Fallback(currentIsland?.readyIntroBody,  "Press Space to begin the real test.");
+                intro.ShowReadyAfterTraining(readyTitle, readyBody);
 
                 // ---- NEW: wait until the Ready panel closes, then ensure CPT starts ----
                 float timeout = 45f;

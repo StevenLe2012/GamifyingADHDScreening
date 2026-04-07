@@ -27,6 +27,24 @@ public class IntroBoot : MonoBehaviour
     public CanvasGroup fadeGroup;                // optional: black Image with CanvasGroup alpha
     public float fadeDuration = 0.35f;
 
+    [Header("WebGL – Thumbnail Gate")]
+    [Tooltip("Full-screen image shown on WebGL before the intro video starts. " +
+             "Player presses Enter (or Space) to dismiss it and begin playback.")]
+    public UnityEngine.UI.Image thumbnailImage;
+
+    [Tooltip("Optional text shown while the video is buffering ('Loading…') " +
+             "and then updated to 'Press Enter to start' once ready.")]
+    public TMPro.TMP_Text loadingLabel;
+
+    [Tooltip("Text shown while the video is buffering.")]
+    public string loadingText = "Loading…";
+
+    [Tooltip("Text shown once the video is buffered and ready to play.")]
+    public string readyText = "Press Enter to start";
+
+    [Tooltip("How long to wait for the video to buffer before giving up (seconds).")]
+    public float prepareTimeout = 20f;
+
     [Header("Diagnostics")]
     public bool log = true;
 
@@ -35,6 +53,9 @@ public class IntroBoot : MonoBehaviour
 
     void Awake()
     {
+        // Ensure thumbnail is hidden at startup; it is shown only in the WebGL gate below.
+        if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
+
         if (renderToCamera && !targetCamera)
             targetCamera = Camera.main;
 
@@ -56,10 +77,14 @@ public class IntroBoot : MonoBehaviour
             vp.SetTargetAudioSource(0, audio);
         }
 
-        // Source
-        string path = System.IO.Path.Combine(Application.streamingAssetsPath, videoFileName);
+        // Source — use string concat on WebGL to guarantee forward-slash URLs
+        // (Path.Combine on Windows IL2CPP can produce backslash separators which break HTTP URLs)
         vp.source = VideoSource.Url;
-        vp.url = path;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        vp.url = Application.streamingAssetsPath + "/" + videoFileName;
+#else
+        vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, videoFileName);
+#endif
 
         // Output
         if (renderToCamera)
@@ -76,13 +101,63 @@ public class IntroBoot : MonoBehaviour
         }
 
         vp.loopPointReached += OnVideoFinished;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Start buffering the video immediately in the background so it is ready
+        // (or close to ready) by the time the user presses Enter on the thumbnail.
+        if (log) Debug.Log("[IntroBoot] WebGL: starting early video prepare…");
+        vp.Prepare();
+#endif
+
         StartCoroutine(CoRun());
     }
 
     IEnumerator CoRun()
     {
-        // Optional fade in from black
-        if (fadeToBlack && fadeGroup) { fadeGroup.alpha = 1f; }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // ── Thumbnail gate ──────────────────────────────────────────────────────────
+        // Show the thumbnail immediately while the video buffers in the background.
+        // The label cycles through loading → ready states so the user always knows
+        // what is happening. Enter/Space is only accepted once the video is prepared
+        // (or the timeout expires), guaranteeing the video plays instantly on press.
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;
+        if (thumbnailImage) thumbnailImage.gameObject.SetActive(true);
+        SetLabel(loadingText);
+
+        // Wait for the video to finish buffering (started in Awake).
+        if (log) Debug.Log("[IntroBoot] WebGL: waiting for video to buffer…");
+        float elapsed = 0f;
+        while (!vp.isPrepared && elapsed < prepareTimeout)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (vp.isPrepared)
+        {
+            if (log) Debug.Log($"[IntroBoot] WebGL: video ready after {elapsed:0.0}s — waiting for Enter.");
+            SetLabel(readyText);
+        }
+        else
+        {
+            // Timed out — still let the user in; the video will try to play anyway.
+            if (log) Debug.LogWarning($"[IntroBoot] WebGL: video not ready after {prepareTimeout}s — proceeding anyway.");
+            SetLabel(readyText);
+        }
+
+        // Now wait for user gesture (unlocks browser audio AND confirms they are ready).
+        yield return CoWaitForEnter();
+        if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed — starting video.");
+
+        if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
+        SetLabel(null);
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
+        // ───────────────────────────────────────────────────────────────────────────
+#else
+        // Non-WebGL: start with black screen as before.
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
+#endif
+
         yield return PrepareAndPlay();
 
         // Fade in underlying frame quickly
@@ -116,9 +191,30 @@ public class IntroBoot : MonoBehaviour
 
     IEnumerator PrepareAndPlay()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // On WebGL, Prepare() was already called in Awake and we waited in CoRun.
+        // If somehow it still isn't ready, give it one more short chance.
+        if (!vp.isPrepared)
+        {
+            if (log) Debug.Log("[IntroBoot] WebGL: video not yet prepared — brief extra wait.");
+            float extra = 5f;
+            while (!vp.isPrepared && extra > 0f)
+            {
+                extra -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
+
+        if (!vp.isPrepared)
+        {
+            if (log) Debug.LogWarning("[IntroBoot] WebGL: skipping video (never became prepared).");
+            yield break;
+        }
+#else
         if (log) Debug.Log($"[IntroBoot] Preparing video: {vp.url}");
         vp.Prepare();
         while (!vp.isPrepared) yield return null;
+#endif
 
         if (log) Debug.Log("[IntroBoot] Playing.");
         vp.Play();
@@ -132,16 +228,53 @@ public class IntroBoot : MonoBehaviour
 
     bool AnySkipPressed()
     {
-        // New Input System
         var kb = Keyboard.current;
         var gp = Gamepad.current;
         if ((kb != null && (kb.anyKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame)) ||
             (gp != null && (gp.startButton.wasPressedThisFrame || gp.aButton.wasPressedThisFrame)))
             return true;
 
-        // Also support old Input Manager if enabled
+#if !UNITY_WEBGL
+        // On WebGL, Input.anyKeyDown includes mouse button presses which would cause an
+        // accidental skip when the player clicks anywhere on the video. Use keyboard only.
         if (Input.anyKeyDown) return true;
+#endif
         return false;
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // Waits until the player presses Enter or Space (satisfies the browser user-gesture
+    // requirement for audio autoplay), then yields one extra frame so that key-press is
+    // fully consumed and doesn't register as a skip in the video loop that follows.
+    IEnumerator CoWaitForEnter()
+    {
+        var kb = Keyboard.current;
+        while (true)
+        {
+            if (kb != null && (kb.enterKey.wasPressedThisFrame ||
+                               kb.numpadEnterKey.wasPressedThisFrame ||
+                               kb.spaceKey.wasPressedThisFrame))
+                break;
+            if (Input.GetKeyDown(KeyCode.Return) ||
+                Input.GetKeyDown(KeyCode.KeypadEnter) ||
+                Input.GetKeyDown(KeyCode.Space))
+                break;
+            yield return null;
+        }
+        yield return null; // flush — prevent the key from being seen by the skip loop
+    }
+#endif
+
+    void SetLabel(string text)
+    {
+        if (loadingLabel == null) return;
+        if (string.IsNullOrEmpty(text))
+            loadingLabel.gameObject.SetActive(false);
+        else
+        {
+            loadingLabel.gameObject.SetActive(true);
+            loadingLabel.text = text;
+        }
     }
 
     IEnumerator CoFade(CanvasGroup g, float from, float to, float seconds)
@@ -161,6 +294,7 @@ public class IntroBoot : MonoBehaviour
         if (vp == null) return;
         vp.loopPointReached -= OnVideoFinished;
         if (vp.isPlaying) vp.Stop();
-        if (vp.targetTexture) vp.targetTexture.Release();
+        // Do not Release() the Inspector-assigned RenderTexture.
+        vp.url = "";
     }
 }

@@ -33,6 +33,11 @@ public class EndGameCutscene : MonoBehaviour
     public CanvasGroup fadeGroup;
     public float fadeDuration = 0.35f;
 
+    [Header("Ending Screen")]
+    [Tooltip("Image revealed on WebGL after the video ends. Sits on screen indefinitely " +
+             "(Application.Quit does nothing in a browser, so this replaces it).")]
+    public UnityEngine.UI.Image endingImage;
+
     [Header("Diagnostics")]
     public bool log = true;
 
@@ -42,6 +47,9 @@ public class EndGameCutscene : MonoBehaviour
 
     void Awake()
     {
+        // Keep ending image hidden until the video finishes.
+        if (endingImage) endingImage.gameObject.SetActive(false);
+
         if (renderToCamera && !targetCamera)
             targetCamera = Camera.main;
 
@@ -149,12 +157,32 @@ public class EndGameCutscene : MonoBehaviour
 
     IEnumerator PrepareAndPlay()
     {
-        string path = System.IO.Path.Combine(Application.streamingAssetsPath, _currentFile);
-        _vp.url = path;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Application.streamingAssetsPath is a URL on WebGL — use string concat, not Path.Combine.
+        _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
+#else
+        _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentFile);
+#endif
 
         if (log) Debug.Log($"[EndGameCutscene] Preparing video: {_vp.url}");
         _vp.Prepare();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        float timeout = 8f;
+        while (!_vp.isPrepared && timeout > 0f)
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (!_vp.isPrepared)
+        {
+            if (log) Debug.LogWarning("[EndGameCutscene] WebGL: video did not prepare in time; skipping.");
+            Finish();
+            yield break;
+        }
+#else
         while (!_vp.isPrepared) yield return null;
+#endif
 
         if (log) Debug.Log("[EndGameCutscene] Playing.");
         _vp.Play();
@@ -176,7 +204,11 @@ public class EndGameCutscene : MonoBehaviour
             (gp != null && (gp.startButton.wasPressedThisFrame || gp.aButton.wasPressedThisFrame)))
             return true;
 
+#if !UNITY_WEBGL
+        // On WebGL, Input.anyKeyDown includes mouse buttons — clicking anywhere on the video
+        // would trigger an accidental skip. Keyboard/gamepad only on WebGL.
         if (Input.anyKeyDown) return true;
+#endif
         return false;
     }
 
@@ -200,25 +232,45 @@ public class EndGameCutscene : MonoBehaviour
             _vp.targetCameraAlpha = 0f;
         if (!renderToCamera && rawImage)
             rawImage.gameObject.SetActive(false);
-        if (fadeGroup) fadeGroup.alpha = 0f;
 
         _isPlaying = false;
 
-        // End the game after the final cutscene.
-#if UNITY_EDITOR
-        // Stop play mode in the editor
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Application.Quit() is a no-op in WebGL.
+        // Instead, reveal the ending image over the existing black screen and stay there.
+        StartCoroutine(CoShowEndingScreen());
+#elif UNITY_EDITOR
+        if (fadeGroup) fadeGroup.alpha = 0f;
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        // Quit the built application
+        if (fadeGroup) fadeGroup.alpha = 0f;
         Application.Quit();
 #endif
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // The screen is already faded to black when this runs.
+    // Show the ending image behind the black overlay, then fade the overlay out
+    // so the image is revealed. The game then sits on that image indefinitely.
+    IEnumerator CoShowEndingScreen()
+    {
+        if (endingImage) endingImage.gameObject.SetActive(true);
+        if (fadeGroup)
+            yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, fadeDuration));
+        else
+            yield return null;
+
+        if (log) Debug.Log("[EndGameCutscene] Ending screen displayed.");
+    }
+#endif
 
     void CleanUpVideo()
     {
         if (_vp == null) return;
         if (_vp.isPlaying) _vp.Stop();
-        if (_vp.targetTexture) _vp.targetTexture.Release();
+        // Do NOT Release() the RenderTexture — it is an Inspector-assigned asset.
+        // Release() permanently frees GPU memory and would break any subsequent play.
+        _vp.url = "";
     }
 }
 

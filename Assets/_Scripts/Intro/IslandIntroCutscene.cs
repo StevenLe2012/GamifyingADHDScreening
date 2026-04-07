@@ -190,12 +190,32 @@ public class IslandIntroCutscene : MonoBehaviour
             yield break;
         }
 
-        string path = System.IO.Path.Combine(Application.streamingAssetsPath, _currentCutscene.videoFileName);
-        _vp.url = path;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
+#else
+        _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentCutscene.videoFileName);
+#endif
 
         if (log) Debug.Log($"[IslandIntroCutscene] Preparing video: {_vp.url}");
         _vp.Prepare();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        const float prepareTimeout = 8f;
+        float elapsed = 0f;
+        while (!_vp.isPrepared && elapsed < prepareTimeout)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (!_vp.isPrepared)
+        {
+            if (log) Debug.LogWarning($"[IslandIntroCutscene] WebGL: video did not prepare within {prepareTimeout}s, skipping.");
+            FinishAndTravel();
+            yield break;
+        }
+#else
         while (!_vp.isPrepared) yield return null;
+#endif
 
         if (log) Debug.Log("[IslandIntroCutscene] Playing.");
         _vp.Play();
@@ -217,7 +237,11 @@ public class IslandIntroCutscene : MonoBehaviour
             (gp != null && (gp.startButton.wasPressedThisFrame || gp.aButton.wasPressedThisFrame)))
             return true;
 
+#if !UNITY_WEBGL
+        // On WebGL, Input.anyKeyDown includes mouse buttons — clicking anywhere on the video
+        // would trigger an accidental skip. Keyboard/gamepad only on WebGL.
         if (Input.anyKeyDown) return true;
+#endif
         return false;
     }
 
@@ -256,7 +280,10 @@ public class IslandIntroCutscene : MonoBehaviour
     {
         if (_vp == null) return;
         if (_vp.isPlaying) _vp.Stop();
-        if (_vp.targetTexture) _vp.targetTexture.Release();
+        // Do NOT Release() the RenderTexture — it is an Inspector-assigned asset shared
+        // across multiple cutscene plays. Releasing it permanently frees GPU memory and
+        // the next cutscene would render to a dead texture (frozen first frame, no visuals).
+        _vp.url = "";
     }
 }
 

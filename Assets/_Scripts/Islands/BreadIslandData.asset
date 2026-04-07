@@ -25,18 +25,30 @@ MonoBehaviour:
   startsDialogueOnArrival: 1
   dialogueHandlerType: DragonHandler
   trainingIntroTitle: Welcome to Sweet Factory!
-  trainingIntroBody: "Your mission is to press SPACE as quickly as possible to collect
-    only the card with THREE DONUTS. \r\n\r\nAll other cards are sugar traps - leave
-    them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
-    ready, press SPACE to begin a training round."
+  trainingIntroBody: "I\u2019m Donutella, the chef behind every delicious creation
+    on this island. I\u2019ll reward you with the gem, but only if you help me prepare
+    the perfect dessert for the people.\r\n\r\nPress SPACE as quickly as possible
+    to collect only the correct recipe with THREE DONUTS.\r\n\r\nBe careful - every
+    other option is a sugar trap. Leave them alone and keep your focus on the red
+    plus sign.\r\n\r\nWhen you\u2019re ready, press SPACE to begin a training round.\r"
   readyIntroTitle: Focus
-  readyIntroBody: "\rRandom visual and audio distractions will appear -  ignore them
-    and keep your focus on the red plus sign.\r\n\r\nAt the end of the round, you\u2019ll
-    collect a gem. More correct cards mean a stronger gem and a faster way home.\r\n\r\nPress
-    SPACE to begin the real mission. Good luck!"
+  readyIntroBody: 'Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.
+
+
+    Are you ready? Use the arrow
+    keys to choose:
+
+    * Start - Begin the mission
+
+    * Training - Practice again
+
+
+    Press
+    SPACE to confirm. Good luck!'
   nonMoxoIntroVoice: {fileID: 0}
-  trainingIntroVoice: {fileID: 8300000, guid: 6d4e288ab343bd74eb26c72be611d5c0, type: 3}
-  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  trainingIntroVoice: {fileID: 8300000, guid: bc3bc434a400cc745aa7dbebd2ff1a5f, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: be07246789e514348920b27c9c44f00a, type: 3}
   lockCptToGlobalDefaults: 1
   totalTrialsOverride: 53
   totalTargetsOverride: 33

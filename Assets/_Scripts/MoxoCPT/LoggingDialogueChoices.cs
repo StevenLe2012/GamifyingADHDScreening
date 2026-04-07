@@ -1,7 +1,10 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using System.IO;
+#endif
 
 namespace MoxoCPT
 {
@@ -21,8 +24,7 @@ namespace MoxoCPT
         private static string _requiredStateKey = "";
         private static string _onEnterEventName = "";
 
-        private static string _phase = "";      // you can leave blank or set "Explore/Narrative/DP/NDP"
-        // REMOVED: _gameState
+        private static string _phase = "";
         private static string _islandId = "";
 
         private static long _optionsShownMs = -1;
@@ -57,7 +59,9 @@ namespace MoxoCPT
             _optionsCount = 0;
             _selectionChangedCount = 0;
 
+#if UNITY_EDITOR
             CreateCSVIfMissing();
+#endif
         }
 
         /// <summary>
@@ -114,18 +118,18 @@ namespace MoxoCPT
         /// </summary>
         public static void LogChoice(int selectedOptionIndex, string selectedOptionText, long choiceTimeMs)
         {
-            CreateCSVIfMissing();
-
             // Compute RT only if we have a valid options_shown_ms
             long rt = (_optionsShownMs > 0) ? (choiceTimeMs - _optionsShownMs) : -1;
 
             // Simple leak heuristic: super fast is usually accidental input carryover
             bool leak = (rt >= 0 && rt < 150);
 
-            var pid = GetCurrentParticipantId();
+            var pid       = GetCurrentParticipantId();
             var sessionId = MoxoCPT.LoggingReport.CurrentSessionId ?? "";
+            var inv       = CultureInfo.InvariantCulture;
 
-            var inv = CultureInfo.InvariantCulture;
+#if UNITY_EDITOR
+            CreateCSVIfMissing();
 
             var row = string.Join(CSV, new[]
             {
@@ -162,6 +166,10 @@ namespace MoxoCPT
 
             using (var sw = File.AppendText(GetCSVPath()))
                 sw.WriteLine(row);
+#endif
+
+            UploadToFirebase(pid, sessionId, selectedOptionIndex, selectedOptionText,
+                             choiceTimeMs, rt, leak, inv);
         }
 
         // ---------- CSV headers ----------
@@ -171,7 +179,6 @@ namespace MoxoCPT
             "session_id",
             "island_id",
             "phase",
-            // REMOVED: "game_state",
 
             "npc",
             "required_state_key",
@@ -194,6 +201,7 @@ namespace MoxoCPT
         };
 
         // ---------- File helpers ----------
+#if UNITY_EDITOR
         private static void CreateCSVIfMissing()
         {
             var path = GetCSVPath();
@@ -211,32 +219,21 @@ namespace MoxoCPT
             var pid = GetCurrentParticipantId();
             var safePid = Sanitize(pid);
 
-            var dir = Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
-            return Path.Combine(dir, $"P_{safePid}_DialogueChoice.csv");
+            var dir = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
+            return System.IO.Path.Combine(dir, $"P_{safePid}_DialogueChoice.csv");
         }
 
         private static void EnsureDirectory(string filePath)
         {
-            var dir = Path.GetDirectoryName(filePath);
+            var dir = System.IO.Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-        }
-
-        private static string GetCurrentParticipantId()
-        {
-            var gm = GameManager.Instance;
-            var pid = (gm != null ? gm.ParticipantId : null);
-
-            if (string.IsNullOrWhiteSpace(pid))
-                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return pid;
         }
 
         private static string Sanitize(string s)
         {
             if (string.IsNullOrEmpty(s)) return "Unknown";
-            foreach (var c in Path.GetInvalidFileNameChars())
+            foreach (var c in System.IO.Path.GetInvalidFileNameChars())
                 s = s.Replace(c, '_');
             return s.Trim();
         }
@@ -250,6 +247,56 @@ namespace MoxoCPT
                 return $"\"{s}\"";
             }
             return s;
+        }
+#endif
+
+        private static string GetCurrentParticipantId()
+        {
+            var gm = GameManager.Instance;
+            var pid = (gm != null ? gm.ParticipantId : null);
+
+            if (string.IsNullOrWhiteSpace(pid))
+                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            return pid;
+        }
+
+        // ---------- Firebase upload ----------
+
+        private static void UploadToFirebase(
+            string pid, string sessionId,
+            int selectedOptionIndex, string selectedOptionText,
+            long choiceTimeMs, long rt, bool leak,
+            IFormatProvider inv)
+        {
+            var svc = FirebaseService.Instance;
+            if (svc == null) return;
+
+            var safePid = FirebaseService.SanitizeKey(pid);
+            var safeSid = FirebaseService.SanitizeKey(sessionId);
+            var path    = $"umaki/dialogue_choices/{safePid}/{safeSid}";
+
+            var sb = new StringBuilder(512);
+            sb.Append(FirebaseService.JS("participant_id",          pid));
+            sb.Append(FirebaseService.JS("session_id",              sessionId));
+            sb.Append(FirebaseService.JS("island_id",               _islandId));
+            sb.Append(FirebaseService.JS("phase",                   _phase));
+            sb.Append(FirebaseService.JS("npc",                     _npc));
+            sb.Append(FirebaseService.JS("required_state_key",      _requiredStateKey));
+            sb.Append(FirebaseService.JS("on_enter_event_name",     _onEnterEventName));
+            sb.Append(FirebaseService.JS("conversation_id",         _conversationId));
+            sb.Append(FirebaseService.JN("options_shown_ms",        _optionsShownMs));
+            sb.Append(FirebaseService.JN("choice_time_ms",          choiceTimeMs));
+            sb.Append(FirebaseService.JN("reaction_time_ms",        rt));
+            sb.Append(FirebaseService.JN("selected_option_index",   selectedOptionIndex));
+            sb.Append(FirebaseService.JS("selected_option_text",    selectedOptionText));
+            sb.Append(FirebaseService.JS("options_presented_text",  _optionsPresentedText));
+            sb.Append(FirebaseService.JN("selection_changed_count", _selectionChangedCount));
+            sb.Append(FirebaseService.JN("options_count",           _optionsCount));
+            sb.Append(FirebaseService.JB("was_input_leak_suspected",leak));
+            sb.Append(FirebaseService.JN("conversation_step",       _conversationStep));
+
+            svc.PostJson(path, FirebaseService.WrapJson(sb.ToString()));
         }
     }
 }

@@ -16,27 +16,41 @@ MonoBehaviour:
   displayName: Cards Island
   icon: {fileID: 21300000, guid: 9f7524c330caee8439cedfc4719c0673, type: 3}
   introTitle: Welcome to Cards Kingdom!
-  introBody: "Your mission is to press SPACE as quickly as possible to collect only
-    the card with THREE HEARTS. \n\nAll other cards are traps - ignore them and keep
-    your focus on the red cross.\n\nKeep your focus on the red cross and avoid distractions.\n\nPress
-    SPACE to start. Good luck! "
+  introBody: "I am Rosaria, Guardian of this island. I will grant you the gem but
+    only if you prove your worth.\n\r\nYour task is simple: press SPACE as quickly
+    and accurately as possible to collect only the cards with THREE HEARTS and help
+    rebuild the broken kingdom.\n\r\nBeware - every other card is a trap. Ignore
+    them, and keep your focus on the red plus sign.\r"
   countdownSeconds: 5
   hasMoxoGame: 1
   startsDialogueOnArrival: 1
   dialogueHandlerType: DragonHandler
   trainingIntroTitle: Welcome to Cards Kingdom!
-  trainingIntroBody: "Your task is to press SPACE as quickly and accurately as possible
-    to collect only the card with THREE hearts.\n\nAll other cards are traps - ignore
-    them and keep your focus on the red plus sign.\n\nWhen you\u2019re ready, press
-    SPACE to begin a training round."
+  trainingIntroBody: "I am Joker of this island. I will grant you the gem but only
+    if you prove your worth. \n\r\nYour task is simple: press SPACE as quickly and
+    accurately as possible to collect only the cards with THREE HEARTS and help rebuild
+    the broken kingdom. \n\r\nBeware - every other card is a fool in disguise. Ignore
+    them, and keep your focus on the red plus sign.\n\nWhen you\u2019re ready, press
+    SPACE to begin a training round.\r\n"
   readyIntroTitle: Focus
-  readyIntroBody: "Random visual and audio distractions will appear -  ignore them
-    and keep your focus on the red plus sign.\n\nAt the end of the round, you\u2019ll
-    collect a gem. More correct cards mean a stronger gem and a faster way home.\n\nPress
-    SPACE to begin the real mission. Good luck!"
+  readyIntroBody: 'Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.
+
+
+    Are you ready? Use the arrow
+    keys to choose:
+
+
+    * Start - Begin the mission
+
+    * Training - Practice
+    again
+
+
+    Press SPACE to confirm. Good luck!'
   nonMoxoIntroVoice: {fileID: 0}
-  trainingIntroVoice: {fileID: 8300000, guid: 45498c24085b7154f9bb02aba4850d35, type: 3}
-  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  trainingIntroVoice: {fileID: 8300000, guid: f3de06e9e5a26d2409d3faa7d9971d94, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: 80f46e9f5379a4a4a927e9ab0cb7ebc4, type: 3}
   lockCptToGlobalDefaults: 1
   totalTrialsOverride: 53
   totalTargetsOverride: 33

@@ -1,13 +1,18 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using System.IO;
+#endif
 
 namespace MoxoCPT
 {
     /// <summary>
     /// Separate CSV logger for distractor activity events (DP only).
     /// One row per distractor activation ("ON event") with onset + offset.
+    /// NOTE: DistractorSystem uses its own nested LoggingDistractors class internally.
+    ///       This standalone class is the external-facing version for future decoupling.
     /// </summary>
     public static class LoggingDistractors
     {
@@ -16,6 +21,7 @@ namespace MoxoCPT
         // Call this once per run (same place you call LoggingReport.CreateReportCSV()).
         public static void CreateDistractorCSV()
         {
+#if UNITY_EDITOR
             var path = GetCSVPath();
             EnsureDirectory(path);
 
@@ -24,6 +30,7 @@ namespace MoxoCPT
 
             using (var sw = File.CreateText(path))
                 sw.WriteLine(string.Join(CSVSeperator, CSVHeaders));
+#endif
         }
 
         /// <summary>
@@ -31,6 +38,26 @@ namespace MoxoCPT
         /// </summary>
         public static void AppendDistractorEvent(DistractorEvent e)
         {
+            var inv = CultureInfo.InvariantCulture;
+
+            // Keep session id consistent with your main report
+            string sessionId = !string.IsNullOrWhiteSpace(e.SessionId)
+                ? e.SessionId
+                : LoggingReport.CurrentSessionId;
+
+            // Optional blanks
+            string trialIndex     = (e.TrialIndex >= 0) ? e.TrialIndex.ToString(inv) : "";
+            string phaseTrialIndex = (e.PhaseTrialIndex >= 0) ? e.PhaseTrialIndex.ToString(inv) : "";
+
+            string onset   = (e.OnsetMs > 0) ? e.OnsetMs.ToString(inv) : "";
+            string offset  = (e.OffsetMs > 0) ? e.OffsetMs.ToString(inv) : "";
+            string planned = (e.PlannedDurationMs >= 0) ? e.PlannedDurationMs.ToString(inv) : "";
+            string actual  = (e.ActualDurationMs >= 0) ? e.ActualDurationMs.ToString(inv) : "";
+            string dpOn    = (e.DpElapsedOnsetMs >= 0) ? e.DpElapsedOnsetMs.ToString(inv) : "";
+            string dpOff   = (e.DpElapsedOffsetMs >= 0) ? e.DpElapsedOffsetMs.ToString(inv) : "";
+            string weight  = e.WeightTarget.HasValue ? e.WeightTarget.Value.ToString(inv) : "";
+
+#if UNITY_EDITOR
             var path = GetCSVPath();
             EnsureDirectory(path);
 
@@ -40,41 +67,19 @@ namespace MoxoCPT
                     swHead.WriteLine(string.Join(CSVSeperator, CSVHeaders));
             }
 
-            var inv = CultureInfo.InvariantCulture;
-
-            // Keep session id consistent with your main report
-            string sessionId = !string.IsNullOrWhiteSpace(e.SessionId)
-                ? e.SessionId
-                : LoggingReport.CurrentSessionId;
-
-            // Optional blanks
-            string trialIndex = (e.TrialIndex >= 0) ? e.TrialIndex.ToString(inv) : "";
-            string phaseTrialIndex = (e.PhaseTrialIndex >= 0) ? e.PhaseTrialIndex.ToString(inv) : "";
-
-            string onset = (e.OnsetMs > 0) ? e.OnsetMs.ToString(inv) : "";
-            string offset = (e.OffsetMs > 0) ? e.OffsetMs.ToString(inv) : "";
-
-            string planned = (e.PlannedDurationMs >= 0) ? e.PlannedDurationMs.ToString(inv) : "";
-            string actual = (e.ActualDurationMs >= 0) ? e.ActualDurationMs.ToString(inv) : "";
-
-            string dpOn = (e.DpElapsedOnsetMs >= 0) ? e.DpElapsedOnsetMs.ToString(inv) : "";
-            string dpOff = (e.DpElapsedOffsetMs >= 0) ? e.DpElapsedOffsetMs.ToString(inv) : "";
-
-            string weight = e.WeightTarget.HasValue ? e.WeightTarget.Value.ToString(inv) : "";
-
             var row = string.Join(CSVSeperator, new[]
             {
                 Escape(e.ParticipantId),
                 Escape(sessionId),
 
                 Escape(e.IslandId),
-                Escape(e.Phase), // should be "DP"
+                Escape(e.Phase),
 
                 trialIndex,
                 phaseTrialIndex,
 
-                Escape(e.DistractorId),   // "D1".."D6"
-                Escape(e.DistractorName), // GameObject.name
+                Escape(e.DistractorId),
+                Escape(e.DistractorName),
 
                 weight,
 
@@ -86,11 +91,14 @@ namespace MoxoCPT
                 dpOff,
 
                 e.ActiveCountAtOnset.ToString(inv),
-                Escape(e.ActiveSetAtOnset) // e.g. "D2|D5" or ""
+                Escape(e.ActiveSetAtOnset)
             });
 
             using (var sw = File.AppendText(path))
                 sw.WriteLine(row);
+#endif
+
+            UploadToFirebase(e, sessionId);
         }
 
         // ---------------- Data container ----------------
@@ -152,37 +160,27 @@ namespace MoxoCPT
             "active_set_at_onset"
         };
 
+#if UNITY_EDITOR
         private static string GetCSVPath()
         {
             var pid = GetCurrentParticipantId();
             var safePid = Sanitize(pid);
 
-            var dir = Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
-            return Path.Combine(dir, $"P_{safePid}_MoxoCPT_Distractors.csv");
+            var dir = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
+            return System.IO.Path.Combine(dir, $"P_{safePid}_MoxoCPT_Distractors.csv");
         }
 
         private static void EnsureDirectory(string filePath)
         {
-            var dir = Path.GetDirectoryName(filePath);
+            var dir = System.IO.Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-        }
-
-        private static string GetCurrentParticipantId()
-        {
-            var gm = GameManager.Instance;
-            var pid = (gm != null ? gm.ParticipantId : null);
-
-            if (string.IsNullOrWhiteSpace(pid))
-                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return pid;
         }
 
         private static string Sanitize(string s)
         {
             if (string.IsNullOrEmpty(s)) return "Unknown";
-            foreach (var c in Path.GetInvalidFileNameChars())
+            foreach (var c in System.IO.Path.GetInvalidFileNameChars())
                 s = s.Replace(c, '_');
             return s.Trim();
         }
@@ -196,6 +194,52 @@ namespace MoxoCPT
                 return $"\"{s}\"";
             }
             return s;
+        }
+#endif
+
+        private static string GetCurrentParticipantId()
+        {
+            var gm = GameManager.Instance;
+            var pid = (gm != null ? gm.ParticipantId : null);
+
+            if (string.IsNullOrWhiteSpace(pid))
+                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            return pid;
+        }
+
+        // ---------------- Firebase upload ----------------
+
+        private static void UploadToFirebase(DistractorEvent e, string sessionId)
+        {
+            var svc = FirebaseService.Instance;
+            if (svc == null) return;
+
+            var pid     = !string.IsNullOrWhiteSpace(e.ParticipantId) ? e.ParticipantId : GetCurrentParticipantId();
+            var safePid = FirebaseService.SanitizeKey(pid);
+            var safeSid = FirebaseService.SanitizeKey(sessionId);
+            var path    = $"umaki/distractor_events/{safePid}/{safeSid}";
+
+            var sb = new StringBuilder(512);
+            sb.Append(FirebaseService.JS("participant_id",         pid));
+            sb.Append(FirebaseService.JS("session_id",             sessionId));
+            sb.Append(FirebaseService.JS("island_id",              e.IslandId));
+            sb.Append(FirebaseService.JS("phase",                  e.Phase));
+            sb.Append(FirebaseService.JN("trial_index",            e.TrialIndex));
+            sb.Append(FirebaseService.JN("phase_trial_index",      e.PhaseTrialIndex));
+            sb.Append(FirebaseService.JS("distractor_id",          e.DistractorId));
+            sb.Append(FirebaseService.JS("distractor_name",        e.DistractorName));
+            sb.Append(FirebaseService.JN("weight_target",          e.WeightTarget));
+            sb.Append(FirebaseService.JN("onset_ms",               e.OnsetMs));
+            sb.Append(FirebaseService.JN("offset_ms",              e.OffsetMs));
+            sb.Append(FirebaseService.JN("planned_duration_ms",    e.PlannedDurationMs));
+            sb.Append(FirebaseService.JN("actual_duration_ms",     e.ActualDurationMs));
+            sb.Append(FirebaseService.JN("dp_elapsed_onset_ms",    e.DpElapsedOnsetMs));
+            sb.Append(FirebaseService.JN("dp_elapsed_offset_ms",   e.DpElapsedOffsetMs));
+            sb.Append(FirebaseService.JN("active_count_at_onset",  e.ActiveCountAtOnset));
+            sb.Append(FirebaseService.JS("active_set_at_onset",    e.ActiveSetAtOnset));
+
+            svc.PostJson(path, FirebaseService.WrapJson(sb.ToString()));
         }
     }
 }

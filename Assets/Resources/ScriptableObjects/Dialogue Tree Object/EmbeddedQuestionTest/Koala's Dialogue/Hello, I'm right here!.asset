@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Hello, I'm right here!
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: fe51ee1077f18d240a2c5385fde1e08e, type: 3}
+  clip: {fileID: 8300000, guid: a56495f5aa01d664a8551a294bfa221c, type: 3}
   subtitle: 'Koala: Hello, I''m right here!'
   character: Koala

@@ -80,8 +80,10 @@ public class MoxoCameraDirector : MonoBehaviour
 
         if (playerController) playerController.enabled = true;
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Release cursor lock so it can be re-acquired by DesktopArrowController's focus handler.
+        // On WebGL this is a no-op if the browser already released lock (user pressed Escape).
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         _inMoxo = false;
 

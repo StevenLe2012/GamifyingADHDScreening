@@ -591,6 +591,11 @@ public class IslandTravelManager : MonoBehaviour
         if (!fader)
             fader = GameObject.FindGameObjectWithTag("Fader")?.GetComponent<FadeScreen>();
 
+        // Auto-wire modeManager so CurrentPlayerRoot is always available,
+        // even if the Inspector reference was not assigned.
+        if (!modeManager)
+            modeManager = FindObjectOfType<PlayerModeManager>();
+
         RebuildAnchorCache();
         StartCoroutine(LateBindPlayerRoot());
     }
@@ -918,34 +923,75 @@ public class IslandTravelManager : MonoBehaviour
 
         GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 
-        // READY intro + countdown
+        // READY intro + countdown (loops if player requests replay training)
         var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
         if (intro)
         {
-            var readyTitle = IntroScreen.Fallback(island.readyIntroTitle, "Ready to start?");
-            var readyBody = IntroScreen.Fallback(island.readyIntroBody, "Press Space to begin the real test.");
-
-            intro.ShowReadyAfterTraining(readyTitle, readyBody, 5f, "Start");
-
-            // Optional per-island voice over for the READY intro
-            if (island.readyIntroVoice)
-                intro.PlayVoice(island.readyIntroVoice);
-
-            // Wait until player dismisses Ready (NO auto-timeout)
-            while (true)
+            bool replayTrainingRequested;
+            do
             {
-                bool hidden =
-                    !intro.isActiveAndEnabled ||
-                    !intro.gameObject.activeInHierarchy ||
-                    (TryGetCanvasGroup(intro.gameObject, out var cg2) && cg2.alpha <= 0.001f);
+                replayTrainingRequested = false;
 
-                if (hidden) break;
-                yield return null;
+                var readyTitle = IntroScreen.Fallback(island.readyIntroTitle, "Ready to start?");
+                var readyBody  = IntroScreen.Fallback(island.readyIntroBody,  "Press Space to begin the real test.");
+
+                intro.ShowReadyAfterTraining(readyTitle, readyBody, 5f, "Start", showReplayTraining: true);
+                // Wire the button click (the flag is set on IntroScreen itself before the fade starts)
+                intro.ArmReplayTraining(null);
+
+                // Optional per-island voice over for the READY intro
+                if (island.readyIntroVoice)
+                    intro.PlayVoice(island.readyIntroVoice);
+
+                // Wait until player dismisses the focus screen (NO auto-timeout)
+                while (true)
+                {
+                    bool hidden =
+                        !intro.isActiveAndEnabled ||
+                        !intro.gameObject.activeInHierarchy ||
+                        (TryGetCanvasGroup(intro.gameObject, out var cg2) && cg2.alpha <= 0.001f);
+
+                    if (hidden) break;
+                    yield return null;
+                }
+
+                // Read the flag NOW: ReplayTrainingPending is set at button-click time (before the
+                // fade), so it is already true even if the loop broke on the alpha threshold.
+                replayTrainingRequested = intro.ReplayTrainingPending;
+
+                if (intro && intro.gameObject.activeInHierarchy)
+                    intro.HideInstant();
+
+                // Player chose to replay training: re-run it before showing the focus screen again
+                if (replayTrainingRequested)
+                {
+                    Debug.Log($"[IslandTravel] Replay Training requested from focus screen for island '{islandId}'.");
+
+                    try { TrainingCPTRunner.ClearCompletedForIsland(islandId); } catch { }
+                    _didTrainingThisTravel = false;
+
+                    GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
+
+                    var replayTrainer = FindTrainerForIsland(islandId);
+                    if (replayTrainer)
+                    {
+                        if (!replayTrainer.gameObject.activeInHierarchy)
+                            replayTrainer.gameObject.SetActive(true);
+
+                        _didTrainingThisTravel = true;
+                        Debug.Log($"[IslandTravel] Replay Training START for island '{islandId}' using '{replayTrainer.name}'.");
+                        yield return StartCoroutine(replayTrainer.RunTrainingForActiveIsland(islandId));
+                        Debug.Log($"[IslandTravel] Replay Training FINISH for island '{islandId}'.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[IslandTravel] Replay Training: No TrainingCPTRunner found for island '{islandId}'. Showing focus screen anyway.");
+                    }
+
+                    GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
+                }
             }
-
-            if (intro && intro.gameObject.activeInHierarchy)
-                intro.HideInstant();
-
+            while (replayTrainingRequested);
         }
 
         TrainingCPTRunner.ForceStopAll();
@@ -1263,6 +1309,15 @@ public class IslandTravelManager : MonoBehaviour
             cg.interactable = true;
         }
 
+        // Pass per-island character and results config (null/empty = fall back to shared defaults).
+        var introAnchor = anchor ? anchor.GetComponent<IntroAnchor>() : null;
+        intro.SetLocalCharacter(introAnchor ? introAnchor.localCharacter : null);
+        intro.SetIslandResultsConfig(
+            introAnchor ? introAnchor.resultsVoice        : null,
+            introAnchor ? introAnchor.resultsTitle        : null,
+            introAnchor ? introAnchor.resultsBodyTemplate : null
+        );
+
         if (logVerbose)
             Debug.Log($"[IslandTravel] Intro placed for '{islandId}'.");
 
@@ -1424,10 +1479,15 @@ public class IslandTravelManager : MonoBehaviour
         var tagged = GameObject.FindGameObjectWithTag("Player");
         if (tagged) return tagged.transform;
 
+        // Desktop_Rig is the moveable root (parent of the Player child).
+        // "Player" intentionally comes AFTER Desktop_Rig: GameObject.Find("Player") would
+        // otherwise return the Player child object, not the rig root, causing teleports to
+        // move the child in local-space instead of the whole rig.
+        // VR_Player / XR names are at the end; they are inactive and skipped by GameObject.Find anyway.
         string[] common =
         {
-            "XR Origin", "XROrigin", "XR Rig", "PlayerRoot", "VR_Player",
-            "Desktop_Rig", "Player"
+            "Desktop_Rig", "PlayerRoot", "Player",
+            "XR Origin", "XROrigin", "XR Rig", "VR_Player"
         };
 
         foreach (var n in common)
@@ -1437,8 +1497,10 @@ public class IslandTravelManager : MonoBehaviour
         }
 
         var scene = SceneManager.GetActiveScene();
+        // Only consider active root objects — disabled XR rigs must not shadow the desktop player.
         foreach (var r in scene.GetRootGameObjects())
         {
+            if (!r.activeInHierarchy) continue;
             if (r.name.Contains("XR") || r.name.Contains("Player"))
                 return r.transform;
         }

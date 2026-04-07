@@ -1,9 +1,11 @@
 using UnityEngine;
-using System.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+#if UNITY_EDITOR
+using System.IO;
+#endif
 
 namespace Biometrics
 {
@@ -35,10 +37,11 @@ namespace Biometrics
         void Start()
         {
             print("creating biometrics");
-            // Creates to the CSV file with only heading
+#if UNITY_EDITOR
+            // CSV biometric logging only works in the Unity Editor (requires filesystem access).
             CreateBiometricCSV();
-            // Updates and Appends the Biometric data to teh CSV
             StartCoroutine(UpdateAndAppendBiometrics());
+#endif
         }
 
         void Update()
@@ -62,61 +65,44 @@ namespace Biometrics
 
         public static void CreateBiometricCSV()
         {
+#if UNITY_EDITOR
             using (StreamWriter sw = File.CreateText(GetCSVPath()))
             {
                 string finalString = "";
                 for (int i = 0; i < CSVHeaders.Length; i++)
                 {
                     if (finalString != "")
-                    {
                         finalString += CSVSeperator;
-                    }
-
                     finalString += CSVHeaders[i];
                 }
-
                 finalString += CSVSeperator + "TimePassed";
                 sw.WriteLine(finalString);
             }
+#endif
         }
 
         public static void AppendToBiometricCSV(BiometricInfo Biometrics)
         {
+#if UNITY_EDITOR
             using (StreamWriter sw = File.AppendText(GetCSVPath()))
             {
-                // Casts all Biometrics to string
-                string playerPos = Biometrics.PlayerPos.ToString();
-                playerPos = playerPos.Replace(",", "");
+                string playerPos     = Biometrics.PlayerPos.ToString().Replace(",", "");
+                string headsetRot    = Biometrics.HeadsetRot.ToString().Replace(",", "");
+                string eyeMov        = Biometrics.EyeMov.ToString().Replace(",", "");
+                string controllerMov = Biometrics.ControllerMov.ToString().Replace(",", "");
+                string controllerRot = Biometrics.ControllerRot.ToString().Replace(",", "");
+                string buttonPress   = Biometrics.ButtonPress.ToString();
 
-                string headsetRot = Biometrics.HeadsetRot.ToString();
-                headsetRot = headsetRot.Replace(",", "");
-
-                string eyeMov = Biometrics.EyeMov.ToString();
-                eyeMov = eyeMov.Replace(",", "");
-
-                string controllerMov = Biometrics.ControllerMov.ToString();
-                controllerMov = controllerMov.Replace(",", "");
-
-                string controllerRot = Biometrics.ControllerRot.ToString();
-                controllerRot = controllerRot.Replace(",", "");
-
-                string buttonPress = Biometrics.ButtonPress.ToString();
-
-                // adds biometric data to the finalString
-                string finalString = "";
-                finalString += playerPos + CSVSeperator;
-                finalString += headsetRot + CSVSeperator;
-                finalString += eyeMov + CSVSeperator;
-                finalString += controllerMov + CSVSeperator;
-                finalString += controllerRot + CSVSeperator;
-                finalString += buttonPress + CSVSeperator;
-
-                var secondsPassed = Time.time - startingTime;
-                finalString += secondsPassed.ToString();
-
-                // appends the biometric to the CSV
+                string finalString = playerPos     + CSVSeperator
+                                   + headsetRot    + CSVSeperator
+                                   + eyeMov        + CSVSeperator
+                                   + controllerMov + CSVSeperator
+                                   + controllerRot + CSVSeperator
+                                   + buttonPress   + CSVSeperator
+                                   + (Time.time - startingTime).ToString();
                 sw.WriteLine(finalString);
             }
+#endif
         }
 
         public BiometricInfo UpdateBiometricData()
@@ -130,21 +116,26 @@ namespace Biometrics
             return biometricData;
         }
 
+#if UNITY_EDITOR
         private static string GetCSVPath()
         {
-            return Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "BiometricData",
-                $"P__Biometrics.csv");
-            //return Path.Combine(Environment.CurrentDirectory, "Assets", "ParticipantData", "BiometricData", $"Biometrics-{DateTime.Now.ToFileTime()}.csv");
+            return System.IO.Path.Combine(Environment.CurrentDirectory, "Assets", "Resources",
+                "ParticipantData", "BiometricData", "P__Biometrics.csv");
         }
+#endif
 
         IEnumerator UpdateAndAppendBiometrics()
         {
-            while (true) //TODO: TURN OFF WHEN GAME IS FINISHED
+#if UNITY_EDITOR
+            while (true)
             {
                 UpdateBiometricData();
                 AppendToBiometricCSV(biometricData);
                 yield return new WaitForSeconds(0.04f);
             }
+#else
+            yield break;
+#endif
         }
     }
 }

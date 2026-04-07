@@ -2017,6 +2017,7 @@ namespace MoxoCPT
         // =====================================================================
         private static class LoggingDistractors
         {
+#if UNITY_EDITOR
             private const string CSVSeperator = ",";
             private static readonly string[] Headers = new[]
             {
@@ -2039,14 +2040,17 @@ namespace MoxoCPT
                 "active_count_at_onset",
                 "active_set_at_onset"
             };
+#endif
 
             public static void CreateDistractorCSV()
             {
+#if UNITY_EDITOR
                 var path = GetCSVPath();
                 EnsureDirectory(path);
                 if (File.Exists(path)) return;
                 using (var sw = File.CreateText(path))
                     sw.WriteLine(string.Join(CSVSeperator, Headers));
+#endif
             }
 
             public static void AppendDistractorEvent(
@@ -2057,28 +2061,26 @@ namespace MoxoCPT
                 string actualDurationMs
             )
             {
+                var inv = CultureInfo.InvariantCulture;
+
+                string pid       = (GameManager.Instance != null) ? (GameManager.Instance.ParticipantId ?? "") : "";
+                string sessionId = LoggingReport.CurrentSessionId ?? "";
+                string islandId  = _cachedIslandId;
+                const string phase = "DP";
+
+#if UNITY_EDITOR
                 var path = GetCSVPath();
                 EnsureDirectory(path);
 
                 if (!File.Exists(path))
                     CreateDistractorCSV();
 
-                var inv = CultureInfo.InvariantCulture;
-
-                string pid = (GameManager.Instance != null) ? (GameManager.Instance.ParticipantId ?? "") : "";
-                string sessionId = LoggingReport.CurrentSessionId ?? "";
-
                 string trialIndex = (p.trialIndexAtOn >= 0) ? p.trialIndexAtOn.ToString(inv) : "";
                 string phaseTrial = (p.phaseTrialIndexAtOn >= 0) ? p.phaseTrialIndexAtOn.ToString(inv) : "";
-
-                string onset = (p.onsetMs > 0) ? p.onsetMs.ToString(inv) : "";
-                string dpOn = (p.dpElapsedOnsetMs >= 0) ? p.dpElapsedOnsetMs.ToString(inv) : "";
-
-                string planned = (p.plannedDurationMs >= 0) ? p.plannedDurationMs.ToString(inv) : "";
-                string w = p.weightTarget.ToString(inv);
-
-                string islandId = _cachedIslandId;
-                string phase = "DP";
+                string onset      = (p.onsetMs > 0) ? p.onsetMs.ToString(inv) : "";
+                string dpOn       = (p.dpElapsedOnsetMs >= 0) ? p.dpElapsedOnsetMs.ToString(inv) : "";
+                string planned    = (p.plannedDurationMs >= 0) ? p.plannedDurationMs.ToString(inv) : "";
+                string w          = p.weightTarget.ToString(inv);
 
                 var row = string.Join(CSVSeperator, new[]
                 {
@@ -2104,11 +2106,16 @@ namespace MoxoCPT
 
                 using (var sw = File.AppendText(path))
                     sw.WriteLine(row);
+#endif
+
+                UploadToFirebase(p, eventType, offsetMs, dpElapsedOffsetMs,
+                                 actualDurationMs, pid, sessionId, islandId, phase, inv);
             }
 
             private static string _cachedIslandId = "";
             public static void SetCachedIslandId(string islandId) => _cachedIslandId = islandId ?? "";
 
+#if UNITY_EDITOR
             private static string GetCSVPath()
             {
                 string pid = (GameManager.Instance != null) ? (GameManager.Instance.ParticipantId ?? "") : "";
@@ -2144,6 +2151,54 @@ namespace MoxoCPT
                     return $"\"{s}\"";
                 }
                 return s;
+            }
+#endif
+
+            private static void UploadToFirebase(
+                PendingEvent p,
+                string eventType,
+                string offsetMs,
+                string dpElapsedOffsetMs,
+                string actualDurationMs,
+                string pid,
+                string sessionId,
+                string islandId,
+                string phase,
+                CultureInfo inv)
+            {
+                var svc = FirebaseService.Instance;
+                if (svc == null) return;
+
+                var safePid = FirebaseService.SanitizeKey(
+                    string.IsNullOrWhiteSpace(pid) ? "unknown" : pid);
+                var safeSid = FirebaseService.SanitizeKey(sessionId);
+                var path    = $"umaki/distractor_events/{safePid}/{safeSid}";
+
+                long.TryParse(offsetMs,          out long offsetMsL);
+                long.TryParse(dpElapsedOffsetMs, out long dpOffL);
+                int.TryParse(actualDurationMs,   out int  actualMs);
+
+                var sb = new System.Text.StringBuilder(512);
+                sb.Append(FirebaseService.JS("participant_id",         pid));
+                sb.Append(FirebaseService.JS("session_id",             sessionId));
+                sb.Append(FirebaseService.JS("island_id",              islandId));
+                sb.Append(FirebaseService.JS("phase",                  phase));
+                sb.Append(FirebaseService.JS("event_type",             eventType));
+                sb.Append(FirebaseService.JN("trial_index",            p.trialIndexAtOn));
+                sb.Append(FirebaseService.JN("phase_trial_index",      p.phaseTrialIndexAtOn));
+                sb.Append(FirebaseService.JS("distractor_id",          p.distractorId));
+                sb.Append(FirebaseService.JS("distractor_name",        p.distractorName));
+                sb.Append(FirebaseService.JN("weight_target",          p.weightTarget));
+                sb.Append(FirebaseService.JN("onset_ms",               p.onsetMs));
+                sb.Append(FirebaseService.JN("offset_ms",              offsetMsL));
+                sb.Append(FirebaseService.JN("planned_duration_ms",    p.plannedDurationMs));
+                sb.Append(FirebaseService.JN("actual_duration_ms",     actualMs));
+                sb.Append(FirebaseService.JN("dp_elapsed_onset_ms",    p.dpElapsedOnsetMs));
+                sb.Append(FirebaseService.JN("dp_elapsed_offset_ms",   dpOffL));
+                sb.Append(FirebaseService.JN("active_count_at_onset",  p.activeCountAtOnset));
+                sb.Append(FirebaseService.JS("active_set_at_onset",    p.activeSetAtOnset));
+
+                svc.PostJson(path, FirebaseService.WrapJson(sb.ToString()));
             }
         }
     }

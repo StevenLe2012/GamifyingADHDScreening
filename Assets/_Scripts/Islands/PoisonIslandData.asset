@@ -23,18 +23,31 @@ MonoBehaviour:
   startsDialogueOnArrival: 1
   dialogueHandlerType: DragonHandler
   trainingIntroTitle: Welcome to Poison Garden!
-  trainingIntroBody: "Your mission is to press SPACE as quickly as possible to collect
-    only the card with THREE MUSHROOMS. \r\n\r\nAll other cards are traps - leave
-    them alone and keep your focus on the red plus sign.\r\n\r\nWhen you\u2019re
-    ready, press SPACE to begin a training round."
+  trainingIntroBody: "I\u2019m Velmora, the shaman who seeks rare mushrooms to heal
+    these dying lands. I will grant you the gem - but only if you aid me in crafting
+    the right cure.\r\n\r\nPress SPACE as quickly as possible to collect only the
+    correct potion labeled with THREE MUSHROOMS and stop the spreading disease.\r\n\r\nBe
+    careful - every other option is poisonous. Leave them alone and keep your focus
+    on the red plus sign.\n\nWhen you\u2019re ready, press SPACE to begin a training
+    round.\r"
   readyIntroTitle: Focus
-  readyIntroBody: "Random visual and audio distractions will appear -  ignore them
-    and keep your focus on the red plus sign.\r\n\r\nAt the end of the round, you\u2019ll
-    collect a gem. More correct cards mean a stronger gem and a faster way home.\r\n\r\nPress
-    SPACE to begin the real mission. Good luck!"
+  readyIntroBody: 'Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.
+
+
+    Are you ready? Use the arrow
+    keys to choose:
+
+    * Start - Begin the mission
+
+    * Training - Practice again
+
+
+    Press
+    SPACE to confirm. Good luck!'
   nonMoxoIntroVoice: {fileID: 0}
-  trainingIntroVoice: {fileID: 8300000, guid: 1cef4156d82caff4c940f9c053295813, type: 3}
-  readyIntroVoice: {fileID: 8300000, guid: a91e9df0066a31b4b8aefd4bcc05c743, type: 3}
+  trainingIntroVoice: {fileID: 8300000, guid: a6e16f8bca09ef24c8c208fb54901e7e, type: 3}
+  readyIntroVoice: {fileID: 8300000, guid: 02a8917f370813d478aff802a72acedc, type: 3}
   lockCptToGlobalDefaults: 1
   totalTrialsOverride: 53
   totalTargetsOverride: 33

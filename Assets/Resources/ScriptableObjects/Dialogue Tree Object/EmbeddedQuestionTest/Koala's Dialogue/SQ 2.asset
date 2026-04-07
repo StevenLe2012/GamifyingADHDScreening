@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: SQ 2
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: eb2afc0e238db6341a1680d051a3e17d, type: 3}
+  clip: {fileID: 8300000, guid: 3451e9a3f63427d45ae512a2fa6d49e8, type: 3}
   subtitle: "Koala: When you have a task that needs organizing - like sorting stuff,
-    planning steps\u2026\r\n"
+    planning steps\u2026how often does it feel hard to get everything in the right
+    order?\r\n"
   character: Koala

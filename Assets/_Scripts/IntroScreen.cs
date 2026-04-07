@@ -629,8 +629,25 @@ public class IntroScreen : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private Button startButton;
 
+    [Tooltip("Optional island character shown while this intro screen is visible, hidden when it closes. Set at runtime via SetLocalCharacter() from the IntroAnchor.")]
+    [SerializeField] private GameObject localCharacter;
+
+    /// <summary>
+    /// Called by IslandTravelManager after placing the intro screen at an island anchor.
+    /// Pass null to clear the previous island's character.
+    /// </summary>
+    public void SetLocalCharacter(GameObject character)
+    {
+        // Hide the outgoing character before switching
+        if (localCharacter && localCharacter != character)
+            localCharacter.SetActive(false);
+
+        localCharacter = character;
+    }
+
     // NEW: Replay Training button (keep assigned but default hidden)
     [SerializeField] private Button replayTrainingButton;
+    [SerializeField] private TextMeshProUGUI replayTrainingButtonLabel;
 
     [SerializeField] private Dialogue.DialogueHandler dialogueHandler; // (only for Welcome)
 
@@ -682,8 +699,116 @@ public class IntroScreen : MonoBehaviour
     [SerializeField] private AudioClip welcomeVoice;
     [Tooltip("Voice over clip for the generic MOXO intro (ready/start panels).")]
     [SerializeField] private AudioClip moxoVoice;
-    [Tooltip("Voice over clip for the results screen (targets hit, etc.).")]
+    [Tooltip("Voice over clip for the results screen (targets hit, etc.). Can be overridden per island via IntroAnchor.")]
     [SerializeField] private AudioClip resultsVoice;
+
+    // Per-island results overrides — set at travel time by IslandTravelManager via SetIslandResultsConfig().
+    // All fall back to the shared inspector fields when null/empty.
+    private AudioClip _islandResultsVoice;
+    private string    _islandResultsTitle;
+    private string    _islandResultsBodyTemplate;
+
+    /// <summary>
+    /// Called by IslandTravelManager after placing the intro screen at an island anchor.
+    /// Pass nulls/empty strings to clear overrides and fall back to the shared defaults.
+    /// </summary>
+    public void SetIslandResultsConfig(AudioClip voice, string title, string bodyTemplate)
+    {
+        _islandResultsVoice        = voice;
+        _islandResultsTitle        = title;
+        _islandResultsBodyTemplate = bodyTemplate;
+    }
+
+    [Header("Typing Effect")]
+    [Tooltip("Reveal body text word by word when the panel opens.")]
+    [SerializeField] private bool enableTypingEffect = true;
+    [Tooltip("Words revealed per second in the body text.")]
+    [SerializeField] private float wordsPerSecond = 6f;
+    [Tooltip("If true, the header appears instantly; only the body uses the typing effect.")]
+    [SerializeField] private bool headerInstant = true;
+    [Tooltip("Pause between the last header word and the first body word (seconds).")]
+    [SerializeField] private float pauseAfterHeader = 0.15f;
+
+    private Coroutine _typingCoroutine;
+
+    private void StartTypingEffect()
+    {
+        StopTyping();
+        if (!enableTypingEffect) return;
+
+        // Pre-hide text NOW (same frame, before any yield) so there is no
+        // one-frame flash of the full text while the coroutine hasn't run yet.
+        if (headerText && !headerInstant) headerText.maxVisibleWords = 0;
+        if (bodyText)                     bodyText.maxVisibleWords   = 0;
+
+        _typingCoroutine = StartCoroutine(CoTypeTexts());
+    }
+
+    private void StopTyping()
+    {
+        if (_typingCoroutine != null)
+        {
+            StopCoroutine(_typingCoroutine);
+            _typingCoroutine = null;
+        }
+        // Always reveal full text so the panel is never left in a half-typed state
+        if (headerText) headerText.maxVisibleWords = int.MaxValue;
+        if (bodyText)   bodyText.maxVisibleWords   = int.MaxValue;
+    }
+
+    private System.Collections.IEnumerator CoTypeTexts()
+    {
+        float interval = wordsPerSecond > 0f ? 1f / wordsPerSecond : 0f;
+
+        // ── Header ──────────────────────────────────────────────────
+        if (headerText)
+        {
+            headerText.ForceMeshUpdate();
+            int totalWords = headerText.textInfo.wordCount;
+
+            if (headerInstant || totalWords <= 0)
+            {
+                headerText.maxVisibleWords = int.MaxValue;
+            }
+            else
+            {
+                // maxVisibleWords = 0 already set in StartTypingEffect before any yield
+                for (int w = 1; w <= totalWords; w++)
+                {
+                    headerText.maxVisibleWords = w;
+                    yield return new WaitForSecondsRealtime(interval);
+                }
+                headerText.maxVisibleWords = int.MaxValue;
+            }
+
+            if (pauseAfterHeader > 0f)
+                yield return new WaitForSecondsRealtime(pauseAfterHeader);
+        }
+
+        // ── Body ─────────────────────────────────────────────────────
+        if (bodyText)
+        {
+            bodyText.ForceMeshUpdate();
+            int totalWords = bodyText.textInfo.wordCount;
+
+            if (totalWords <= 0)
+            {
+                bodyText.maxVisibleWords = int.MaxValue;
+            }
+        else
+        {
+            // maxVisibleWords = 0 already set in StartTypingEffect before any yield
+            for (int w = 1; w <= totalWords; w++)
+            {
+                bodyText.maxVisibleWords = w;
+                yield return new WaitForSecondsRealtime(interval);
+            }
+            bodyText.maxVisibleWords = int.MaxValue;
+        }
+        }
+
+        _typingCoroutine = null;
+    }
 
     private bool _isVisible;
     private bool _starting;
@@ -691,6 +816,10 @@ public class IntroScreen : MonoBehaviour
 
     // NEW: replay training action
     private UnityEvent _currentReplayTraining;
+
+    // Set at the moment the replay training button is clicked (before the fade coroutine runs),
+    // so callers can read it as soon as the panel's alpha crosses the hidden threshold.
+    public bool ReplayTrainingPending { get; private set; }
 
     private Coroutine delayCo;
     private bool _delaying;
@@ -751,6 +880,9 @@ public class IntroScreen : MonoBehaviour
 
         if (!startButtonLabel && startButton)
             startButtonLabel = startButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        if (!replayTrainingButtonLabel && replayTrainingButton)
+            replayTrainingButtonLabel = replayTrainingButton.GetComponentInChildren<TextMeshProUGUI>();
 
         if (startButton) startButton.onClick.AddListener(OnStartClicked);
 
@@ -880,14 +1012,19 @@ public class IntroScreen : MonoBehaviour
             PlayVoiceInternal(moxoVoice);
     }
 
-    public void ShowReadyAfterTraining(string title = "Ready to start?", string body = "Press Space to begin the real test.", float? delayOverride = null, string buttonLabel = "Start")
+    public void ShowReadyAfterTraining(string title = "Ready to start?", string body = "Press Space to begin the real test.", float? delayOverride = null, string buttonLabel = "Start", bool showReplayTraining = false)
     {
-        // NEVER show training button here
-        SetReplayTrainingVisible(false);
-
+        ReplayTrainingPending = false; // reset each time the focus screen is freshly shown
         MoxoStartGate.Arm();
 
-        ShowMoxo(title, body);
+        ShowMoxo(title, body); // ShowMoxo already calls SetReplayTrainingVisible(false)
+
+        // Show replay training button BEFORE starting the delay so that
+        // SetStartButtonsInteractable(false) inside CoDelayStart catches it while active,
+        // keeping it greyed out for the full countdown duration.
+        if (showReplayTraining)
+            SetReplayTrainingVisible(true);
+
         DelayStartButton(delayOverride.HasValue ? delayOverride.Value : defaultReadyDelaySeconds, buttonLabel);
     }
 
@@ -940,6 +1077,9 @@ public class IntroScreen : MonoBehaviour
         if (_starting || _delaying || (replayTrainingButton && !replayTrainingButton.interactable)) return;
         _starting = true;
 
+        // Mark BEFORE the fade coroutine runs so callers polling alpha can read it immediately.
+        ReplayTrainingPending = true;
+
         Debug.Log("[IntroScreen] Replay Training clicked → fading out then starting replay training.");
 
         if (canvasGroup) { canvasGroup.blocksRaycasts = false; canvasGroup.interactable = false; }
@@ -948,6 +1088,7 @@ public class IntroScreen : MonoBehaviour
 
     private System.Collections.IEnumerator CoFadeOutAndReplayTraining()
     {
+        StopTyping();
         if (canvasGroup) { canvasGroup.blocksRaycasts = false; canvasGroup.interactable = false; }
 
         while (canvasGroup && canvasGroup.alpha > 0f)
@@ -958,6 +1099,7 @@ public class IntroScreen : MonoBehaviour
 
         if (canvasGroup) canvasGroup.alpha = 0f;
         _isVisible = false;
+        if (localCharacter) localCharacter.SetActive(false);
         gameObject.SetActive(false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
@@ -1040,6 +1182,7 @@ public class IntroScreen : MonoBehaviour
     public void HideInstant()
     {
         StopAllCoroutines();
+        StopTyping(); // reset maxVisibleWords after StopAllCoroutines nullifies the typing coroutine
         if (canvasGroup)
         {
             canvasGroup.alpha = 0f;
@@ -1048,6 +1191,7 @@ public class IntroScreen : MonoBehaviour
         }
         _isVisible = false;
         _starting = false;
+        if (localCharacter) localCharacter.SetActive(false);
         gameObject.SetActive(false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
@@ -1055,10 +1199,15 @@ public class IntroScreen : MonoBehaviour
 
         // ALWAYS hide training button when hidden
         SetReplayTrainingVisible(false);
+
+        // Safety: if HideInstant is called externally (e.g. a timeout), clear the pending flag
+        // so we don't accidentally re-run training when neither button was pressed.
+        ReplayTrainingPending = false;
     }
 
     private System.Collections.IEnumerator CoFadeOutAndBegin()
     {
+        StopTyping();
         if (canvasGroup) { canvasGroup.blocksRaycasts = false; canvasGroup.interactable = false; }
 
         while (canvasGroup && canvasGroup.alpha > 0f)
@@ -1069,6 +1218,7 @@ public class IntroScreen : MonoBehaviour
 
         if (canvasGroup) canvasGroup.alpha = 0f;
         _isVisible = false;
+        if (localCharacter) localCharacter.SetActive(false);
         gameObject.SetActive(false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
@@ -1107,6 +1257,11 @@ public class IntroScreen : MonoBehaviour
 
         if (!visible && EventSystem.current)
             EventSystem.current.SetSelectedGameObject(null);
+
+        if (localCharacter) localCharacter.SetActive(visible);
+
+        if (visible) StartTypingEffect();
+        else         StopTyping();
     }
 
     public void ShowResults(int hit, int total, int falseAlarms, int totalDistractors, System.Action onContinue = null)
@@ -1114,24 +1269,31 @@ public class IntroScreen : MonoBehaviour
         // NEVER show training button on normal results
         SetReplayTrainingVisible(false);
 
-        string body = resultsBodyTemplate
-            .Replace("{HIT}", hit.ToString())
-            .Replace("{TOTAL}", total.ToString())
-            .Replace("{FA}", falseAlarms.ToString())
+        // Resolve per-island overrides, falling back to shared inspector defaults
+        string activeTitle        = !string.IsNullOrWhiteSpace(_islandResultsTitle)        ? _islandResultsTitle        : resultsTitle;
+        string activeBodyTemplate = !string.IsNullOrWhiteSpace(_islandResultsBodyTemplate) ? _islandResultsBodyTemplate : resultsBodyTemplate;
+        AudioClip activeVoice     = _islandResultsVoice ? _islandResultsVoice : resultsVoice;
+
+        string body = activeBodyTemplate
+            .Replace("{HIT}",     hit.ToString())
+            .Replace("{TOTAL}",   total.ToString())
+            .Replace("{FA}",      falseAlarms.ToString())
             .Replace("{D_TOTAL}", totalDistractors.ToString());
 
-        ApplyPreset(moxoPreset, resultsTitle, body);
+        ApplyPreset(moxoPreset, activeTitle, body);
 
         if (startButtonLabel) startButtonLabel.text = resultsButtonLabel = StripCountdownSuffix(resultsButtonLabel);
 
         _currentStart = new UnityEvent();
         if (onContinue != null) _currentStart.AddListener(() => onContinue());
 
+        // ShowInstant(true) already enables localCharacter, so the island character
+        // will appear alongside the results panel automatically.
         ShowInstant(true);
         DelayStartButton(continueDelaySeconds, resultsButtonLabel);
 
-        if (resultsVoice)
-            PlayVoiceInternal(resultsVoice);
+        if (activeVoice)
+            PlayVoiceInternal(activeVoice);
 
         MoxoStartGate.Disarm();
     }
@@ -1159,6 +1321,7 @@ public class IntroScreen : MonoBehaviour
         if (delayCo != null) StopCoroutine(delayCo);
         finalLabel = StripCountdownSuffix(finalLabel);
         if (startButtonLabel) startButtonLabel.text = StripCountdownSuffix(startButtonLabel.text);
+        if (replayTrainingButtonLabel) replayTrainingButtonLabel.text = StripCountdownSuffix(replayTrainingButtonLabel.text);
         delayCo = StartCoroutine(CoDelayStart(seconds, finalLabel));
     }
 
@@ -1167,16 +1330,28 @@ public class IntroScreen : MonoBehaviour
         _delaying = true;
         SetStartButtonsInteractable(false);
 
+        // Capture the replay training button's base label once at the start of the countdown
+        string replayFinalLabel = replayTrainingButtonLabel
+            ? StripCountdownSuffix(replayTrainingButtonLabel.text)
+            : "Replay Training";
+
         float t = Mathf.Max(0f, seconds);
         while (t > 0.01f)
         {
-            if (startButtonLabel && showCountdownOnButton)
-                startButtonLabel.text = $"{finalLabel} ({Mathf.CeilToInt(t)})";
+            if (showCountdownOnButton)
+            {
+                if (startButtonLabel)
+                    startButtonLabel.text = $"{finalLabel} ({Mathf.CeilToInt(t)})";
+
+                if (replayTrainingButtonLabel && replayTrainingButton && replayTrainingButton.gameObject.activeInHierarchy)
+                    replayTrainingButtonLabel.text = $"{replayFinalLabel} ({Mathf.CeilToInt(t)})";
+            }
             yield return new WaitForSecondsRealtime(1f);
             t -= 1f;
         }
 
         if (startButtonLabel) startButtonLabel.text = finalLabel;
+        if (replayTrainingButtonLabel) replayTrainingButtonLabel.text = replayFinalLabel;
         SetStartButtonsInteractable(true);
         _delaying = false;
 

@@ -34,9 +34,25 @@ public class DesktopArrowController : MonoBehaviour
         _cc.radius = 0.25f;
         _cc.skinWidth = 0.02f;
 
+#if !UNITY_WEBGL
+        // On desktop/standalone we can lock the cursor immediately.
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+#endif
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // WebGL browsers only allow pointer-lock in response to a direct user click.
+    // Re-acquire lock whenever the game canvas is focused (user clicked the page).
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus && enabled)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+#endif
 
     void Update()
     {

@@ -1,7 +1,10 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using System.IO;
+#endif
 
 namespace MoxoCPT
 {
@@ -18,6 +21,7 @@ namespace MoxoCPT
             // Always start a NEW session id per run
             CurrentSessionId = "S_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
+#if UNITY_EDITOR
             var path = GetCSVPath();
             EnsureDirectory(path);
 
@@ -26,19 +30,11 @@ namespace MoxoCPT
 
             using (var sw = File.CreateText(path))
                 sw.WriteLine(string.Join(CSVSeperator, CSVHeaders));
+#endif
         }
 
         public static void AppendToReportCSV(Report report)
         {
-            var path = GetCSVPath();
-            EnsureDirectory(path);
-
-            if (!File.Exists(path))
-            {
-                using (var swHead = File.CreateText(path))
-                    swHead.WriteLine(string.Join(CSVSeperator, CSVHeaders));
-            }
-
             var inv = CultureInfo.InvariantCulture;
 
             string sessionId = !string.IsNullOrWhiteSpace(report.SessionId)
@@ -85,6 +81,16 @@ namespace MoxoCPT
                 ? report.TrialIndex.ToString(inv)
                 : "";
 
+#if UNITY_EDITOR
+            var path = GetCSVPath();
+            EnsureDirectory(path);
+
+            if (!File.Exists(path))
+            {
+                using (var swHead = File.CreateText(path))
+                    swHead.WriteLine(string.Join(CSVSeperator, CSVHeaders));
+            }
+
             var row = string.Join(CSVSeperator, new[]
             {
                 Escape(report.ParticipantId),
@@ -92,7 +98,6 @@ namespace MoxoCPT
 
                 trialIndex,
 
-                // ---- new ----
                 Escape(report.Phase),
                 phaseTrial,
 
@@ -106,17 +111,14 @@ namespace MoxoCPT
                 offset,
                 stimActual,
 
-
                 report.ResponseMade.ToString(),
 
-                // ✅ split RT columns (target vs non-target)
                 rt,
                 rtNonTarget,
 
                 report.Correct.ToString(),
                 Escape(report.Outcome),
 
-                // ---- keep originals ----
                 report.Attentiveness.ToString(),
                 report.Timeliness.ToString(),
                 report.HyperReactiveness.ToString(),
@@ -126,6 +128,9 @@ namespace MoxoCPT
 
             using (var sw = File.AppendText(path))
                 sw.WriteLine(row);
+#endif
+
+            UploadToFirebase(report, sessionId);
         }
 
         // ---------- INTERNALS ----------
@@ -136,31 +141,27 @@ namespace MoxoCPT
 
             "trial_index",
 
-            // ---- new ----
             "phase",
             "phase_trial_index",
 
             "island_id",
             "island_name",
 
-
             "stimulus_type",
             "stimulus_name",
-            "stimulus_duration_ms",        // planned
+            "stimulus_duration_ms",
             "stimulus_onset_ms",
             "stimulus_offset_ms",
-            "stimulus_actual_duration_ms", // measured
+            "stimulus_actual_duration_ms",
 
             "response_made",
 
-            // ✅ split RT columns (target vs non-target)
             "reaction_time_ms",
             "reaction_time_ms_non_target",
 
             "correct",
             "outcome",
 
-            // keep originals
             "attentiveness",
             "timeliness",
             "hyperreactiveness",
@@ -168,21 +169,42 @@ namespace MoxoCPT
             "hyperreactive_count"
         };
 
+#if UNITY_EDITOR
         private static string GetCSVPath()
         {
             var pid = GetCurrentParticipantId();
             var safePid = Sanitize(pid);
 
-            var dir = Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
-            return Path.Combine(dir, $"P_{safePid}_MoxoCPT.csv");
+            var dir = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets", "Resources", "ParticipantData", "ReportData");
+            return System.IO.Path.Combine(dir, $"P_{safePid}_MoxoCPT.csv");
         }
 
         private static void EnsureDirectory(string filePath)
         {
-            var dir = Path.GetDirectoryName(filePath);
+            var dir = System.IO.Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
         }
+
+        private static string Sanitize(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "Unknown";
+            foreach (var c in System.IO.Path.GetInvalidFileNameChars())
+                s = s.Replace(c, '_');
+            return s.Trim();
+        }
+
+        private static string Escape(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            if (s.Contains(",") || s.Contains("\"") || s.Contains("\n") || s.Contains("\r"))
+            {
+                s = s.Replace("\"", "\"\"");
+                return $"\"{s}\"";
+            }
+            return s;
+        }
+#endif
 
         private static string GetCurrentParticipantId()
         {
@@ -195,24 +217,51 @@ namespace MoxoCPT
             return pid;
         }
 
-        private static string Sanitize(string s)
+        // ---------- Firebase upload ----------
+
+        private static void UploadToFirebase(Report r, string sessionId)
         {
-            if (string.IsNullOrEmpty(s)) return "Unknown";
-            foreach (var c in Path.GetInvalidFileNameChars())
-                s = s.Replace(c, '_');
-            return s.Trim();
+            var svc = FirebaseService.Instance;
+            if (svc == null) return;
+
+            var pid    = !string.IsNullOrWhiteSpace(r.ParticipantId) ? r.ParticipantId : GetCurrentParticipantId();
+            var safePid = FirebaseService.SanitizeKey(pid);
+            var safeSid = FirebaseService.SanitizeKey(sessionId);
+            var key     = $"t{(r.TrialIndex >= 0 ? r.TrialIndex.ToString() : "x")}";
+
+            var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{key}";
+            var json = BuildCPTTrialJson(r, sessionId);
+
+            svc.PutJson(path, json);
         }
 
-        // If you ever have commas in island names etc, quote them for CSV safety
-        private static string Escape(string s)
+        private static string BuildCPTTrialJson(Report r, string sessionId)
         {
-            if (string.IsNullOrEmpty(s)) return "";
-            if (s.Contains(",") || s.Contains("\"") || s.Contains("\n") || s.Contains("\r"))
-            {
-                s = s.Replace("\"", "\"\"");
-                return $"\"{s}\"";
-            }
-            return s;
+            var sb = new StringBuilder(512);
+            sb.Append(FirebaseService.JS("participant_id",              r.ParticipantId));
+            sb.Append(FirebaseService.JS("session_id",                  sessionId));
+            sb.Append(FirebaseService.JN("trial_index",                 r.TrialIndex));
+            sb.Append(FirebaseService.JS("phase",                       r.Phase));
+            sb.Append(FirebaseService.JN("phase_trial_index",           r.PhaseTrialIndex));
+            sb.Append(FirebaseService.JS("island_id",                   r.IslandId));
+            sb.Append(FirebaseService.JS("island_name",                 r.IslandName));
+            sb.Append(FirebaseService.JS("stimulus_type",               r.StimulusType));
+            sb.Append(FirebaseService.JS("stimulus_name",               r.StimulusName));
+            sb.Append(FirebaseService.JN("stimulus_duration_ms",        r.StimulusDurationMs));
+            sb.Append(FirebaseService.JN("stimulus_onset_ms",           r.StimulusOnsetMs));
+            sb.Append(FirebaseService.JN("stimulus_offset_ms",          r.StimulusOffsetMs));
+            sb.Append(FirebaseService.JN("stimulus_actual_duration_ms", r.StimulusActualDurationMs));
+            sb.Append(FirebaseService.JB("response_made",               r.ResponseMade));
+            sb.Append(FirebaseService.JN("reaction_time_ms",            r.ReactionTimeMs));
+            sb.Append(FirebaseService.JN("reaction_time_ms_non_target", r.ReactionTimeNonTargetMs));
+            sb.Append(FirebaseService.JB("correct",                     r.Correct));
+            sb.Append(FirebaseService.JS("outcome",                     r.Outcome));
+            sb.Append(FirebaseService.JB("attentiveness",               r.Attentiveness));
+            sb.Append(FirebaseService.JB("timeliness",                  r.Timeliness));
+            sb.Append(FirebaseService.JB("hyperreactiveness",           r.HyperReactiveness));
+            sb.Append(FirebaseService.JB("impulsiveness",               r.Impulsiveness));
+            sb.Append(FirebaseService.JN("hyperreactive_count",         r.HyperReactiveCount));
+            return FirebaseService.WrapJson(sb.ToString());
         }
     }
 }

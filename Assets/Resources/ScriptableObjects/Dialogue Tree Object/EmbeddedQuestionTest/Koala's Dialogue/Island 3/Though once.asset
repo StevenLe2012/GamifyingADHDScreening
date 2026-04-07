@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
+  m_Name: Though once
+  m_EditorClassIdentifier: 
+  clip: {fileID: 8300000, guid: 5d053482e97039a4f88f59e4933f85ab, type: 3}
+  subtitle: "Koala: Though once we found the right potion \n- finishing those last
+    few still felt weirdly hard to push through."
+  character: Koala

@@ -105,17 +105,39 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Read participant metadata from URL query parameters so the researcher
+        // can open a unique link per session without any in-game input screen.
+        //
+        // Supported parameters:
+        //   ?num=001            → participantNumber  (padded to 3 digits)
+        //   ?last=SMITH         → participantLastName
+        //   ?date=2026-03-17    → sessionDate (ISO yyyy-MM-dd)
+        //   ?pid=MY_ID          → participantId (legacy free-form, used if num/last absent)
+        //
+        // Example URL:
+        //   https://your-game.web.app/?num=001&last=SMITH&date=2026-03-17
+        ReadParticipantIdFromUrl();
+#endif
     }
 
     private void Start()
     {
-        if (string.IsNullOrWhiteSpace(participantId))
-            Debug.LogWarning("[GameManager] ParticipantId is empty. Set it in the Inspector before starting recordings.");
+        if (string.IsNullOrWhiteSpace(participantId) && string.IsNullOrWhiteSpace(participantNumber))
+            Debug.LogWarning("[GameManager] ParticipantId is empty. Pass ?num=001&last=NAME in the URL or set it in the Inspector.");
 
+        // IntroScreen.IsVisible requires canvasGroup to be non-null; if it isn't assigned in
+        // the Inspector it returns false even though the screen is showing.  On WebGL we always
+        // start in Narrative (the welcome screen is always the first thing the player sees).
+#if UNITY_WEBGL && !UNITY_EDITOR
+        UpdateGameState(GameState.Narrative);
+#else
         if (IntroScreen.Instance != null && IntroScreen.Instance.IsVisible)
             UpdateGameState(GameState.Narrative);
         else
             UpdateGameState(GameState.Explore);
+#endif
     }
 
     /// <summary>
@@ -260,4 +282,51 @@ public class GameManager : MonoBehaviour
         }
         return null;
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // ── URL parameter helpers ─────────────────────────────────────────────────
+
+    private void ReadParticipantIdFromUrl()
+    {
+        try
+        {
+            string url = Application.absoluteURL;
+
+            string num  = GetQueryParam(url, "num");
+            string last = GetQueryParam(url, "last");
+            string date = GetQueryParam(url, "date");
+            string pid  = GetQueryParam(url, "pid");
+
+            if (!string.IsNullOrEmpty(num))  participantNumber   = num;
+            if (!string.IsNullOrEmpty(last)) participantLastName = last;
+            if (!string.IsNullOrEmpty(date)) sessionDate         = date;
+            if (!string.IsNullOrEmpty(pid))  participantId       = pid;
+
+            Debug.Log($"[GameManager] URL → ParticipantId = '{ParticipantId}'");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[GameManager] URL param parse failed: {e.Message}");
+        }
+    }
+
+    /// <summary>Returns the decoded value of a query parameter, or null if absent.</summary>
+    private static string GetQueryParam(string url, string key)
+    {
+        if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(key)) return null;
+
+        // Match ?key= or &key=
+        int idx = url.IndexOf("?" + key + "=", StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) idx = url.IndexOf("&" + key + "=", StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return null;
+
+        int start = idx + key.Length + 2; // skip delimiter + key + "="
+        int end   = url.IndexOf('&', start);
+        if (end < 0) end = url.IndexOf('#', start);
+        if (end < 0) end = url.Length;
+
+        string raw = url.Substring(start, end - start);
+        return Uri.UnescapeDataString(raw); // decode %20, + etc.
+    }
+#endif
 }

@@ -37,6 +37,7 @@ namespace UIElements
         private AudioObjects _curAudioObject;
         private Vocals _speaker;
         private UnityEvent _nextEvent;
+        private Coroutine _autoAdvanceCo;
 
         private void Start()
         {
@@ -59,6 +60,7 @@ namespace UIElements
         {
             CancelInvoke(nameof(ContinueDialogue));
             CancelInvoke(nameof(PlayNextEvent));
+            if (_autoAdvanceCo != null) { StopCoroutine(_autoAdvanceCo); _autoAdvanceCo = null; }
         }
 
         public void BindDialogueUnit(DialogueUnit unit)
@@ -100,7 +102,9 @@ namespace UIElements
             if (GetNextAudioObject())
             {
                 SayCurDialogue();
-                Invoke(nameof(ContinueDialogue), _curAudioObject.clip.length);
+                // Use a coroutine instead of Invoke so we can wait for the clip to load on WebGL.
+                // AudioClip.length returns 0 on WebGL until the clip is fully loaded.
+                _autoAdvanceCo = StartCoroutine(CoWaitThenContinue(_curAudioObject.clip));
                 return;
             }
 
@@ -118,7 +122,7 @@ namespace UIElements
 
             if (_nextEvent != null)
             {
-                Invoke(nameof(PlayNextEvent), _curAudioObject.clip.length);
+                _autoAdvanceCo = StartCoroutine(CoWaitThenPlayNextEvent(_curAudioObject.clip));
                 return;
             }
 
@@ -433,6 +437,43 @@ namespace UIElements
             for (int i = 0; i < options.Length; i++)
                 parts[i] = options[i] != null ? (options[i].buttonText ?? "") : "";
             return string.Join("|", parts);
+        }
+
+        // Waits for the AudioClip to finish loading (WebGL streams audio asynchronously,
+        // so clip.length returns 0 until the data is ready), then advances dialogue.
+        private System.Collections.IEnumerator CoWaitThenContinue(AudioClip clip)
+        {
+            yield return WaitForClipReady(clip);
+            ContinueDialogue();
+        }
+
+        private System.Collections.IEnumerator CoWaitThenPlayNextEvent(AudioClip clip)
+        {
+            yield return WaitForClipReady(clip);
+            PlayNextEvent();
+        }
+
+        // Waits until the clip is loaded and its length is known, then waits the full duration.
+        // Falls back to a 1.5-second delay if the clip never loads within the timeout.
+        private System.Collections.IEnumerator WaitForClipReady(AudioClip clip)
+        {
+            if (clip == null) { yield return new WaitForSeconds(1.5f); yield break; }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // On WebGL, AudioClip.loadState may be Loading or Loading even after Play().
+            // Request the data explicitly and poll until ready.
+            clip.LoadAudioData();
+
+            float loadTimeout = 8f;
+            while (clip.loadState == AudioDataLoadState.Loading && loadTimeout > 0f)
+            {
+                loadTimeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+#endif
+            // Use clip.length if valid; otherwise fall back to 1.5 s so dialogue doesn't freeze.
+            float duration = (clip.length > 0.05f) ? clip.length : 1.5f;
+            yield return new WaitForSeconds(duration);
         }
 
         private void PlayNextEvent()

@@ -922,6 +922,10 @@ namespace MoxoCPT
         [Header("Rig Cards")]
         [SerializeField] private Cards cards;
 
+        [Header("Progress Display")]
+        [Tooltip("Optional UI label showing 'Progress: n/total cards'. Hidden during training.")]
+        [SerializeField] private CPTProgressDisplay progressDisplay;
+
         [Header("Card Interval (NEW)")]
         [Tooltip("Fixed gap AFTER a card turns off, before the next card shows (seconds). Default 0.85")]
         [SerializeField] private float interStimulusIntervalSeconds = 0.85f;
@@ -1370,6 +1374,9 @@ namespace MoxoCPT
 
             yield return StartCoroutine(ShowCountdown(_secondsTillGameStarts, countdownStartText, countdownEndText));
 
+            // Show progress counter for the real game (hidden during training).
+            progressDisplay?.Show(totalTrialsPerIsland);
+
             // NDP (NO distractors)
             yield return StartCoroutine(RunPhase("NDP", _ndpPlan, globalStartIndex: 0));
 
@@ -1387,6 +1394,10 @@ namespace MoxoCPT
             KoalaStandIdle();
 
             if (cards != null && cards.curCard != null) TurnCardOff(cards.curCard);
+
+            // Hide progress counter before results screen appears.
+            progressDisplay?.Hide();
+
             MoxoCPTManager.Instance?.OnGameEnd();
         }
 
@@ -1458,6 +1469,9 @@ namespace MoxoCPT
 
                 TurnCardOn(tp.card);
                 cards.UpdateCurCard(tp.card);
+
+                // globalStartIndex + i + 1 gives the 1-based card number across both phases.
+                progressDisplay?.UpdateCount(globalStartIndex + i + 1);
 
                 long onsetMs = (long)(Time.realtimeSinceStartup * 1000.0f);
 

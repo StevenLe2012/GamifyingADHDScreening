@@ -36,6 +36,16 @@ public class PlayerModeManager : MonoBehaviour
 
     private const string kPrefsKey = "PlayerMode.Last";
 
+    private void Awake()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Deactivate the VR rig immediately in Awake — before any camera renders a frame —
+        // so the TrackedPoseDriver and XR cameras inside VR_Player never run.
+        if (vrRig)      vrRig.SetActive(false);
+        if (desktopRig) desktopRig.SetActive(true);
+#endif
+    }
+
     private void Start()
     {
         // Optional: restore last mode
@@ -73,6 +83,17 @@ public class PlayerModeManager : MonoBehaviour
     private IEnumerator SetModeCoroutine(PlayerMode mode)
     {
         _isSwitching = true;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // XR is never available in WebGL — skip all XR manager calls and activate desktop immediately.
+        if (vrRig)      vrRig.SetActive(false);
+        if (desktopRig) desktopRig.SetActive(true);
+        _currentMode = PlayerMode.Desktop;
+        _isSwitching = false;
+        if (rememberLastMode) PlayerPrefs.SetInt(kPrefsKey, (int)_currentMode);
+        try { OnModeChanged?.Invoke(_currentMode); } catch (Exception e) { Debug.LogException(e); }
+        yield break;
+#endif
 
         // Cache manager once
         var xrManager = XRGeneralSettings.Instance != null ? XRGeneralSettings.Instance.Manager : null;
