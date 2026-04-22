@@ -462,6 +462,8 @@ public class IslandSelectionUI : MonoBehaviour
     [SerializeField] private GameObject panel;
     [SerializeField] private Transform buttonParent;
     [SerializeField] private GameObject buttonPrefab;
+    [Tooltip("Optional. Picks a random remaining island; disabled when only one island is available.")]
+    [SerializeField] private Button randomIslandButton;
 
     [Header("Highlight")]
     [SerializeField] private Color selectedTint = new Color(1.15f, 1.15f, 1.15f, 1f);
@@ -495,6 +497,7 @@ public class IslandSelectionUI : MonoBehaviour
     private bool _suppressEventSystemSelection = true;
 
     private readonly List<Button> _buttons = new();
+    private readonly List<IslandData> _islandsInPicker = new();
     private int _index = 0;
     private float _ignoreUntilUnscaled = 0f;
 
@@ -592,6 +595,10 @@ public class IslandSelectionUI : MonoBehaviour
                 Debug.LogWarning($"[IslandSelectionUI] Button prefab '{buttonPrefab?.name}' has no Button component.", this);
             }
         }
+
+        _islandsInPicker.Clear();
+        _islandsInPicker.AddRange(remaining);
+        UpdateRandomIslandButton();
 
         _index = Mathf.Clamp(_index, 0, Mathf.Max(0, _buttons.Count - 1));
         ApplyHighlight();
@@ -702,6 +709,13 @@ public class IslandSelectionUI : MonoBehaviour
                 else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored SPACE (within ignore window).", this);
                 handled = true;
             }
+
+            if (Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                if (Time.unscaledTime >= _ignoreUntilUnscaled) OnRandomIslandClicked();
+                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored R (within ignore window).", this);
+                handled = true;
+            }
         }
 
         if (!handled && enableLegacyInputFallback)
@@ -725,6 +739,12 @@ public class IslandSelectionUI : MonoBehaviour
             {
                 if (Time.unscaledTime >= _ignoreUntilUnscaled) Activate();
                 else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored SPACE (legacy; within ignore window).", this);
+            }
+
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                if (Time.unscaledTime >= _ignoreUntilUnscaled) OnRandomIslandClicked();
+                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored R (legacy; within ignore window).", this);
             }
         }
     }
@@ -863,6 +883,27 @@ public class IslandSelectionUI : MonoBehaviour
         }
     }
 
+    private void UpdateRandomIslandButton()
+    {
+        if (!randomIslandButton) return;
+
+        bool canRandom = _islandsInPicker.Count > 1;
+        randomIslandButton.interactable = canRandom;
+
+        // Replace the event object so Inspector-persistent listeners cannot bypass
+        // this class's random flow (which handles intro cutscene + state guards).
+        randomIslandButton.onClick = new Button.ButtonClickedEvent();
+        if (canRandom)
+            randomIslandButton.onClick.AddListener(OnRandomIslandClicked);
+    }
+
+    private void OnRandomIslandClicked()
+    {
+        if (_islandsInPicker.Count <= 1) return;
+        int i = UnityEngine.Random.Range(0, _islandsInPicker.Count);
+        OnPick(_islandsInPicker[i]);
+    }
+
     void OnPick(IslandData island)
     {
         var cg = panel ? panel.GetComponent<CanvasGroup>() : null;
@@ -941,6 +982,12 @@ public class IslandSelectionUI : MonoBehaviour
         _suppressEventSystemSelection = false;
 
         _buttons.Clear();
+        _islandsInPicker.Clear();
+        if (randomIslandButton)
+        {
+            randomIslandButton.onClick.RemoveAllListeners();
+            randomIslandButton.interactable = false;
+        }
     }
 
 #if UNITY_EDITOR
@@ -959,6 +1006,12 @@ public class IslandSelectionUI : MonoBehaviour
     void Clear()
     {
         _buttons.Clear();
+        _islandsInPicker.Clear();
+        if (randomIslandButton)
+        {
+            randomIslandButton.onClick.RemoveAllListeners();
+            randomIslandButton.interactable = false;
+        }
         for (int i = buttonParent.childCount - 1; i >= 0; i--)
             Destroy(buttonParent.GetChild(i).gameObject);
     }

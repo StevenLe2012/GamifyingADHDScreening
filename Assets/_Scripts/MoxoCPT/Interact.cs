@@ -5,11 +5,18 @@ namespace MoxoCPT
 {
     public class Interact : MonoBehaviour
     {
-        // Monotonically increasing press counter.
-        // ButtonPress increments it; StartReport snapshots it at trial start and
-        // detects presses as any increment since the snapshot.
-        // ChangeShapes never needs to clear it → no race condition.
-        public static int _pressCount = 0;
+    // Monotonically increasing press counter.
+    // ButtonPress increments it; StartReport snapshots it at trial start and
+    // detects presses as any increment since the snapshot.
+    // ChangeShapes never needs to clear it → no race condition.
+    public static int _pressCount = 0;
+
+    /// <summary>
+    /// Fired on the exact frame a correct hit is registered (target trial + first press
+    /// while the stimulus is still on screen). Subscribe to drive koala happy animation.
+    /// </summary>
+    public static event System.Action OnCorrectHit;
+
 
         // Keep the old boolean as a forwarding alias so any external code that still
         // writes Interact._buttonPressed = true continues to work.
@@ -119,7 +126,11 @@ namespace MoxoCPT
                         if (isTargetTrial)
                         {
                             if (stimulusIsOnNow)
+                            {
                                 report.Timeliness = true;
+                                // Notify subscribers (e.g. koala happy animation) immediately.
+                                OnCorrectHit?.Invoke();
+                            }
 
                             report.Attentiveness = true;
                         }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   islandId: DRAGON
   displayName: Dragon Island
-  icon: {fileID: 21300000, guid: f61d6b395bf69a542861556f31e9cf4c, type: 3}
+  icon: {fileID: 21300000, guid: 79257594c537a2a4ba7fa2910f0fe270, type: 3}
   introTitle: Congratulations!
   introBody: "You\u2019ve unlocked all four gems and restored the Navigation Ring.\n\nBut
     your victory has not gone unnoticed\u2026 The Dragon Lord, ancient guardian of

@@ -42,6 +42,10 @@ public class IslandIntroCutscene : MonoBehaviour
     public CanvasGroup fadeGroup;
     public float fadeDuration = 0.35f;
 
+    [Header("WebGL Buffering")]
+    [Tooltip("How long to wait for the video to buffer before skipping (seconds). Increase for slow connections.")]
+    public float prepareTimeout = 30f;
+
     [Header("Diagnostics")]
     public bool log = true;
 
@@ -139,6 +143,15 @@ public class IslandIntroCutscene : MonoBehaviour
         }
 
         _pendingIsland = island;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Start buffering immediately on WebGL so the video is ready (or close to ready)
+        // by the time the coroutine reaches PrepareAndPlay — avoids timeout on slow connections.
+        _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
+        _vp.Prepare();
+        if (log) Debug.Log($"[IslandIntroCutscene] WebGL: early prepare started for {_currentCutscene.videoFileName}");
+#endif
+
         StartCoroutine(CoRun());
     }
 
@@ -191,16 +204,21 @@ public class IslandIntroCutscene : MonoBehaviour
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
+        // URL and Prepare() were already called in PlayIfNeeded for early buffering.
+        // Only set them here if not already prepared (safety fallback).
+        if (!_vp.isPrepared && string.IsNullOrEmpty(_vp.url))
+        {
+            _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
+            _vp.Prepare();
+        }
 #else
         _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentCutscene.videoFileName);
+        _vp.Prepare();
 #endif
 
-        if (log) Debug.Log($"[IslandIntroCutscene] Preparing video: {_vp.url}");
-        _vp.Prepare();
+        if (log) Debug.Log($"[IslandIntroCutscene] Waiting for video: {_currentCutscene.videoFileName}");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        const float prepareTimeout = 8f;
         float elapsed = 0f;
         while (!_vp.isPrepared && elapsed < prepareTimeout)
         {

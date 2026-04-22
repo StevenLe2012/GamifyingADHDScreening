@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: I'm so sorry
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 4a8967e3319a4dd44ac8caed27c0bbf9, type: 3}
+  clip: {fileID: 8300000, guid: 792f0a70ee1802f4090cb3b9a4b81bc9, type: 3}
   subtitle: "You: I\u2019m so sorry to hear that. Don\u2019t worry, I\u2019ll help
     you escape. And then we can get out of here together."
   character: You

@@ -71,6 +71,11 @@ namespace MoxoCPT
             ? report.StimulusActualDurationMs.ToString(inv)
             : "";
 
+            string isiMs = (report.InterStimulusIntervalMs >= 0)
+                ? report.InterStimulusIntervalMs.ToString(inv)
+                : "";
+            string isiBaseIdx = (report.IsiBaseIndex >= 0) ? report.IsiBaseIndex.ToString(inv) : "";
+
             // phase_trial_index: blank if unset (< 0)
             string phaseTrial = (report.PhaseTrialIndex >= 0)
                 ? report.PhaseTrialIndex.ToString(inv)
@@ -124,6 +129,12 @@ namespace MoxoCPT
                 report.HyperReactiveness.ToString(),
                 report.Impulsiveness.ToString(),
                 report.HyperReactiveCount.ToString(inv),
+
+                isiMs,
+                isiBaseIdx,
+                report.InterStimulusScheduleSeed.ToString(inv),
+                report.TrialPlanSeed.ToString(inv),
+                report.IsiPermutationSeed.ToString(inv),
             });
 
             using (var sw = File.AppendText(path))
@@ -166,7 +177,13 @@ namespace MoxoCPT
             "timeliness",
             "hyperreactiveness",
             "impulsiveness",
-            "hyperreactive_count"
+            "hyperreactive_count",
+
+            "inter_stimulus_interval_ms",
+            "isi_base_index",
+            "isi_study_seed",
+            "trial_plan_seed",
+            "isi_permutation_seed"
         };
 
 #if UNITY_EDITOR
@@ -261,6 +278,11 @@ namespace MoxoCPT
             sb.Append(FirebaseService.JB("hyperreactiveness",           r.HyperReactiveness));
             sb.Append(FirebaseService.JB("impulsiveness",               r.Impulsiveness));
             sb.Append(FirebaseService.JN("hyperreactive_count",         r.HyperReactiveCount));
+            sb.Append(FirebaseService.JN("inter_stimulus_interval_ms",  r.InterStimulusIntervalMs));
+            sb.Append(FirebaseService.JN("isi_base_index",              r.IsiBaseIndex));
+            sb.Append(FirebaseService.JN("isi_study_seed",              r.InterStimulusScheduleSeed));
+            sb.Append(FirebaseService.JN("trial_plan_seed",             r.TrialPlanSeed));
+            sb.Append(FirebaseService.JN("isi_permutation_seed",        r.IsiPermutationSeed));
             return FirebaseService.WrapJson(sb.ToString());
         }
     }

@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Why did
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 5387eed43fad39e439a5e9b445563bf8, type: 3}
+  clip: {fileID: 8300000, guid: ce89884a3bb886a4ca6359d6783dbf4d, type: 3}
   subtitle: 'You: Why did the Dragon Lord restrict you?'
   character: You

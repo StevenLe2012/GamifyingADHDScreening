@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Koala
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 74b57479c72eab644ab10532d6f6689c, type: 3}
-  subtitle: 'You: Kola?!'
+  clip: {fileID: 8300000, guid: c7e3b32b2f81fb245908c9b6620c4b3c, type: 3}
+  subtitle: "You: Kola?! Why are you dressed like that? \nAnd you can talk?"
   character: You

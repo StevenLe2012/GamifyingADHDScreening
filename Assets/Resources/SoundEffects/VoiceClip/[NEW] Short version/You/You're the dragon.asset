@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: You're the dragon
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 8ea95cc20e4b0ce4bb6ff7b0ffdf77b6, type: 3}
+  clip: {fileID: 8300000, guid: 7f22ea2e5efe7f540aeac0edf4b19ca5, type: 3}
   subtitle: "You: You\u2019re the Dragon Lord.\r"
   character: You

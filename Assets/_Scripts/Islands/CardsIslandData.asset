@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: CardsIslandData
   m_EditorClassIdentifier: 
   islandId: CARDS
-  displayName: Cards Island
-  icon: {fileID: 21300000, guid: 9f7524c330caee8439cedfc4719c0673, type: 3}
+  displayName: 
+  icon: {fileID: 21300000, guid: 3bb9a0ad94dbc63488558423d275065d, type: 3}
   introTitle: Welcome to Cards Kingdom!
   introBody: "I am Rosaria, Guardian of this island. I will grant you the gem but
     only if you prove your worth.\n\r\nYour task is simple: press SPACE as quickly

@@ -6,6 +6,31 @@ namespace MoxoCPT
     {
         public static CPTScoreRuntime I { get; private set; }
 
+        /// <summary>
+        /// Sum of <see cref="CorrectTargetsHit"/> for completed MOXO runs on CARDS, BREAD, POISON, SKULL only.
+        /// Used for end-game total display. Reset via <see cref="ResetFourIslandSessionTotal"/>.
+        /// </summary>
+        private static int s_cumulativeCorrectHitsFourBaseIslands;
+
+        public static int CumulativeCorrectHitsFourBaseIslands => s_cumulativeCorrectHitsFourBaseIslands;
+
+        public static void ResetFourIslandSessionTotal()
+        {
+            s_cumulativeCorrectHitsFourBaseIslands = 0;
+        }
+
+        /// <summary>
+        /// After a successful CPT run, add this run's correct target hits if the island is one of the four base islands.
+        /// </summary>
+        public static void TryCommitRunToFourIslandTotal(int correctHits, string islandId)
+        {
+            var id = (islandId ?? "").Trim().ToUpperInvariant();
+            if (id != "CARDS" && id != "BREAD" && id != "POISON" && id != "SKULL")
+                return;
+
+            s_cumulativeCorrectHitsFourBaseIslands += Mathf.Max(0, correctHits);
+        }
+
         // Target counters
         private int _countedTargets;     // targets seen via RegisterTrial
         private int _countedHits;        // correct hits on target trials

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EmbeddedQuestionTest
   m_EditorClassIdentifier: 
   npcName: Ekonn
-  defaultState: BeginGame
+  defaultState: Intro
   scriptableCallbackNames: []
   dialogueUnits:
   - requiredStateKey: Intro
@@ -64,8 +64,6 @@ MonoBehaviour:
     audioObjects:
     - {fileID: 11400000, guid: 629a1d9f7243af7409076dd83ea58b30, type: 2}
     - {fileID: 11400000, guid: 6396795455ba399498422c245af4d51f, type: 2}
-    - {fileID: 11400000, guid: 32591d458c95c4b489b835aa22a662bd, type: 2}
-    - {fileID: 11400000, guid: 7cca5844e834fd7418eef755c830a9f6, type: 2}
     - {fileID: 11400000, guid: 548287cd678a2e84dae9395957437669, type: 2}
     options: []
     nextEventWithoutButton:
@@ -218,7 +216,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: SQ1
+            m_StringArgument: SQ5
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 11400000}
@@ -234,7 +232,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ1
+  - requiredStateKey: SQ5
     character: You
     audioObjects:
     - {fileID: 11400000, guid: 7df88d5684e24dc418daedb2892c2408, type: 2}
@@ -252,7 +250,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ1doneA
+              m_StringArgument: SQ5doneA
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -267,7 +265,7 @@ MonoBehaviour:
               m_StringArgument: b
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ1doneA
+      nextStateKey: SQ5doneA
     - buttonText: Almost never move
       actionToTrigger:
         m_PersistentCalls:
@@ -281,7 +279,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ1doneA
+              m_StringArgument: SQ5doneA
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -296,7 +294,7 @@ MonoBehaviour:
               m_StringArgument: c
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ1doneA
+      nextStateKey: SQ5doneA
     - buttonText: Move now and then
       actionToTrigger:
         m_PersistentCalls:
@@ -310,7 +308,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ1doneB
+              m_StringArgument: SQ5doneB
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -325,7 +323,7 @@ MonoBehaviour:
               m_StringArgument: c
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ1doneB
+      nextStateKey: SQ5doneB
     - buttonText: Hard to keep still
       actionToTrigger:
         m_PersistentCalls:
@@ -339,7 +337,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ1doneC
+              m_StringArgument: SQ5doneC
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -354,7 +352,7 @@ MonoBehaviour:
               m_StringArgument: c
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ1doneC
+      nextStateKey: SQ5doneC
     - buttonText: Always moving
       actionToTrigger:
         m_PersistentCalls:
@@ -368,7 +366,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ1doneC
+              m_StringArgument: SQ5doneC
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -383,12 +381,12 @@ MonoBehaviour:
               m_StringArgument: c
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ1doneC
+      nextStateKey: SQ5doneC
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls: []
     onEnterEventName: 
-  - requiredStateKey: SQ1doneA
+  - requiredStateKey: SQ5doneA
     character: You
     audioObjects:
     - {fileID: 11400000, guid: 787faab2df2ea3047857b096502cd877, type: 2}
@@ -408,7 +406,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: SQ2
+            m_StringArgument: SQ6
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 11400000}
@@ -424,7 +422,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ1doneB
+  - requiredStateKey: SQ5doneB
     character: You
     audioObjects:
     - {fileID: 11400000, guid: 1ad21035cbd035a4f87b1c1f5cf28a79, type: 2}
@@ -444,7 +442,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: SQ2
+            m_StringArgument: SQ6
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 11400000}
@@ -460,7 +458,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ1doneC
+  - requiredStateKey: SQ5doneC
     character: You
     audioObjects:
     - {fileID: 11400000, guid: e3632f68b91cd574e994712b2d26cdbe, type: 2}
@@ -480,7 +478,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: SQ2
+            m_StringArgument: SQ6
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 11400000}
@@ -496,7 +494,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ2
+  - requiredStateKey: SQ6
     character: 
     audioObjects:
     - {fileID: 11400000, guid: 7cdf0de05af281043a194c75e4f47952, type: 2}
@@ -514,7 +512,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ2doneA
+              m_StringArgument: SQ6doneA
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -529,7 +527,7 @@ MonoBehaviour:
               m_StringArgument: done
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ2doneA
+      nextStateKey: SQ6doneA
     - buttonText: The engine is usually quiet
       actionToTrigger:
         m_PersistentCalls:
@@ -543,7 +541,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ2doneA
+              m_StringArgument: SQ6doneA
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -558,7 +556,7 @@ MonoBehaviour:
               m_StringArgument: b
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ2doneA
+      nextStateKey: SQ6doneA
     - buttonText: It hums once in a while
       actionToTrigger:
         m_PersistentCalls:
@@ -572,7 +570,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ2doneB
+              m_StringArgument: SQ6doneB
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -587,7 +585,7 @@ MonoBehaviour:
               m_StringArgument: done
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ2doneB
+      nextStateKey: SQ6doneB
     - buttonText: It runs more days than not
       actionToTrigger:
         m_PersistentCalls:
@@ -601,7 +599,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ2doneC
+              m_StringArgument: SQ6doneC
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -616,7 +614,7 @@ MonoBehaviour:
               m_StringArgument: done
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ2doneC
+      nextStateKey: SQ6doneC
     - buttonText: It never seems to shut off
       actionToTrigger:
         m_PersistentCalls:
@@ -630,7 +628,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ2doneC
+              m_StringArgument: SQ6doneC
               m_BoolArgument: 0
             m_CallState: 2
           - m_Target: {fileID: 11400000}
@@ -645,12 +643,12 @@ MonoBehaviour:
               m_StringArgument: done
               m_BoolArgument: 0
             m_CallState: 2
-      nextStateKey: SQ2doneC
+      nextStateKey: SQ6doneC
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls: []
     onEnterEventName: 
-  - requiredStateKey: SQ2doneA
+  - requiredStateKey: SQ6doneA
     character: 
     audioObjects:
     - {fileID: 11400000, guid: 582af8ca502f24347a1f61ca33953c26, type: 2}
@@ -683,7 +681,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ2doneB
+  - requiredStateKey: SQ6doneB
     character: 
     audioObjects:
     - {fileID: 11400000, guid: c6ae502578f3ca0499f68fd2f25cbd1d, type: 2}
@@ -716,7 +714,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
     onEnterEventName: 
-  - requiredStateKey: SQ2doneC
+  - requiredStateKey: SQ6doneC
     character: 
     audioObjects:
     - {fileID: 11400000, guid: bd79f8d2e878f6c4db5c5a9e9bcd6459, type: 2}

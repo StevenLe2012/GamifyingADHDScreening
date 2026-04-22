@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: PoisonIslandData
   m_EditorClassIdentifier: 
   islandId: POISON
-  displayName: Poison Island
-  icon: {fileID: 21300000, guid: a483df3be161a3d4fa9d6dbbda299a27, type: 3}
+  displayName: 
+  icon: {fileID: 21300000, guid: 9fd279076aee8584197749071059d862, type: 3}
   introTitle: Welcome to Poison Garden!
   introBody: 'Your mission is to press SPACE as quickly as possible to collect only
     the card with THREE MUSHROOMS. '

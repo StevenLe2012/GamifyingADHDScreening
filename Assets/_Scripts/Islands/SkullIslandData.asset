@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: SkullIslandData
   m_EditorClassIdentifier: 
   islandId: SKULL
-  displayName: Skull Island
-  icon: {fileID: 21300000, guid: 43df567e7befc6644878e5b51ce7f0b0, type: 3}
+  displayName: 
+  icon: {fileID: 21300000, guid: 88683e0d2618a8f4ab5f3a59621cf219, type: 3}
   introTitle: Welcome to Skull Island!
   introBody: "Your mission is to press SPACE as quickly and accurately as possible
     to collect only the RED skull.\r\n\r\nAll other skulls are cursed impostors -

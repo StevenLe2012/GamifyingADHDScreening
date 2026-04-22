@@ -163,9 +163,8 @@ public class KoalaAnimatorDriver : MonoBehaviour
     [Header("Animator Params")]
     [SerializeField] private string triggerStand = "Stand";
     [SerializeField] private string boolTalking  = "Talking";
-
-    // ✅ NEW: sustained cheer
     [SerializeField] private string boolCheerOn  = "CheerOn";
+    [SerializeField] private string triggerHappy  = "Happy";
 
     private bool _warned;
 
@@ -198,7 +197,8 @@ public class KoalaAnimatorDriver : MonoBehaviour
         if (!A()) return;
 
         animator.SetBool(boolTalking, false);
-        animator.SetBool(boolCheerOn, false);   // ✅ turn cheer off
+        animator.SetBool(boolCheerOn, false);
+        animator.ResetTrigger(triggerHappy);  // discard any queued Happy trigger
         animator.SetTrigger(triggerStand);
     }
 
@@ -210,9 +210,12 @@ public class KoalaAnimatorDriver : MonoBehaviour
         animator.SetBool(boolTalking, false);
         animator.SetBool(boolCheerOn, on);
 
-        // Always anchor to the standing state so the animator doesn't transition
-        // through a sitting pose when entering or exiting cheer.
-        animator.SetTrigger(triggerStand);
+        // Only fire Stand when EXITING cheer. Firing Stand while CheerOn=true
+        // causes the trigger to be consumed first and cancel the cheer transition.
+        // The caller (ChangeShapes) is responsible for ensuring a standing-idle
+        // baseline BEFORE calling SetCheer(true).
+        if (!on)
+            animator.SetTrigger(triggerStand);
     }
 
     public void SetTalking(bool on)
@@ -229,6 +232,17 @@ public class KoalaAnimatorDriver : MonoBehaviour
         {
             animator.SetTrigger(triggerStand);
         }
+    }
+
+    // ---------- Happy reaction ----------
+    /// <summary>
+    /// Fire the Happy trigger once. The Animator plays the clip and returns to idle
+    /// automatically via its exit transition — no manual reset needed.
+    /// </summary>
+    public void PlayHappy()
+    {
+        if (!A()) return;
+        animator.SetTrigger(triggerHappy);
     }
 
     // ---------- Back-compat ----------

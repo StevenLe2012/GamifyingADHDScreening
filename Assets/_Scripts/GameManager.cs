@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MoxoCPT;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -107,23 +108,44 @@ public class GameManager : MonoBehaviour
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Read participant metadata from URL query parameters so the researcher
-        // can open a unique link per session without any in-game input screen.
+        // Priority order:
+        //   1. URL query parameters (researcher override — highest priority)
+        //   2. ParticipantLoginScreen input (player-entered data from IntroBoot)
+        //   3. Auto-generated timestamp fallback (see ParticipantId getter)
         //
-        // Supported parameters:
+        // Supported URL parameters:
         //   ?num=001            → participantNumber  (padded to 3 digits)
         //   ?last=SMITH         → participantLastName
         //   ?date=2026-03-17    → sessionDate (ISO yyyy-MM-dd)
-        //   ?pid=MY_ID          → participantId (legacy free-form, used if num/last absent)
+        //   ?pid=MY_ID          → participantId (legacy free-form)
         //
-        // Example URL:
-        //   https://your-game.web.app/?num=001&last=SMITH&date=2026-03-17
+        // Example URL: https://your-game.web.app/?num=001&last=SMITH&date=2026-03-17
         ReadParticipantIdFromUrl();
+
+        // If URL gave us nothing, pull from the in-game login screen.
+        // Login screen ALWAYS wins over Inspector values — Inspector fields are
+        // dev defaults only and must not silently override real participant data.
+        if (ParticipantSession.WasSubmitted)
+        {
+            if (!string.IsNullOrEmpty(ParticipantSession.Number))
+                participantNumber = ParticipantSession.Number;
+
+            if (!string.IsNullOrEmpty(ParticipantSession.LastName))
+                participantLastName = ParticipantSession.LastName;
+
+            if (!string.IsNullOrEmpty(ParticipantSession.SessionDate))
+                sessionDate = ParticipantSession.SessionDate;
+        }
+
+        Debug.Log($"[GameManager] Resolved ParticipantId = '{ParticipantId}'");
 #endif
     }
 
     private void Start()
     {
+        // Fresh session total for end-game display (four base islands only; see CPTScoreRuntime).
+        CPTScoreRuntime.ResetFourIslandSessionTotal();
+
         if (string.IsNullOrWhiteSpace(participantId) && string.IsNullOrWhiteSpace(participantNumber))
             Debug.LogWarning("[GameManager] ParticipantId is empty. Pass ?num=001&last=NAME in the URL or set it in the Inspector.");
 

@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: And I
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 4a8933fafc260b044be597dfc78a3efe, type: 3}
+  clip: {fileID: 8300000, guid: 323e047f7337bba4989f50ecd0cd7aca, type: 3}
   subtitle: "You: And I won\u2019t turn into a koala?"
   character: You

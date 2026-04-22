@@ -2218,6 +2218,9 @@ namespace MoxoCPT
                 }
             }
 
+            // Count this run toward the session total for CARDS / BREAD / POISON / SKULL (end-game summary).
+            CPTScoreRuntime.TryCommitRunToFourIslandTotal(hit, CurrentIslandId());
+
             var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
             if (intro != null)
             {
@@ -2269,6 +2272,12 @@ namespace MoxoCPT
         private IEnumerator CoShowRewardThenResults(
             IntroScreen intro, int hit, int total, int falseAlarms, int totalDistractors)
         {
+            // OnGameEnd() already reset the koala to idle. Wait one frame then start
+            // the celebration dance so it plays through the reward and results screen.
+            // (Requires the Happy state in the Animator to have Loop Time = true.)
+            yield return null;
+            KoalaAnimBus.BroadcastToActiveKoalas(k => k.PlayHappy());
+
             var anchor = GetCurrentIntroAnchor();
 
             if (anchor != null && anchor.rewardObject != null)
@@ -2381,11 +2390,16 @@ namespace MoxoCPT
                 // IMPORTANT: ensure replay training button is hidden on the Ready screen
                 intro.SetReplayTrainingVisible(false);
 
-                // Read island-specific ready text — same fallback logic as IslandTravelManager.
+                // Read island-specific ready text & voice — same logic as IslandTravelManager.
                 var currentIsland = IslandTravelManager.I?.CurrentIsland;
                 var readyTitle = IntroScreen.Fallback(currentIsland?.readyIntroTitle, "Ready to start?");
                 var readyBody  = IntroScreen.Fallback(currentIsland?.readyIntroBody,  "Press Space to begin the real test.");
                 intro.ShowReadyAfterTraining(readyTitle, readyBody);
+
+                // Stop any lingering redo-prompt voice, then play the island's ready voice.
+                intro.StopVoice();
+                if (currentIsland != null && currentIsland.readyIntroVoice)
+                    intro.PlayVoice(currentIsland.readyIntroVoice);
 
                 // ---- NEW: wait until the Ready panel closes, then ensure CPT starts ----
                 float timeout = 45f;
@@ -2523,6 +2537,10 @@ namespace MoxoCPT
             }
         }
 
+        /// <summary>
+        /// Stimulus duration, phase structure, and inter-stimulus intervals are driven by the active island's <see cref="ChangeShapes"/>
+        /// (ISI values from a study seed; order may be shuffled per participant ID).
+        /// </summary>
         private void NudgeActiveRunnerStart()
         {
             var runner = FindObjectsOfType<MonoBehaviour>(true)

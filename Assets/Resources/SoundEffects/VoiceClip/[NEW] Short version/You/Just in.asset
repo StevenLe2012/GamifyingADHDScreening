@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Just in
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 35bad59c861e36f41ad9b225eb04b963, type: 3}
+  clip: {fileID: 8300000, guid: 859fe6da4eb9ca249a42a658306028d0, type: 3}
   subtitle: 'You: Just in time for what?'
   character: You

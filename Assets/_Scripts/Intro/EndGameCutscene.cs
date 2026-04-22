@@ -1,6 +1,9 @@
 using System.Collections;
+using MoxoCPT;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Video;
+using TMPro;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -25,7 +28,7 @@ public class EndGameCutscene : MonoBehaviour
     [Tooltip("If true, renders on camera near plane. If false, uses RenderTexture + RawImage.")]
     public bool renderToCamera = false;
     public Camera targetCamera;
-    public UnityEngine.UI.RawImage rawImage;
+    public RawImage rawImage;
     public RenderTexture tempRenderTexture;
 
     [Header("Fade (optional)")]
@@ -36,7 +39,21 @@ public class EndGameCutscene : MonoBehaviour
     [Header("Ending Screen")]
     [Tooltip("Image revealed on WebGL after the video ends. Sits on screen indefinitely " +
              "(Application.Quit does nothing in a browser, so this replaces it).")]
-    public UnityEngine.UI.Image endingImage;
+    public Image endingImage;
+
+    [Tooltip("Optional UI Text: digits only. Sum of correct target hits across CARDS, BREAD, POISON, SKULL for this session.")]
+    public Text fourIslandTotalScoreDigits;
+
+    [Tooltip("Optional TextMeshPro: digits only (same total). Use this OR fourIslandTotalScoreDigits.")]
+    public TextMeshProUGUI fourIslandTotalScoreDigitsTMP;
+
+    [Header("WebGL Buffering")]
+    [Tooltip("How long to wait for the video to buffer before skipping (seconds). Increase for slow connections.")]
+    public float prepareTimeout = 30f;
+
+    [Header("Editor preview")]
+    [Tooltip("After the ending image is shown in the Editor, wait this many realtime seconds before stopping Play Mode (so you can verify layout and score).")]
+    [SerializeField] private float editorEndingPreviewHoldSeconds = 10f;
 
     [Header("Diagnostics")]
     public bool log = true;
@@ -113,6 +130,14 @@ public class EndGameCutscene : MonoBehaviour
         }
 
         _currentFile = fileName.Trim();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Start buffering immediately so the video is ready by the time CoRun reaches PrepareAndPlay.
+        _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
+        _vp.Prepare();
+        if (log) Debug.Log($"[EndGameCutscene] WebGL: early prepare started for {_currentFile}");
+#endif
+
         StartCoroutine(CoRun());
     }
 
@@ -158,20 +183,25 @@ public class EndGameCutscene : MonoBehaviour
     IEnumerator PrepareAndPlay()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Application.streamingAssetsPath is a URL on WebGL — use string concat, not Path.Combine.
-        _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
+        // URL and Prepare() were already called in PlayFile for early buffering.
+        // Only call again if not already started (safety fallback).
+        if (!_vp.isPrepared && string.IsNullOrEmpty(_vp.url))
+        {
+            _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
+            _vp.Prepare();
+        }
 #else
         _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentFile);
+        _vp.Prepare();
 #endif
 
-        if (log) Debug.Log($"[EndGameCutscene] Preparing video: {_vp.url}");
-        _vp.Prepare();
+        if (log) Debug.Log($"[EndGameCutscene] Waiting for video: {_currentFile}");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        float timeout = 8f;
-        while (!_vp.isPrepared && timeout > 0f)
+        float elapsed = 0f;
+        while (!_vp.isPrepared && elapsed < prepareTimeout)
         {
-            timeout -= Time.unscaledDeltaTime;
+            elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
         if (!_vp.isPrepared)
@@ -237,23 +267,25 @@ public class EndGameCutscene : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         // Application.Quit() is a no-op in WebGL.
-        // Instead, reveal the ending image over the existing black screen and stay there.
+        // Reveal the ending image over the existing black screen and stay there.
         StartCoroutine(CoShowEndingScreen());
 #elif UNITY_EDITOR
-        if (fadeGroup) fadeGroup.alpha = 0f;
-        UnityEditor.EditorApplication.isPlaying = false;
+        // Same ending UI as WebGL, then exit Play Mode after a hold so you can verify score/layout.
+        StartCoroutine(CoShowEndingScreenThenExitEditor());
 #else
         if (fadeGroup) fadeGroup.alpha = 0f;
         Application.Quit();
 #endif
     }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-    // The screen is already faded to black when this runs.
-    // Show the ending image behind the black overlay, then fade the overlay out
-    // so the image is revealed. The game then sits on that image indefinitely.
+    /// <summary>
+    /// The screen is already faded to black when this runs (after the video).
+    /// Show the ending image behind the black overlay, then fade the overlay out.
+    /// </summary>
     IEnumerator CoShowEndingScreen()
     {
+        ApplyFourIslandTotalToEndingUI();
+
         if (endingImage) endingImage.gameObject.SetActive(true);
         if (fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, fadeDuration));
@@ -262,7 +294,29 @@ public class EndGameCutscene : MonoBehaviour
 
         if (log) Debug.Log("[EndGameCutscene] Ending screen displayed.");
     }
+
+#if UNITY_EDITOR
+    IEnumerator CoShowEndingScreenThenExitEditor()
+    {
+        yield return StartCoroutine(CoShowEndingScreen());
+
+        float hold = Mathf.Max(0f, editorEndingPreviewHoldSeconds);
+        if (log) Debug.Log($"[EndGameCutscene] Editor: holding ending screen for {hold}s then exiting Play Mode.");
+        if (hold > 0f)
+            yield return new WaitForSecondsRealtime(hold);
+
+        UnityEditor.EditorApplication.isPlaying = false;
+    }
 #endif
+
+    void ApplyFourIslandTotalToEndingUI()
+    {
+        int n = CPTScoreRuntime.CumulativeCorrectHitsFourBaseIslands;
+        if (fourIslandTotalScoreDigits)
+            fourIslandTotalScoreDigits.text = n.ToString();
+        if (fourIslandTotalScoreDigitsTMP)
+            fourIslandTotalScoreDigitsTMP.text = n.ToString();
+    }
 
     void CleanUpVideo()
     {

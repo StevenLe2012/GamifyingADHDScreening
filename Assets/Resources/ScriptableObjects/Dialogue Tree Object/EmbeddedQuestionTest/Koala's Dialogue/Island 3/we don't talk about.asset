@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: we don't talk about
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: a61b20b68673af5479ac395fc7b6da0b, type: 3}
-  subtitle: 'Kola: Honestly smart. One wrong mushroom and it''s a whole situation.'
+  subtitle: 'Kola: We don''t talk about that bottle.'
   character: Koala

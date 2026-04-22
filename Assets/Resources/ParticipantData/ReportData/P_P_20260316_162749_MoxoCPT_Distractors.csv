@@ -1,2 +1,0 @@
-participant_id,session_id,island_id,phase,event_type,trial_index,phase_trial_index,distractor_id,distractor_name,weight_target,onset_ms,offset_ms,planned_duration_ms,actual_duration_ms,dp_elapsed_onset_ms,dp_elapsed_offset_ms,active_count_at_onset,active_set_at_onset
-,S_20260316_162613,POISON,DP,OFF,46,8,D2,Monster,0.1666667,159716,163216,3500,3500,15509,19009,1,D2

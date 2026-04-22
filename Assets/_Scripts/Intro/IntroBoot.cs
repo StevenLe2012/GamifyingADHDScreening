@@ -27,6 +27,12 @@ public class IntroBoot : MonoBehaviour
     public CanvasGroup fadeGroup;                // optional: black Image with CanvasGroup alpha
     public float fadeDuration = 0.35f;
 
+    [Header("WebGL – Participant Login")]
+    [Tooltip("Assign the ParticipantLoginScreen component here. " +
+             "It is shown first (before the thumbnail) so the player can enter their info. " +
+             "Leave empty to skip (e.g. when URL params supply the ID already).")]
+    public ParticipantLoginScreen loginScreen;
+
     [Header("WebGL – Thumbnail Gate")]
     [Tooltip("Full-screen image shown on WebGL before the intro video starts. " +
              "Player presses Enter (or Space) to dismiss it and begin playback.")]
@@ -53,15 +59,14 @@ public class IntroBoot : MonoBehaviour
 
     void Awake()
     {
-        // Ensure thumbnail is hidden at startup; it is shown only in the WebGL gate below.
+        // Hide both screens at startup — CoRun activates them at the right moment.
+        if (loginScreen)   loginScreen.gameObject.SetActive(false);
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
 
         if (renderToCamera && !targetCamera)
             targetCamera = Camera.main;
 
-        // Preload next scene while video plays (DISABLED for now)
-        // preload = SceneManager.LoadSceneAsync(mainSceneName);
-        // if (preload != null) preload.allowSceneActivation = false;
+        // Scene is preloaded later (after login) so it doesn't block the Editor on startup.
 
         // Build VideoPlayer
         vp = gameObject.AddComponent<VideoPlayer>();
@@ -114,48 +119,91 @@ public class IntroBoot : MonoBehaviour
 
     IEnumerator CoRun()
     {
+        // Determine whether participant info was already supplied via URL params.
+        // If so the login screen is skipped (researcher mode).
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // ── Thumbnail gate ──────────────────────────────────────────────────────────
-        // Show the thumbnail immediately while the video buffers in the background.
-        // The label cycles through loading → ready states so the user always knows
-        // what is happening. Enter/Space is only accepted once the video is prepared
-        // (or the timeout expires), guaranteeing the video plays instantly on press.
-        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;
+        bool urlHasId = Application.absoluteURL.Contains("?num=")  ||
+                        Application.absoluteURL.Contains("&num=")  ||
+                        Application.absoluteURL.Contains("?last=") ||
+                        Application.absoluteURL.Contains("&last=") ||
+                        Application.absoluteURL.Contains("?pid=")  ||
+                        Application.absoluteURL.Contains("&pid=");
+#else
+        bool urlHasId = false;
+#endif
+
+        bool needLogin = loginScreen != null && !urlHasId && !ParticipantSession.WasSubmitted;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // ── WebGL flow ───────────────────────────────────────────────────────────────
+        //   1. Thumbnail → player presses Enter → audio unlocked
+        //   2. Login screen pops up over thumbnail → player fills in + clicks Start
+        //   3. Fade to black → intro video plays
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;   // clear so thumbnail is visible
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(true);
-        SetLabel(loadingText);
 
-        // Wait for the video to finish buffering (started in Awake).
-        if (log) Debug.Log("[IntroBoot] WebGL: waiting for video to buffer…");
-        float elapsed = 0f;
-        while (!vp.isPrepared && elapsed < prepareTimeout)
+        if (needLogin)
         {
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
+            // Step 1: thumbnail only — wait for Enter (also unlocks browser audio).
+            SetLabel(readyText);    // e.g. "Press Enter to start"
+            if (log) Debug.Log("[IntroBoot] WebGL: thumbnail shown — waiting for Enter.");
+            yield return CoWaitForEnter();
+            if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed — showing login screen.");
 
-        if (vp.isPrepared)
-        {
-            if (log) Debug.Log($"[IntroBoot] WebGL: video ready after {elapsed:0.0}s — waiting for Enter.");
-            SetLabel(readyText);
+            // Step 2: login screen pops up; start preloading Main while player fills the form.
+            SetLabel(null);
+            loginScreen.gameObject.SetActive(true);
+            preload = SceneManager.LoadSceneAsync(mainSceneName);
+            if (preload != null) preload.allowSceneActivation = false;
+            bool submitted = false;
+            loginScreen.OnSubmitted += () => submitted = true;
+            while (!submitted) yield return null;
+            if (log) Debug.Log($"[IntroBoot] Login: #{ParticipantSession.Number} {ParticipantSession.LastName} {ParticipantSession.SessionDate}");
         }
         else
         {
-            // Timed out — still let the user in; the video will try to play anyway.
-            if (log) Debug.LogWarning($"[IntroBoot] WebGL: video not ready after {prepareTimeout}s — proceeding anyway.");
+            // No login needed (URL params supplied) — thumbnail + buffer wait only.
+            SetLabel(loadingText);
+            if (log) Debug.Log("[IntroBoot] WebGL: waiting for video to buffer…");
+            preload = SceneManager.LoadSceneAsync(mainSceneName);
+            if (preload != null) preload.allowSceneActivation = false;
+            float elapsed = 0f;
+            while (!vp.isPrepared && elapsed < prepareTimeout)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            if (log) Debug.Log(vp.isPrepared
+                ? $"[IntroBoot] WebGL: video ready after {elapsed:0.0}s."
+                : $"[IntroBoot] WebGL: buffer timeout — proceeding anyway.");
             SetLabel(readyText);
+            yield return CoWaitForEnter();
+            if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed.");
         }
 
-        // Now wait for user gesture (unlocks browser audio AND confirms they are ready).
-        yield return CoWaitForEnter();
-        if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed — starting video.");
-
+        // Step 3: hide thumbnail + login, fade to black, play video.
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
         SetLabel(null);
         if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
-        // ───────────────────────────────────────────────────────────────────────────
+        // ────────────────────────────────────────────────────────────────────────────
 #else
-        // Non-WebGL: start with black screen as before.
+        // ── Editor / standalone: login on black screen then play immediately ─────────
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;
+
+        if (needLogin)
+        {
+            loginScreen.gameObject.SetActive(true);
+            bool submitted = false;
+            loginScreen.OnSubmitted += () => submitted = true;
+            if (log) Debug.Log("[IntroBoot] Editor: showing login screen.");
+            while (!submitted) yield return null;
+            if (log) Debug.Log($"[IntroBoot] Login: #{ParticipantSession.Number} {ParticipantSession.LastName} {ParticipantSession.SessionDate}");
+
+            loginScreen.gameObject.SetActive(false);
+        }
+
         if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
+        // ────────────────────────────────────────────────────────────────────────────
 #endif
 
         yield return PrepareAndPlay();
@@ -164,7 +212,7 @@ public class IntroBoot : MonoBehaviour
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, 0.25f));
 
-        // Show "skip" hint after delay
+        // Wait for video to finish (or skip if allowed).
         float t = 0f;
         while (vp.isPlaying)
         {
@@ -179,14 +227,34 @@ public class IntroBoot : MonoBehaviour
             yield return null;
         }
 
-        // Fade out
+        // Fade to black — screen is now fully black before any scene loading starts.
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, fadeGroup.alpha, 1f, fadeDuration));
 
-        // Finish
         CleanUpVideo();
-        if (preload != null) preload.allowSceneActivation = true;
-        else SceneManager.LoadScene(mainSceneName);
+
+        // Start async load now that the screen is black — any hitch is invisible.
+        // On WebGL preload was already started during login so this is skipped.
+        if (preload == null)
+        {
+            preload = SceneManager.LoadSceneAsync(mainSceneName);
+            if (preload != null) preload.allowSceneActivation = false;
+        }
+
+        // Wait for load then activate.
+        if (preload != null)
+        {
+            while (preload.progress < 0.9f)
+            {
+                if (log) Debug.Log($"[IntroBoot] Loading… {preload.progress * 100:0}%");
+                yield return null;
+            }
+            preload.allowSceneActivation = true;
+        }
+        else
+        {
+            SceneManager.LoadScene(mainSceneName);
+        }
     }
 
     IEnumerator PrepareAndPlay()
@@ -213,7 +281,17 @@ public class IntroBoot : MonoBehaviour
 #else
         if (log) Debug.Log($"[IntroBoot] Preparing video: {vp.url}");
         vp.Prepare();
-        while (!vp.isPrepared) yield return null;
+        float prepareTimer = 0f;
+        while (!vp.isPrepared && prepareTimer < prepareTimeout)
+        {
+            prepareTimer += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        if (!vp.isPrepared)
+        {
+            if (log) Debug.LogWarning("[IntroBoot] Video did not prepare in time — skipping.");
+            yield break;
+        }
 #endif
 
         if (log) Debug.Log("[IntroBoot] Playing.");

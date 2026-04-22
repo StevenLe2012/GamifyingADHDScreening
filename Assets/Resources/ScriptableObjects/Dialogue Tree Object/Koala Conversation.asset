@@ -436,7 +436,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: PreSQ6
+      nextStateKey: 
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls: []
@@ -474,7 +474,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: Energy
+      nextStateKey: PreSQ8a
     - buttonText: I didn't look at them once.
       actionToTrigger:
         m_PersistentCalls:
@@ -503,7 +503,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: Energy
+      nextStateKey: PreSQ8b
     - buttonText: Honestly? Kind of charming after a while.
       actionToTrigger:
         m_PersistentCalls:
@@ -532,7 +532,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: Energy
+      nextStateKey: PreSQ8c
     - buttonText: My brain just filed them under background noise.
       actionToTrigger:
         m_PersistentCalls:
@@ -561,7 +561,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: Energy
+      nextStateKey: PreSQ8d
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls: []
@@ -1112,7 +1112,7 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: SQ5a
+      nextStateKey: SQ4a
     - buttonText: I delay sometimes
       actionToTrigger:
         m_PersistentCalls:
@@ -1126,7 +1126,7 @@ MonoBehaviour:
               m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
               m_IntArgument: 0
               m_FloatArgument: 0
-              m_StringArgument: SQ5b
+              m_StringArgument: SQ4b
               m_BoolArgument: 0
             m_CallState: 1
           - m_Target: {fileID: 11400000}
@@ -1141,7 +1141,7 @@ MonoBehaviour:
               m_StringArgument: SQ2c
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: SQ5b
+      nextStateKey: SQ4b
     - buttonText: I put things off pretty often
       actionToTrigger:
         m_PersistentCalls:
@@ -1170,7 +1170,7 @@ MonoBehaviour:
               m_StringArgument: SQ2c
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: SQ5c
+      nextStateKey: SQ4b
     - buttonText: I avoid starting as long as I can
       actionToTrigger:
         m_PersistentCalls:
@@ -1199,7 +1199,7 @@ MonoBehaviour:
               m_StringArgument: SQ2c
               m_BoolArgument: 0
             m_CallState: 1
-      nextStateKey: SQ5c
+      nextStateKey: SQ4c
     nextEventWithoutButton:
       m_PersistentCalls:
         m_Calls: []
@@ -1645,7 +1645,7 @@ MonoBehaviour:
   - requiredStateKey: PreSQ8c
     character: Koala_Cards
     audioObjects:
-    - {fileID: 11400000, guid: 6fb2d6206905c8f46a3bc39591831dc7, type: 2}
+    - {fileID: 11400000, guid: 923d8a5d04f58294fb27aab76d51c140, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
@@ -1901,6 +1901,7 @@ MonoBehaviour:
     character: Koala_Poison
     audioObjects:
     - {fileID: 11400000, guid: 6fb2d6206905c8f46a3bc39591831dc7, type: 2}
+    - {fileID: 11400000, guid: 9ab946b76ff0060489223f189ffd2393, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
@@ -1934,6 +1935,7 @@ MonoBehaviour:
     character: Koala_Poison
     audioObjects:
     - {fileID: 11400000, guid: 0d1487d88e47fae419530cb286f61cee, type: 2}
+    - {fileID: 11400000, guid: 9ab946b76ff0060489223f189ffd2393, type: 2}
     options: []
     nextEventWithoutButton:
       m_PersistentCalls:
@@ -1966,7 +1968,7 @@ MonoBehaviour:
   - requiredStateKey: EnergyCheck
     character: Koala_Skull
     audioObjects:
-    - {fileID: 11400000, guid: 9ab946b76ff0060489223f189ffd2393, type: 2}
+    - {fileID: 11400000, guid: b08c7d158a357a14b8e5c69dd13f4816, type: 2}
     options:
     - buttonText: Fully charged - let's go
       actionToTrigger:

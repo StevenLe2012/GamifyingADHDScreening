@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: BreadIslandData
   m_EditorClassIdentifier: 
   islandId: BREAD
-  displayName: Bread Island
-  icon: {fileID: 21300000, guid: cdc9ddcff9f34264a8952145891c8454, type: 3}
+  displayName: 
+  icon: {fileID: 21300000, guid: 00efa0eb0503e3f4185a73aa2cfe03cb, type: 3}
   introTitle: Welcome to Sweet Factory!
   introBody: "Your mission is to press SPACE as quickly as possible to collect only
     the card with THREE DONUTS. \r\n\r\nAll other cards are sugar traps - leave them

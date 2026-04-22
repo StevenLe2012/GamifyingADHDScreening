@@ -20,7 +20,7 @@ namespace MoxoCPT
         [SerializeField] private TextMeshProUGUI label;
 
         [Tooltip("Format string. {0} = current card number, {1} = total cards.")]
-        [SerializeField] private string format = "Progress: {0}/{1} cards";
+        [SerializeField] private string format = "Progress: {0}/{1}";
 
         private int _total;
 

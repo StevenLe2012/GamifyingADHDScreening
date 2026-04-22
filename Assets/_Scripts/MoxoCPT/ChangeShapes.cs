@@ -883,6 +883,15 @@ namespace MoxoCPT
         [SerializeField] private string midPhaseMainText = "Ready for more challenge";
         [SerializeField] private string midPhaseEndText = "Go!";
 
+        [Tooltip("Character shown during the mid-phase UI. Disabled in the scene; enabled when the UI appears and hidden when it ends.")]
+        [SerializeField] private GameObject midPhaseCharacter;
+
+        [Tooltip("Audio clip played when the mid-phase UI appears.")]
+        [SerializeField] private AudioClip midPhaseAudio;
+
+        [Tooltip("AudioSource used to play midPhaseAudio. If unassigned, the clip plays at the countdown UI's world position.")]
+        [SerializeField] private AudioSource midPhaseAudioSource;
+
         [Header("Countdown UI Placement")]
         [SerializeField] private int countdownSortingOrder = 90;
         [SerializeField] private bool countdownFacePlayer = false;
@@ -893,21 +902,21 @@ namespace MoxoCPT
         [SerializeField] private float uiClearBuffer = 0.05f;
 
         [Header("Trials")]
-        [SerializeField] private int totalTrialsPerIsland = 70;
-        [SerializeField] private int trialsPerPhase = 35;
+        [SerializeField] private int totalTrialsPerIsland = 84;
+        [SerializeField] private int trialsPerPhase = 42;
 
-        [Header("Phase Buckets (MUST sum to 35 each phase)")]
+        [Header("Phase Buckets (MUST sum to trialsPerPhase each phase)")]
         [SerializeField] private List<DurationBucket> ndpBuckets = new List<DurationBucket>()
         {
-            new DurationBucket { durationSeconds = 0.5f, targetCount = 14, nonTargetCount = 10 },
-            new DurationBucket { durationSeconds = 1.0f, targetCount = 8,  nonTargetCount = 2  },
+            new DurationBucket { durationSeconds = 0.5f, targetCount = 17, nonTargetCount = 12 },
+            new DurationBucket { durationSeconds = 1.0f, targetCount = 10, nonTargetCount = 2  },
             new DurationBucket { durationSeconds = 3.0f, targetCount = 1,  nonTargetCount = 0  },
         };
 
         [SerializeField] private List<DurationBucket> dpBuckets = new List<DurationBucket>()
         {
-            new DurationBucket { durationSeconds = 0.5f, targetCount = 14, nonTargetCount = 10 },
-            new DurationBucket { durationSeconds = 1.0f, targetCount = 8,  nonTargetCount = 2  },
+            new DurationBucket { durationSeconds = 0.5f, targetCount = 17, nonTargetCount = 12 },
+            new DurationBucket { durationSeconds = 1.0f, targetCount = 10, nonTargetCount = 2  },
             new DurationBucket { durationSeconds = 3.0f, targetCount = 1,  nonTargetCount = 0  },
         };
 
@@ -923,12 +932,19 @@ namespace MoxoCPT
         [SerializeField] private Cards cards;
 
         [Header("Progress Display")]
+        [Tooltip("If false, the progress UI is disabled even when a display is assigned.")]
+        [SerializeField] private bool showProgressDisplay = false;
         [Tooltip("Optional UI label showing 'Progress: n/total cards'. Hidden during training.")]
         [SerializeField] private CPTProgressDisplay progressDisplay;
 
-        [Header("Card Interval (NEW)")]
-        [Tooltip("Fixed gap AFTER a card turns off, before the next card shows (seconds). Default 0.85")]
-        [SerializeField] private float interStimulusIntervalSeconds = 0.85f;
+        [Header("Inter-stimulus interval (ISI)")]
+        [Tooltip("Gap after stimulus offset before the next trial (seconds). Durations are drawn in [min,max] using the study seed below.")]
+        [SerializeField] private float isiMinSeconds = 0.8f;
+        [SerializeField] private float isiMaxSeconds = 1.2f;
+        [Tooltip("Seeds 42 base ISIs (uniform [min,max]); each base appears once in NDP and once in DP → same total ISI in both phases for every participant. Combined multiset over 84 trials: each value ×2. Change for a new protocol version.")]
+        [SerializeField] private int interStimulusScheduleSeed = unchecked((int)0x4D4F584Fu); // "MOXO"
+        [Tooltip("If true: independent Fisher–Yates order within NDP and within DP, seeded with Participant ID (same multiset, different trial-to-ISI mapping per person). If false: fixed global order for everyone.")]
+        [SerializeField] private bool shuffleIsiOrderPerParticipant = true;
 
         // NEW: equal distribution for non-target types
         [Header("Non-Target Distribution (NEW)")]
@@ -945,6 +961,7 @@ namespace MoxoCPT
 
         [Tooltip("If true, tries to auto-find koala if koalaObject is not assigned.")]
         [SerializeField] private bool autoFindKoala = true;
+
 
         private bool _hasStarted;
         private Coroutine _runner;
@@ -973,6 +990,15 @@ namespace MoxoCPT
         private List<TrialPlan> _ndpPlan;
         private List<TrialPlan> _dpPlan;
 
+        /// <summary>42 base ISIs (study seed). Each appears once in NDP and once in DP → equal phase ISI sums. Perms map phase trial index → base index.</summary>
+        private float[] _isiBaseValues;
+        private int[] _isiPermNdp;
+        private int[] _isiPermDp;
+        private int _isiPermSeedNdp;
+        private int _isiPermSeedDp;
+        private int _trialPlanSeedNdp;
+        private int _trialPlanSeedDp;
+
         // -------- lifecycle guards --------
         private void OnEnable()
         {
@@ -985,10 +1011,10 @@ namespace MoxoCPT
             // Safety: ensure distractors are not running when enabling (NDP protection)
             distractors?.StopDP();
 
-            // NEW
+            // Koala is visible for the whole MOXO game, starting from training.
             BindKoala();
-            SetKoalaActive(true); // default visible when enabled
-            KoalaStandIdle();              // ✅ standing idle at the beginning
+            SetKoalaActive(true);
+            KoalaAnimBus.BroadcastToActiveKoalas(k => k.EnsureStandingIdle());
         }
 
         private void OnDisable()
@@ -1069,10 +1095,9 @@ namespace MoxoCPT
                 yield break;
             }
 
-            // NEW (safe if already bound)
+            // Koala is visible for the whole MOXO game.
             BindKoala();
             SetKoalaActive(true);
-            //KoalaStandIdle();              // ✅ ensure pose is reset before any later enable
 
             var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
             _currentIslandId = (island != null) ? (island.islandId ?? "") : "";
@@ -1136,9 +1161,48 @@ namespace MoxoCPT
             if (!ValidatePhaseBuckets("NDP", ndpBuckets)) yield break;
             if (!ValidatePhaseBuckets("DP", dpBuckets)) yield break;
 
-            // build randomized plan per phase (guaranteed different across phase+island)
-            if (!BuildPlanForPhase("NDP", _currentIslandId, ndpBuckets, out _ndpPlan)) yield break;
-            if (!BuildPlanForPhase("DP", _currentIslandId, dpBuckets, out _dpPlan)) yield break;
+            BuildGlobalIsiSchedule(pid, _currentIslandId);
+
+            // build randomized plan per phase (participant-specific order)
+            if (!BuildPlanForPhase("NDP", _currentIslandId, ndpBuckets, pid, out _ndpPlan, out _trialPlanSeedNdp)) yield break;
+            if (!BuildPlanForPhase("DP", _currentIslandId, dpBuckets, pid, out _dpPlan, out _trialPlanSeedDp)) yield break;
+
+            // Set planned totals used by the results screen.
+            // Use the finalized built plans as source of truth so totals remain correct
+            // even if buckets/config are edited or a plan build is retried.
+            int plannedTargetTotal = 0;
+            int plannedNonTargetTotal = 0;
+            if (_ndpPlan != null)
+            {
+                for (int i = 0; i < _ndpPlan.Count; i++)
+                {
+                    if (_ndpPlan[i].isTarget) plannedTargetTotal++;
+                    else plannedNonTargetTotal++;
+                }
+            }
+            if (_dpPlan != null)
+            {
+                for (int i = 0; i < _dpPlan.Count; i++)
+                {
+                    if (_dpPlan[i].isTarget) plannedTargetTotal++;
+                    else plannedNonTargetTotal++;
+                }
+            }
+
+            var tracker = CPTScoreRuntime.I;
+            if (tracker != null)
+            {
+                tracker.SetTotalTargets(plannedTargetTotal);
+                tracker.SetTotalDistractors(plannedNonTargetTotal);
+            }
+
+            float ndpStimSum = 0f, dpStimSum = 0f;
+            for (int i = 0; i < _ndpPlan.Count; i++) ndpStimSum += _ndpPlan[i].durationSeconds;
+            for (int i = 0; i < _dpPlan.Count; i++) dpStimSum += _dpPlan[i].durationSeconds;
+            if (Mathf.Abs(ndpStimSum - dpStimSum) > 0.0001f)
+                Debug.LogWarning($"[ChangeShapes] NDP stimulus sum ({ndpStimSum:0.###}s) ≠ DP ({dpStimSum:0.###}s); use matching duration buckets so NDP and DP total time match.");
+
+            LogPlannedCptAndUiDurations();
 
             yield return StartCoroutine(CoRunCountdownAndTrials());
         }
@@ -1160,6 +1224,78 @@ namespace MoxoCPT
                 return false;
             }
             return true;
+        }
+
+        private void BuildGlobalIsiSchedule(string participantId, string islandId)
+        {
+            int half = trialsPerPhase;
+            float min = Mathf.Min(isiMinSeconds, isiMaxSeconds);
+            float max = Mathf.Max(isiMinSeconds, isiMaxSeconds);
+
+            var valueRng = new System.Random(unchecked(interStimulusScheduleSeed));
+            _isiBaseValues = new float[half];
+            for (int i = 0; i < half; i++)
+                _isiBaseValues[i] = (float)(min + (max - min) * valueRng.NextDouble());
+
+            _isiPermNdp = new int[half];
+            _isiPermDp = new int[half];
+            for (int i = 0; i < half; i++)
+            {
+                _isiPermNdp[i] = i;
+                _isiPermDp[i] = i;
+            }
+
+            int study = unchecked(interStimulusScheduleSeed);
+            int islandHash = StableHash(string.IsNullOrWhiteSpace(islandId) ? "UNKNOWN_ISLAND" : islandId.Trim());
+            if (shuffleIsiOrderPerParticipant)
+            {
+                string pidKey = string.IsNullOrWhiteSpace(participantId) ? "UNKNOWN" : participantId.Trim();
+                int h = StableHash(pidKey);
+                _isiPermSeedNdp = HashCombine(study, h, islandHash, unchecked((int)0x4E4450));
+                _isiPermSeedDp = HashCombine(study, h, islandHash, unchecked((int)0x445044));
+                FisherYates(_isiPermNdp, new System.Random(_isiPermSeedNdp)); // NDP
+                FisherYates(_isiPermDp, new System.Random(_isiPermSeedDp)); // DP
+            }
+            else
+            {
+                _isiPermSeedNdp = HashCombine(study, islandHash, 1);
+                _isiPermSeedDp = HashCombine(study, islandHash, 2);
+                FisherYates(_isiPermNdp, new System.Random(_isiPermSeedNdp));
+                FisherYates(_isiPermDp, new System.Random(_isiPermSeedDp));
+            }
+        }
+
+        private int GetIsiBaseIndexForGlobalTrial(int globalTrialIndex)
+        {
+            int half = trialsPerPhase;
+            if (_isiPermNdp == null || _isiPermDp == null || _isiPermNdp.Length != half || _isiPermDp.Length != half)
+                return -1;
+            if (globalTrialIndex < half)
+                return Mathf.Clamp(_isiPermNdp[globalTrialIndex], 0, half - 1);
+            int phaseIdx = Mathf.Clamp(globalTrialIndex - half, 0, half - 1);
+            return Mathf.Clamp(_isiPermDp[phaseIdx], 0, half - 1);
+        }
+
+        private float GetIsiForGlobalTrial(int globalTrialIndex)
+        {
+            int half = trialsPerPhase;
+            if (_isiBaseValues == null || _isiBaseValues.Length != half ||
+                _isiPermNdp == null || _isiPermNdp.Length != half ||
+                _isiPermDp == null || _isiPermDp.Length != half)
+                return Mathf.Max(0f, (Mathf.Min(isiMinSeconds, isiMaxSeconds) + Mathf.Max(isiMinSeconds, isiMaxSeconds)) * 0.5f);
+
+            if (globalTrialIndex < half)
+            {
+                int k = Mathf.Clamp(_isiPermNdp[globalTrialIndex], 0, half - 1);
+                return Mathf.Max(0f, _isiBaseValues[k]);
+            }
+            else
+            {
+                int phaseIdx = globalTrialIndex - half;
+                phaseIdx = Mathf.Clamp(phaseIdx, 0, half - 1);
+                int k = Mathf.Clamp(_isiPermDp[phaseIdx], 0, half - 1);
+                return Mathf.Max(0f, _isiBaseValues[k]);
+            }
         }
 
         // -------- NEW helpers for NonTarget type indexing --------
@@ -1192,9 +1328,10 @@ namespace MoxoCPT
         }
 
         // Uses local System.Random (does NOT touch UnityEngine.Random state).
-        private bool BuildPlanForPhase(string phaseName, string islandId, List<DurationBucket> buckets, out List<TrialPlan> plan)
+        private bool BuildPlanForPhase(string phaseName, string islandId, List<DurationBucket> buckets, string participantId, out List<TrialPlan> plan, out int planSeed)
         {
             plan = null;
+            planSeed = 0;
 
             var all = cards.cardArr;
             var targets = all.Where(t => t && t.CompareTag("Target")).ToArray();
@@ -1234,8 +1371,14 @@ namespace MoxoCPT
                 for (int i = 0; i < b.nonTargetCount; i++) pool.Add((false, b.durationSeconds));
             }
 
-            // Phase+Island specific base seed (key for across-phase/island randomization)
-            int baseSeed = HashCombine(_runSeed, StableHash(islandId), StableHash(phaseName));
+            // Study + island + phase + participant: participant-specific trial order while preserving bucket totals.
+            string pidKey = string.IsNullOrWhiteSpace(participantId) ? "UNKNOWN" : participantId.Trim();
+            int baseSeed = HashCombine(
+                unchecked(interStimulusScheduleSeed),
+                StableHash(islandId),
+                StableHash(phaseName),
+                StableHash(pidKey));
+            planSeed = baseSeed;
 
             List<(bool isTarget, float dur)> ordered = null;
 
@@ -1374,14 +1517,36 @@ namespace MoxoCPT
 
             yield return StartCoroutine(ShowCountdown(_secondsTillGameStarts, countdownStartText, countdownEndText));
 
-            // Show progress counter for the real game (hidden during training).
-            progressDisplay?.Show(totalTrialsPerIsland);
+            // Show progress counter for the real game only when explicitly enabled.
+            if (showProgressDisplay) progressDisplay?.Show(totalTrialsPerIsland);
 
             // NDP (NO distractors)
             yield return StartCoroutine(RunPhase("NDP", _ndpPlan, globalStartIndex: 0));
 
-            // mid-phase UI
+            // mid-phase UI — enable character + play audio, then hide both when done
+            if (midPhaseCharacter)
+            {
+                midPhaseCharacter.SetActive(true);
+                // Yield one frame so any OnEnable/Start on the character settles
+                // before we start the countdown (prevents scripts on the character
+                // from interfering with the coroutine chain).
+                yield return null;
+            }
+
+            // Show koala standing idle during the mid-phase countdown.
+            BindKoala();
+            SetKoalaActive(true);
+            yield return null;
+            KoalaAnimBus.BroadcastToActiveKoalas(k => k.EnsureStandingIdle());
+
+            Debug.Log("[ChangeShapes] Mid-phase: starting countdown UI.");
+            PlayMidPhaseAudio();
+
             yield return StartCoroutine(ShowCountdown(midPhaseCountdownSeconds, midPhaseMainText, midPhaseEndText));
+
+            Debug.Log("[ChangeShapes] Mid-phase: countdown done, hiding character.");
+            StopMidPhaseAudio();
+            if (midPhaseCharacter) midPhaseCharacter.SetActive(false);
 
             // DP (START distractors here)
             yield return StartCoroutine(RunPhase("DP", _dpPlan, globalStartIndex: trialsPerPhase));
@@ -1389,15 +1554,15 @@ namespace MoxoCPT
             // end safety
             distractors?.StopDP();
 
-            // NEW: ensure koala is ON at the end
             SetKoalaActive(true);
-            KoalaStandIdle();
 
             if (cards != null && cards.curCard != null) TurnCardOff(cards.curCard);
 
             // Hide progress counter before results screen appears.
-            progressDisplay?.Hide();
+            if (showProgressDisplay) progressDisplay?.Hide();
 
+            // MoxoCPTManager.OnGameEnd owns the post-game flow (reward + results screen).
+            // The happy animation is triggered from there so it persists through results.
             MoxoCPTManager.Instance?.OnGameEnd();
         }
 
@@ -1409,39 +1574,26 @@ namespace MoxoCPT
             // ✅ DP-only distractors control (ChangeShapes owns timing)
             if (phaseName == "DP")
             {
-                // ✅ DP: show koala + CHEER (must wait a frame after SetActive)
+                // DP: koala visible and standing idle (no cheer).
                 BindKoala();
                 SetKoalaActive(true);
 
-                // IMPORTANT: allow Animator to initialize after activation
+                // Allow Animator to initialize after activation.
                 yield return null;
 
-                // Establish a clean standing-idle baseline so the animator is never
-                // caught in an ambiguous state when the cheer bool is flipped on.
                 KoalaStandIdle();
 
-                // Let the idle state settle one frame before enabling cheer,
-                // so the Stand trigger is consumed and the transition is deterministic.
-                yield return null;
-
-                KoalaAnimBus.BroadcastToAllKoalas(k => k.SetCheer(true));   // ✅ cheer stays on for whole DP
-
-                float dpSeconds = ComputePhaseSeconds(_dpPlan);
+                float dpSeconds = ComputePhaseSeconds(_dpPlan, trialsPerPhase);
                 distractors?.StartDP(_currentIslandId, _runSeed, dpSeconds);
             }
             else
             {
-                // ✅ NDP: koala hidden, but put it in idle BEFORE hiding (while still active)
+                // NDP: koala visible and standing idle throughout.
                 BindKoala();
-
-                // Make sure it is active long enough to receive the idle command
                 SetKoalaActive(true);
                 yield return null;
 
-                KoalaStandIdle();
-
-                // Now hide it for NDP
-                SetKoalaActive(true);
+                KoalaAnimBus.BroadcastToActiveKoalas(k => k.EnsureStandingIdle());
 
                 distractors?.StopDP();
             }
@@ -1465,13 +1617,14 @@ namespace MoxoCPT
                 }
 
                 float dur = tp.durationSeconds;
-                float isi = Mathf.Max(0f, interStimulusIntervalSeconds);
+                int globalIdx = globalStartIndex + i;
+                float isi = GetIsiForGlobalTrial(globalIdx);
 
                 TurnCardOn(tp.card);
                 cards.UpdateCurCard(tp.card);
 
                 // globalStartIndex + i + 1 gives the 1-based card number across both phases.
-                progressDisplay?.UpdateCount(globalStartIndex + i + 1);
+                if (showProgressDisplay) progressDisplay?.UpdateCount(globalStartIndex + i + 1);
 
                 long onsetMs = (long)(Time.realtimeSinceStartup * 1000.0f);
 
@@ -1483,6 +1636,11 @@ namespace MoxoCPT
                 report.StimulusOnsetMs = onsetMs;
                 report.StimulusType = GetStimulusTypeLabel(tp.card, tp.isTarget);
                 report.StimulusDurationMs = Mathf.RoundToInt(dur * 1000f);
+                report.InterStimulusIntervalMs = Mathf.RoundToInt(isi * 1000f);
+                report.IsiBaseIndex = GetIsiBaseIndexForGlobalTrial(globalIdx);
+                report.InterStimulusScheduleSeed = unchecked(interStimulusScheduleSeed);
+                report.TrialPlanSeed = (phaseName == "NDP") ? _trialPlanSeedNdp : _trialPlanSeedDp;
+                report.IsiPermutationSeed = (phaseName == "NDP") ? _isiPermSeedNdp : _isiPermSeedDp;
                 report.StimulusName = tp.card != null ? tp.card.name : "";
 
                 if (logger != null && logger.IsLogging)
@@ -1530,18 +1688,42 @@ namespace MoxoCPT
             Debug.Log($"[ChangeShapes] Phase {phaseName} complete.");
         }
 
-        private float ComputePhaseSeconds(List<TrialPlan> plan)
+        private float ComputePhaseSeconds(List<TrialPlan> plan, int globalStartIndex)
         {
             if (plan == null || plan.Count == 0) return 0f;
 
-            float isi = Mathf.Max(0f, interStimulusIntervalSeconds);
             float sum = 0f;
-
-            // Your loop does: Wait(dur) then Wait(isi) for every trial
             for (int i = 0; i < plan.Count; i++)
-                sum += plan[i].durationSeconds + isi;
+                sum += plan[i].durationSeconds + GetIsiForGlobalTrial(globalStartIndex + i);
 
             return sum;
+        }
+
+        /// <summary>
+        /// Wall time for card+ISI phases (matches what is passed to DistractorSystem as DP budget). Excludes countdown and mid-phase UI.
+        /// </summary>
+        private void LogPlannedCptAndUiDurations()
+        {
+            float ndpCards = ComputePhaseSeconds(_ndpPlan, 0);
+            float dpCards = ComputePhaseSeconds(_dpPlan, trialsPerPhase);
+
+            float countdownBlock = _secondsTillGameStarts + goHoldSeconds + uiClearBuffer + postCountdownDelay;
+            float midBlock = midPhaseCountdownSeconds + goHoldSeconds + uiClearBuffer + postCountdownDelay;
+
+            float isiSumHalf = 0f;
+            if (_isiBaseValues != null)
+                for (int i = 0; i < _isiBaseValues.Length; i++)
+                    isiSumHalf += _isiBaseValues[i];
+
+            Debug.Log(
+                "[ChangeShapes] Planned durations: NDP and DP totals match across participants when buckets match (study-seeded stimulus plan + paired ISIs). " +
+                $"initial countdown block ≈ {countdownBlock:0.###} s, " +
+                $"NDP (stimulus+ISI) = {ndpCards:0.###} s, " +
+                $"mid-phase UI block ≈ {midBlock:0.###} s, " +
+                $"DP (stimulus+ISI) = {dpCards:0.###} s (equals NDP: {Mathf.Abs(ndpCards - dpCards) < 0.0001f}), " +
+                $"sum(ISI) per phase from bases = {isiSumHalf:0.###} s, " +
+                $"distractor DP budget = {dpCards:0.###} s."
+            );
         }
 
         private IEnumerator ShowCountdown(float seconds, string mainText, string endText)
@@ -1654,6 +1836,37 @@ namespace MoxoCPT
         private static EyeTrackLogger GetLogger()
             => EyeTrackLogger.I ?? FindObjectOfType<EyeTrackLogger>(true);
 
+        // Returns the assigned AudioSource, or lazily creates one on this GameObject.
+        // ChangeShapes is always active during gameplay, so the source is always usable.
+        private AudioSource GetOrCreateMidPhaseAudioSource()
+        {
+            if (midPhaseAudioSource) return midPhaseAudioSource;
+            midPhaseAudioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+            midPhaseAudioSource.playOnAwake = false;
+            midPhaseAudioSource.spatialBlend = 0f; // 2-D so it's audible regardless of position
+            return midPhaseAudioSource;
+        }
+
+        private void PlayMidPhaseAudio()
+        {
+            if (!midPhaseAudio) return;
+            try
+            {
+                var src = GetOrCreateMidPhaseAudioSource();
+                if (src) { src.clip = midPhaseAudio; src.Play(); }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[ChangeShapes] PlayMidPhaseAudio failed (non-fatal): {e.Message}");
+            }
+        }
+
+        private void StopMidPhaseAudio()
+        {
+            if (midPhaseAudioSource && midPhaseAudioSource.isPlaying)
+                midPhaseAudioSource.Stop();
+        }
+
         private void HideCountdownUI(bool immediate)
         {
             if (!countdownUI) return;
@@ -1715,12 +1928,11 @@ namespace MoxoCPT
         // ----------------- koala animation helpers (NEW) -----------------
         private void KoalaStandIdle()
         {
-            // ensure koala exists + is active before trying to animate
             BindKoala();
-            if (koalaObject) SetKoalaActive(true);
-
-            // drive animation
-            KoalaAnimBus.BroadcastToAllKoalas(k => k.EnsureStandingIdle());
+            // Broadcast to whichever koalas are currently active.
+            // Callers are responsible for activating/deactivating the koala object
+            // before and after this call — do NOT force-show the koala here.
+            KoalaAnimBus.BroadcastToActiveKoalas(k => k.EnsureStandingIdle());
         }
 
         private void KoalaCheer()
@@ -1742,6 +1954,15 @@ namespace MoxoCPT
         private void KoalaTalkOff()
         {
             KoalaAnimBus.BroadcastToAllKoalas(k => k.SetTalking(false));
+        }
+
+        // ----------------- koala happy reaction -----------------
+
+        private void OnKoalaCorrectHit()
+        {
+            // Trigger is consumed by the Animator immediately; the clip plays once
+            // and the exit transition returns the koala to idle automatically.
+            KoalaAnimBus.BroadcastToActiveKoalas(k => k.PlayHappy());
         }
 
         // ----------------- hashing helpers -----------------

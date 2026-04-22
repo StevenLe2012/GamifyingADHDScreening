@@ -3,6 +3,9 @@ using TMPro;
 
 public class FPSTracker : MonoBehaviour
 {
+    [Tooltip("When off, this overlay is hidden and no FPS work runs.")]
+    [SerializeField] private bool showFpsOverlay = false;
+
     [SerializeField] private float fpsUpdateInterval = 0.5f;
     [SerializeField] private float warningFPS = 70.0f;
     [SerializeField] private float criticalFPS = 60.0f;
@@ -14,7 +17,14 @@ public class FPSTracker : MonoBehaviour
 
     private void Awake()
     {
-        _fpsUI = GetComponentInChildren<TextMeshProUGUI>();
+        _fpsUI = GetComponentInChildren<TextMeshProUGUI>(true);
+        if (!showFpsOverlay)
+        {
+            if (_fpsUI) _fpsUI.gameObject.SetActive(false);
+            enabled = false;
+            return;
+        }
+
         _timeLeft = fpsUpdateInterval;
         _accumulatedTime = 0.0f;
         _frames = 0;
@@ -22,6 +32,7 @@ public class FPSTracker : MonoBehaviour
 
     private void Update()
     {
+        if (!showFpsOverlay || !_fpsUI) return;
         UpdateFPS();
     }
 

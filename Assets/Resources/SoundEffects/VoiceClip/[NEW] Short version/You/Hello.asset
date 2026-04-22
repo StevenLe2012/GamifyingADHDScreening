@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Hello
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 74463a0d4e33e084f8b64eae8791ebec, type: 3}
-  subtitle: 'You: Hello'
+  clip: {fileID: 8300000, guid: f47d2a24d7a6df04995a3e51ed38a88f, type: 3}
+  subtitle: 'You: Hello?'
   character: You

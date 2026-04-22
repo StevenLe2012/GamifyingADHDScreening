@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Ofc
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 86052b49de8f9a64389a57c110a91c99, type: 3}
+  clip: {fileID: 8300000, guid: bb82b954abf5d064fb1e70740cbb66d6, type: 3}
   subtitle: 'You: Of course!'
   character: You

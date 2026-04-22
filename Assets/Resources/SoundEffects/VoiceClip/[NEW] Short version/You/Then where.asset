@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2849438a38de7ab42a1ce4abe9bb67e9, type: 3}
   m_Name: Then where
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 4da4536bb5f2c3b4a862e0b2403bff2c, type: 3}
+  clip: {fileID: 8300000, guid: a9c3eeec2c3388b4e8f653717977f156, type: 3}
   subtitle: "You: Then where\u2019s my pet koala?!"
   character: You

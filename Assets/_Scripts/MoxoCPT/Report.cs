@@ -13,7 +13,7 @@ namespace MoxoCPT
         public string SessionId;
 
         // ---- Trial identity ----
-        // global 0..69 across the whole island run
+        // global 0..(totalTrialsPerIsland-1) across the whole island run (e.g. 0..83 for 84 cards)
         public int TrialIndex;
 
         // ---- Island ----
@@ -28,6 +28,19 @@ namespace MoxoCPT
 
         // stimulus ON time (ms)
         public int StimulusDurationMs;
+
+        // planned ISI after stimulus offset until next trial (ms); -1 if unknown
+        public int InterStimulusIntervalMs;
+        // index into the 42 seeded base ISI values; -1 if unknown
+        public int IsiBaseIndex;
+
+        // reproducibility metadata
+        // seed used to build this phase's trial plan (target/non-target+duration order and card-pick stream)
+        public int TrialPlanSeed;
+        // study seed used to generate the 42 base ISI values
+        public int InterStimulusScheduleSeed;
+        // seed used for this phase's ISI permutation
+        public int IsiPermutationSeed;
 
         // ms since app start when stimulus became visible and invisible
         public long StimulusOnsetMs;
@@ -87,6 +100,11 @@ namespace MoxoCPT
             StimulusType = "";
             StimulusName = "";
             StimulusDurationMs = -1;
+            InterStimulusIntervalMs = -1;
+            IsiBaseIndex = -1;
+            TrialPlanSeed = 0;
+            InterStimulusScheduleSeed = 0;
+            IsiPermutationSeed = 0;
             StimulusOnsetMs = -1;
             StimulusOffsetMs = -1;
             StimulusActualDurationMs = -1;

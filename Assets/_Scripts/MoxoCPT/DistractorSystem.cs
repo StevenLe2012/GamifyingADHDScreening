@@ -979,18 +979,14 @@ namespace MoxoCPT
     /// <summary>
     /// DistractorSystem (DP-only).
     /// ChangeShapes should call:
-    ///   - distractors.StartDP(islandId, runSeed);
+    ///   - distractors.StartDP(islandId, runSeed, dpSeconds) with DP wall time = sum of stimulus+ISI for the DP phase;
     ///   - (each DP trial) distractors.SetTrialContext(trialIndex, phaseTrialIndex);
     ///   - distractors.StopDP();
     ///
-    /// STRICT MODE (UPDATED TO YOUR NEW GOAL):
-    /// - Exactly 6 distractors
-    /// - Each distractor has EXACTLY equal total ON time across the DP
-    /// - Individual ON segments are randomized between [minOnSeconds, maxOnSeconds] in onStepSeconds steps
-    /// - Concurrency is always 1 or 2 (never 0, never >2)
-    /// - No OFF gaps (minOffSeconds/maxOffSeconds forced to 0 in strict)
-    /// - Schedule is precomputed and ends cleanly (no truncation)
-    /// - islandId contributes to seed (counterbalanced per island)
+    /// CONDITION CATALOG MODE (optional, default): 15 pair episodes (every unordered pair once) + 6×k single episodes
+    /// (each distractor exactly k times, equal frequency); random order; simultaneous on/offset for pairs; episode lengths fill DP wall time in [minOn,maxOn] when feasible.
+    ///
+    /// STRICT MODE (optional): Exactly 6 distractors, equal total ON time each, chunks in [minOn,maxOn], concurrency 1..2, no gaps.
     ///
     /// NOTE ON "STRICT":
     /// - Coroutine timing jitters, so "actual" ms is not perfectly exact in real time.
@@ -1045,15 +1041,50 @@ namespace MoxoCPT
         // =========================
         [Header("Strict Schedule (DP only)")]
         [Tooltip("If ON, uses a fully precomputed strict schedule: exact equal total time per distractor, 1..2 overlap, no gaps, clean end.")]
-        [SerializeField] private bool strictExactSchedule = true;
+        [SerializeField] private bool strictExactSchedule = false;
 
-        [Tooltip("DP duration used for scheduling (seconds). Overridden if StartDP(islandId,seed,dpSecondsOverride) is used.")]
-        [SerializeField] private float dpDurationSeconds = 66f;
+        [Header("Condition catalog (DP only)")]
+        [Tooltip("If ON: single-distractor episodes only (one at a time). Total active time per distractor is equal; each runs singlePresentationsPerDistractor times. Episode lengths fill DP wall-clock from ChangeShapes. Takes priority over Strict.")]
+        [SerializeField] private bool conditionCatalogSchedule = true;
+
+        [Tooltip("Each distractor appears exactly this many times as a solo episode. Total episodes = 6 × this value. Total active seconds per distractor = DP budget ÷ 6 (split randomly across these episodes within min/max).")]
+        [SerializeField] [Min(1)] private int singlePresentationsPerDistractor = 3;
+
+        [Tooltip("If true: consecutive episodes use different distractors (no back-to-back same distractor).")]
+        [SerializeField] private bool noAdjacentEpisodeDistractorOverlap = true;
+
+        [Tooltip("Greedy order attempts before falling back to unconstrained shuffle with a warning.")]
+        [SerializeField] private int conditionOrderBuildAttempts = 8000;
+
+        // ================================================================
+        // FIXED OCCURRENCES MODE
+        // Each distractor plays exactly N times; every distractor gets the
+        // same total ON time; chunk durations are randomised in [min,max].
+        // Takes priority over all other schedule modes when enabled.
+        // ================================================================
+        [Header("Fixed Occurrences Mode")]
+        [Tooltip("Each distractor appears exactly 'occurrencesPerDistractor' times with equal total active time per distractor. Takes priority over Condition Catalog and Strict modes.")]
+        [SerializeField] private bool fixedOccurrencesMode = false;
+
+        [Tooltip("Number of times each distractor is activated. Total chunks = distractors × this value.")]
+        [Min(1)]
+        [SerializeField] private int occurrencesPerDistractor = 3;
+
+        // Set each DP start: real runs use StartDP(islandId, seed, dpSeconds) from ChangeShapes (stimulus+ISI sum).
+        // Two-arg StartDP / StartSystem use FallbackDpBudgetSeconds for editor testing only.
+        private float _dpBudgetSeconds;
+        private const float FallbackDpBudgetSeconds = 120f;
 
         // Kept for compatibility with your original script; NOT USED in updated strict mode.
         [Tooltip("Legacy field (ignored in UPDATED strict mode).")]
         [Range(1f, 2f)]
         [SerializeField] private float targetAvgConcurrency = 1.5f;
+
+        /// <summary>Strict + condition catalog log OFF rows using planned timestamps (no RT jitter in CSV).</summary>
+        private bool _usePlannedDistractorOffRows = false;
+
+        /// <summary>Seeded in StartDP for condition-catalog episode order retries.</summary>
+        private int _dpCombinedSeed;
 
         // ---------------- DP runtime ----------------
         private bool _dpRunning = false;
@@ -1141,14 +1172,11 @@ namespace MoxoCPT
 
         public void StartDP(string islandId, int seed, float dpSecondsOverride)
         {
-            // Store the true DP duration coming from ChangeShapes
-            dpDurationSeconds = Mathf.Max(0.001f, dpSecondsOverride);
+            _dpBudgetSeconds = Mathf.Max(0.001f, dpSecondsOverride);
+            if (strictExactSchedule || conditionCatalogSchedule)
+                _dpBudgetSeconds = AlignDownToStep(_dpBudgetSeconds, onStepSeconds);
 
-            // In strict mode, dpDurationSeconds MUST be aligned to onStepSeconds
-            if (strictExactSchedule)
-                dpDurationSeconds = AlignDownToStep(dpDurationSeconds, onStepSeconds);
-
-            StartDP(islandId, seed);
+            StartDP(islandId, seed, budgetFromChangeShapes: true);
         }
 
         // Align DOWN so schedule never runs longer than the actual phase
@@ -1162,6 +1190,11 @@ namespace MoxoCPT
         }
 
         public void StartDP(string islandId, int seed)
+        {
+            StartDP(islandId, seed, budgetFromChangeShapes: false);
+        }
+
+        private void StartDP(string islandId, int seed, bool budgetFromChangeShapes)
         {
             if (_dpRunning) return;
 
@@ -1177,9 +1210,12 @@ namespace MoxoCPT
             allowOverlap = true;
             maxSimultaneous = 2;
 
-            // strict mode needs step-aligned duration (safety if StartDP(seed) called directly)
-            if (strictExactSchedule)
-                dpDurationSeconds = AlignDownToStep(dpDurationSeconds, onStepSeconds);
+            if (!budgetFromChangeShapes)
+            {
+                _dpBudgetSeconds = AlignDownToStep(Mathf.Max(0.001f, FallbackDpBudgetSeconds), onStepSeconds);
+                if (debugLogs)
+                    Log($"DP budget from fallback ({_dpBudgetSeconds:0.###}s) — use StartDP(island, seed, dpSeconds) from ChangeShapes for real CPT runs.");
+            }
 
             // strict mode removes any OFF delay
             if (strictExactSchedule)
@@ -1200,7 +1236,19 @@ namespace MoxoCPT
             LoggingDistractors.CreateDistractorCSV();
 
             int combinedSeed = CombineSeeds(seed, HashIslandId(islandId), unchecked((int)0xC0DEC0DE));
+            _dpCombinedSeed = combinedSeed;
             _rng = new System.Random(combinedSeed);
+            string runMode = fixedOccurrencesMode ? "FixedOccurrences" : conditionCatalogSchedule ? "ConditionCatalog" : strictExactSchedule ? "Strict" : "Legacy";
+            LoggingDistractors.SetRunMetadata(
+                seed,
+                combinedSeed,
+                runMode,
+                _dpBudgetSeconds,
+                minOnSeconds,
+                maxOnSeconds,
+                onStepSeconds,
+                singlePresentationsPerDistractor,
+                noAdjacentEpisodeDistractorOverlap);
 
             _activeIdx.Clear();
 
@@ -1219,11 +1267,29 @@ namespace MoxoCPT
 
             if (_dpCo != null) StopCoroutine(_dpCo);
 
-            _dpCo = strictExactSchedule
-                ? StartCoroutine(CoRunDP_StrictExact(combinedSeed))   // ✅ name kept for compatibility
-                : StartCoroutine(CoRunDP_LegacyWeighted());
+            _usePlannedDistractorOffRows = false;
 
-            Log($"DP START (strict={strictExactSchedule}) islandId='{_dpIslandId}', seed={seed}, combinedSeed={combinedSeed}, entries={assigned}");
+            if (fixedOccurrencesMode)
+            {
+                _usePlannedDistractorOffRows = true;
+                _dpCo = StartCoroutine(CoRunDP_FixedOccurrences(combinedSeed));
+            }
+            else if (conditionCatalogSchedule)
+            {
+                _usePlannedDistractorOffRows = true;
+                _dpCo = StartCoroutine(CoRunDP_ConditionCatalog());
+            }
+            else if (strictExactSchedule)
+            {
+                _usePlannedDistractorOffRows = true;
+                _dpCo = StartCoroutine(CoRunDP_StrictExact(combinedSeed));
+            }
+            else
+            {
+                _dpCo = StartCoroutine(CoRunDP_LegacyWeighted());
+            }
+
+            Log($"DP START (mode={runMode}) islandId='{_dpIslandId}', seed={seed}, combinedSeed={combinedSeed}, entries={assigned}, dpBudget={_dpBudgetSeconds:0.###}s");
         }
 
         public void StopDP()
@@ -1309,10 +1375,10 @@ namespace MoxoCPT
             }
 
             float step = Mathf.Max(0.0001f, onStepSeconds);
-            int T = Mathf.RoundToInt(dpDurationSeconds / step);
-            if (!Mathf.Approximately(T * step, dpDurationSeconds))
+            int T = Mathf.RoundToInt(_dpBudgetSeconds / step);
+            if (!Mathf.Approximately(T * step, _dpBudgetSeconds))
             {
-                Debug.LogError($"[Distractors] dpDurationSeconds must be a multiple of onStepSeconds. dp={dpDurationSeconds}, step={step}", this);
+                Debug.LogError($"[Distractors] DP budget must be a multiple of onStepSeconds. dp={_dpBudgetSeconds}, step={step}", this);
                 yield break;
             }
 
@@ -1436,11 +1502,11 @@ namespace MoxoCPT
 
             var events = BuildEventsFromLanes(laneA, laneB, step);
 
-            Log($"STRICT EQUAL-RANDOM PLAN: dp={dpDurationSeconds:0.00}s step={step:0.00}s");
+            Log($"STRICT EQUAL-RANDOM PLAN: dp={_dpBudgetSeconds:0.00}s step={step:0.00}s");
             Log($"  Tsteps={T}, totalSlots={totalSlots}, extraSlots={extraSlots}, perDistractor={perSeconds:0.00}s");
 
             // --- Execution (yields allowed, not inside try/catch) ---
-            float dpEnd = dpDurationSeconds;
+            float dpEnd = _dpBudgetSeconds;
             float t0 = Time.realtimeSinceStartup;
 
             int eIdx = 0;
@@ -1460,6 +1526,304 @@ namespace MoxoCPT
             if (remaining > 0f) yield return new WaitForSecondsRealtime(remaining);
 
             StopDP();
+        }
+
+        private struct ConditionEpisodeSpec
+        {
+            public bool isPair;
+            public int a;
+            public int b;
+        }
+
+        private struct ConditionPlannedEpisode
+        {
+            public ConditionEpisodeSpec spec;
+            public int stepCount;
+        }
+
+        /// <summary>
+        /// Singles only: one distractor at a time. Splits DP wall time so each distractor gets exactly T/6 steps total,
+        /// divided across <see cref="singlePresentationsPerDistractor"/> episodes in [minOn,maxOn] per episode.
+        /// </summary>
+        private IEnumerator CoRunDP_ConditionCatalog()
+        {
+            if (entries.Count != 6)
+            {
+                Debug.LogError($"[Distractors] Condition catalog requires exactly 6 distractors. Found {entries.Count}.", this);
+                yield break;
+            }
+
+            float step = Mathf.Max(0.0001f, onStepSeconds);
+            int T = Mathf.RoundToInt(_dpBudgetSeconds / step);
+            if (!Mathf.Approximately(T * step, _dpBudgetSeconds))
+            {
+                Debug.LogError($"[Distractors] DP budget must be a multiple of onStepSeconds. dp={_dpBudgetSeconds}, step={step}", this);
+                yield break;
+            }
+
+            int k = Mathf.Max(1, singlePresentationsPerDistractor);
+            int nEpisodes = 6 * k;
+            int minSteps = Mathf.Max(1, Mathf.RoundToInt(minOnSeconds / step));
+            int maxSteps = Mathf.Max(minSteps, Mathf.RoundToInt(maxOnSeconds / step));
+
+            if (!TryBuildEqualSinglesPlannedEpisodes(T, k, minSteps, maxSteps, _rng, out List<ConditionPlannedEpisode> pool, out string buildErr))
+            {
+                Debug.LogError($"[Distractors] Condition catalog: {buildErr}", this);
+                yield break;
+            }
+
+            List<ConditionPlannedEpisode> ordered;
+            if (!noAdjacentEpisodeDistractorOverlap)
+            {
+                ordered = new List<ConditionPlannedEpisode>(pool);
+                Shuffle(ordered, _rng);
+            }
+            else
+            {
+                int maxAtt = Mathf.Max(1, conditionOrderBuildAttempts);
+                bool ok = false;
+                ordered = null;
+                for (int attempt = 0; attempt < maxAtt; attempt++)
+                {
+                    int attemptSeed = CombineSeeds(_dpCombinedSeed, attempt, unchecked((int)0xAD01AC01));
+                    var rng = new System.Random(attemptSeed);
+                    if (TryBuildGreedyPlannedNoAdjacentOverlap(rng, pool, out ordered))
+                    {
+                        ok = true;
+                        break;
+                    }
+                }
+                if (!ok)
+                {
+                    Debug.LogWarning(
+                        "[Distractors] Could not order singles with no adjacent same distractor after " + maxAtt +
+                        " attempts; using unconstrained shuffle (back-to-back same distractor may occur).",
+                        this);
+                    ordered = new List<ConditionPlannedEpisode>(pool);
+                    Shuffle(ordered, _rng);
+                }
+            }
+
+            int sumSteps = 0;
+            for (int i = 0; i < ordered.Count; i++)
+                sumSteps += ordered[i].stepCount;
+            if (sumSteps != T)
+                Debug.LogError($"[Distractors] Internal: planned steps sum {sumSteps} != T={T}.", this);
+
+            string overlapDesc = noAdjacentEpisodeDistractorOverlap
+                ? "no adjacent same distractor"
+                : "unconstrained order";
+            Log($"CONDITION CATALOG plan: dp={_dpBudgetSeconds:0.###}s, step={step:0.###}s, T={T}, episodes={nEpisodes} ({k}× per distractor), equal total ON per distractor (T/6 each), [{minOnSeconds:0.#}–{maxOnSeconds:0.#}s/episode], {overlapDesc}.");
+
+            allowOverlap = false;
+            maxSimultaneous = 1;
+
+            for (int e = 0; e < ordered.Count && _dpRunning; e++)
+            {
+                float durSec = ordered[e].stepCount * step;
+                int idx = ordered[e].spec.a;
+                ActivatePlanned(idx, durSec);
+                yield return new WaitForSecondsRealtime(durSec);
+                if (!_dpRunning) yield break;
+                DeactivatePlanned(idx);
+            }
+
+            StopDP();
+        }
+
+        private static int ConditionEpisodeActiveMask(ConditionEpisodeSpec s)
+        {
+            if (s.isPair) return (1 << s.a) | (1 << s.b);
+            return 1 << s.a;
+        }
+
+        /// <summary>
+        /// Split <paramref name="totalSteps"/> into exactly <paramref name="k"/> segment lengths in [<paramref name="minSteps"/>, <paramref name="maxSteps"/>].
+        /// </summary>
+        private static int[] SplitIntoExactlyKChunks(int totalSteps, int k, int minSteps, int maxSteps, System.Random rng)
+        {
+            if (k <= 0 || totalSteps < k * minSteps || totalSteps > k * maxSteps)
+                return null;
+
+            var seg = new int[k];
+            for (int i = 0; i < k; i++)
+                seg[i] = minSteps;
+            int remainder = totalSteps - k * minSteps;
+            while (remainder > 0)
+            {
+                var cand = new List<int>(k);
+                for (int i = 0; i < k; i++)
+                {
+                    if (seg[i] < maxSteps)
+                        cand.Add(i);
+                }
+                if (cand.Count == 0)
+                    return null;
+                int pick = cand[rng.Next(0, cand.Count)];
+                seg[pick]++;
+                remainder--;
+            }
+
+            for (int i = 0; i < k; i++)
+            {
+                int j = rng.Next(i, k);
+                (seg[i], seg[j]) = (seg[j], seg[i]);
+            }
+
+            return seg;
+        }
+
+        /// <summary>
+        /// Each distractor gets exactly <paramref name="totalDpSteps"/>/6 steps total, split into <paramref name="k"/> episodes.
+        /// Remainder steps (when total not divisible by 6) are assigned to randomly chosen distractors (+1 step each).
+        /// </summary>
+        private bool TryBuildEqualSinglesPlannedEpisodes(
+            int totalDpSteps, int k, int minSteps, int maxSteps, System.Random rng,
+            out List<ConditionPlannedEpisode> pool, out string error)
+        {
+            pool = null;
+            error = null;
+            int nEpisodes = 6 * k;
+
+            if (totalDpSteps < nEpisodes)
+            {
+                error = $"DP has only T={totalDpSteps} steps but needs at least {nEpisodes} (one step minimum per episode). Increase DP or reduce presentations per distractor.";
+                return false;
+            }
+
+            int basePer = totalDpSteps / 6;
+            int rem = totalDpSteps % 6;
+            var extraOrder = new List<int> { 0, 1, 2, 3, 4, 5 };
+            Shuffle(extraOrder, rng);
+            int[] perD = new int[6];
+            for (int d = 0; d < 6; d++)
+                perD[d] = basePer;
+            for (int i = 0; i < rem; i++)
+                perD[extraOrder[i]]++;
+
+            for (int d = 0; d < 6; d++)
+            {
+                if (perD[d] < k * minSteps || perD[d] > k * maxSteps)
+                {
+                    error =
+                        $"Cannot split equal time for D{d + 1}: that distractor gets {perD[d]} steps total but needs between {k * minSteps} and {k * maxSteps} steps ({k} episodes × [{minSteps},{maxSteps}] steps). Adjust DP duration, onStepSeconds, or min/max active seconds.";
+                    return false;
+                }
+            }
+
+            pool = new List<ConditionPlannedEpisode>(nEpisodes);
+            for (int d = 0; d < 6; d++)
+            {
+                int[] chunks = SplitIntoExactlyKChunks(perD[d], k, minSteps, maxSteps, rng);
+                if (chunks == null)
+                {
+                    error = $"Failed to split {perD[d]} steps into {k} chunks for D{d + 1} within [{minSteps},{maxSteps}].";
+                    return false;
+                }
+                for (int i = 0; i < k; i++)
+                {
+                    pool.Add(new ConditionPlannedEpisode
+                    {
+                        spec = new ConditionEpisodeSpec { isPair = false, a = d, b = -1 },
+                        stepCount = chunks[i]
+                    });
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryBuildGreedyPlannedNoAdjacentOverlap(
+            System.Random rng, IReadOnlyList<ConditionPlannedEpisode> source, out List<ConditionPlannedEpisode> result)
+        {
+            var remaining = new List<ConditionPlannedEpisode>(source);
+            Shuffle(remaining, rng);
+            result = new List<ConditionPlannedEpisode>(remaining.Count);
+
+            int first = rng.Next(0, remaining.Count);
+            result.Add(remaining[first]);
+            remaining.RemoveAt(first);
+
+            while (remaining.Count > 0)
+            {
+                int lastMask = ConditionEpisodeActiveMask(result[result.Count - 1].spec);
+                var candidateIndices = new List<int>(remaining.Count);
+                for (int i = 0; i < remaining.Count; i++)
+                {
+                    if ((lastMask & ConditionEpisodeActiveMask(remaining[i].spec)) == 0)
+                        candidateIndices.Add(i);
+                }
+
+                if (candidateIndices.Count == 0)
+                {
+                    result = null;
+                    return false;
+                }
+
+                int pickSlot = candidateIndices[rng.Next(0, candidateIndices.Count)];
+                result.Add(remaining[pickSlot]);
+                remaining.RemoveAt(pickSlot);
+            }
+
+            return true;
+        }
+
+        private void ActivatePairSimultaneous(int a, int b, float onSeconds)
+        {
+            if (!_dpRunning) return;
+            if (!IsValid(a) || !IsValid(b) || a == b) return;
+
+            long onsetMs = NowMs();
+            long dpElapsedOnsetMs = onsetMs - _dpStartMs;
+
+            var ea = entries[a];
+            var eb = entries[b];
+
+            ea.obj.SetActive(true);
+            eb.obj.SetActive(true);
+            ea.running = true;
+            eb.running = true;
+
+            _activeIdx.Add(a);
+            _activeIdx.Add(b);
+
+            float rt = Time.realtimeSinceStartup;
+            _activeStartRealtime[a] = rt;
+            _activeStartRealtime[b] = rt;
+            _activeStartMs[a] = onsetMs;
+            _activeStartMs[b] = onsetMs;
+
+            const float w = 0f;
+            CreatePendingEvent(a, onsetMs, dpElapsedOnsetMs, onSeconds, w);
+            CreatePendingEvent(b, onsetMs, dpElapsedOnsetMs, onSeconds, w);
+
+            LoggingDistractors.AppendDistractorEvent(_pending[a], eventType: "ON", offsetMs: "", dpElapsedOffsetMs: "", actualDurationMs: "");
+            LoggingDistractors.AppendDistractorEvent(_pending[b], eventType: "ON", offsetMs: "", dpElapsedOffsetMs: "", actualDurationMs: "");
+
+            if (debugLogs)
+                Log($"ON PAIR: D{a + 1}+D{b + 1} for {onSeconds:0.###}s | activeSet={BuildActiveSetString()} trial={_curTrialIndex}/{_curPhaseTrialIndex}");
+
+            TryPlayAudio(a);
+            TryPlayAudio(b);
+        }
+
+        private void TryPlayAudio(int idx)
+        {
+            if (!IsValid(idx)) return;
+            var e = entries[idx];
+            if (e.clip != null && e.audioSource != null)
+            {
+                e.audioSource.clip = e.clip;
+                e.audioSource.loop = loopAudioWhileVisible;
+                e.audioSource.volume = audioVolume;
+                e.audioSource.Play();
+            }
+        }
+
+        private void DeactivatePairPlanned(int a, int b)
+        {
+            if (IsValid(a) && _activeIdx.Contains(a)) DeactivatePlanned(a);
+            if (IsValid(b) && _activeIdx.Contains(b)) DeactivatePlanned(b);
         }
 
         // ---------- STRICT helper methods (NEW) ----------
@@ -1695,13 +2059,7 @@ namespace MoxoCPT
             if (debugLogs)
                 Log($"ON: D{idx + 1} '{e.obj.name}' for {onSeconds:0.0}s (active={_activeIdx.Count}) trial={_pending[idx].trialIndexAtOn}/{_pending[idx].phaseTrialIndexAtOn}");
 
-            if (e.clip != null && e.audioSource != null)
-            {
-                e.audioSource.clip = e.clip;
-                e.audioSource.loop = loopAudioWhileVisible;
-                e.audioSource.volume = audioVolume;
-                e.audioSource.Play();
-            }
+            TryPlayAudio(idx);
         }
 
         private void DeactivatePlanned(int idx)
@@ -1718,6 +2076,204 @@ namespace MoxoCPT
                 var e = entries[idx];
                 Log($"OFF: D{idx + 1} '{(e != null && e.obj ? e.obj.name : "NULL")}' (active={_activeIdx.Count})");
             }
+        }
+
+        // ============================================================
+        // FIXED OCCURRENCES SCHEDULER
+        // - Each distractor activated exactly occurrencesPerDistractor times
+        // - Equal total ON time per distractor
+        // - Each chunk duration randomised in [minOnSeconds, maxOnSeconds]
+        // - Max 2 concurrent; no same-distractor overlap
+        // ============================================================
+
+        private struct FixedOccEvent
+        {
+            public float time;      // seconds from DP start
+            public int   idx;       // distractor index
+            public bool  isOn;
+            public float duration;  // > 0 for ON events
+        }
+
+        private IEnumerator CoRunDP_FixedOccurrences(int combinedSeed)
+        {
+            int n   = entries.Count;
+            int occ = Mathf.Max(1, occurrencesPerDistractor);
+
+            if (n < 1)
+            {
+                Debug.LogError("[Distractors] FixedOccurrences: no entries.", this);
+                yield break;
+            }
+
+            float minOn = Mathf.Max(0.05f, minOnSeconds);
+            float maxOn = Mathf.Max(minOn,  maxOnSeconds);
+
+            // Target total per distractor = occ × midpoint chunk duration.
+            // All distractors share the same target so totals are exactly equal.
+            float tTarget = occ * ((minOn + maxOn) * 0.5f);
+            tTarget = Mathf.Clamp(tTarget, occ * minOn, occ * maxOn);
+
+            Log($"[FixedOccurrences] n={n} occ={occ} tTarget={tTarget:0.00}s chunkRange=[{minOn},{maxOn}]s");
+
+            // Build occ chunks per distractor, each in [minOn,maxOn] summing to tTarget.
+            var allChunks = new List<(int idx, float dur)>(n * occ);
+            for (int i = 0; i < n; i++)
+            {
+                var chunks = FixedOcc_GenerateChunks(tTarget, occ, minOn, maxOn, _rng);
+                foreach (float dur in chunks)
+                    allChunks.Add((i, dur));
+            }
+
+            // Shuffle all chunks (preserves equal-total property).
+            Shuffle(allChunks, _rng);
+
+            // Build sorted ON/OFF event list with greedy 2-lane schedule.
+            int maxSlots = Mathf.Max(1, maxSimultaneous);
+            var events = FixedOcc_BuildSchedule(allChunks, maxSlots);
+
+            if (events.Count == 0)
+            {
+                Debug.LogWarning("[Distractors] FixedOccurrences: empty schedule.", this);
+                yield break;
+            }
+
+            float scheduleEnd = 0f;
+            foreach (var ev in events)
+                if (ev.isOn) scheduleEnd = Mathf.Max(scheduleEnd, ev.time + ev.duration);
+
+            Log($"[FixedOccurrences] {allChunks.Count} chunks → {events.Count} events, schedule ends at {scheduleEnd:0.0}s (dpBudget={_dpBudgetSeconds:0.0}s)");
+
+            // Execute.
+            float t0  = Time.realtimeSinceStartup;
+            int   eIdx = 0;
+
+            while (_dpRunning && eIdx < events.Count)
+            {
+                var ev   = events[eIdx];
+                float wait = ev.time - (Time.realtimeSinceStartup - t0);
+                if (wait > 0.001f)
+                    yield return new WaitForSecondsRealtime(wait);
+                if (!_dpRunning) yield break;
+
+                if (ev.isOn)
+                    ActivatePlanned(ev.idx, ev.duration);
+                else
+                    DeactivatePlanned(ev.idx);
+
+                eIdx++;
+            }
+
+            // Wait for the last chunk to finish before stopping.
+            float remaining = scheduleEnd - (Time.realtimeSinceStartup - t0);
+            if (remaining > 0f)
+                yield return new WaitForSecondsRealtime(remaining);
+
+            StopDP();
+        }
+
+        /// <summary>
+        /// Generates exactly <paramref name="count"/> durations in [minOn, maxOn] that sum to
+        /// <paramref name="total"/>. Order is randomised.
+        /// </summary>
+        private static List<float> FixedOcc_GenerateChunks(
+            float total, int count, float minOn, float maxOn, System.Random rng)
+        {
+            var result    = new List<float>(count);
+            float remaining = total;
+
+            for (int i = 0; i < count - 1; i++)
+            {
+                int   left = count - 1 - i;          // chunks still to generate after this one
+                float lo   = Mathf.Max(minOn, remaining - left * maxOn);
+                float hi   = Mathf.Min(maxOn, remaining - left * minOn);
+
+                if (lo > hi + 0.001f)
+                {
+                    // Numerical edge-case: clamp gracefully.
+                    lo = hi = Mathf.Clamp(remaining / (left + 1), minOn, maxOn);
+                }
+
+                float chunk = lo + (float)rng.NextDouble() * Mathf.Max(0f, hi - lo);
+                result.Add(chunk);
+                remaining -= chunk;
+            }
+
+            // Last chunk = whatever is left, clamped for safety.
+            result.Add(Mathf.Clamp(remaining, minOn, maxOn));
+
+            // Shuffle segment order so the same distractor doesn't always start long/short.
+            Shuffle(result, rng);
+            return result;
+        }
+
+        /// <summary>
+        /// Greedy 2-lane scheduler: places shuffled chunks one by one into the earliest
+        /// available lane slot, pushing past any same-distractor conflict in the other lane.
+        /// Returns a time-sorted list of ON and OFF events.
+        /// </summary>
+        private static List<FixedOccEvent> FixedOcc_BuildSchedule(
+            List<(int idx, float dur)> chunks, int maxSlots)
+        {
+            // slotEnd[s]  = when slot s becomes free
+            // slotDist[s] = which distractor is in slot s (-1 if empty)
+            var slotEnd  = new float[maxSlots];
+            var slotDist = new int[maxSlots];
+            for (int s = 0; s < maxSlots; s++) { slotEnd[s] = 0f; slotDist[s] = -1; }
+
+            var events = new List<FixedOccEvent>(chunks.Count * 2);
+
+            foreach (var (idx, dur) in chunks)
+            {
+                float bestStart = float.MaxValue;
+                int   bestSlot  = -1;
+
+                for (int s = 0; s < maxSlots; s++)
+                {
+                    // Earliest time this slot is free.
+                    float start = slotEnd[s];
+
+                    // Push start forward while any other active slot holds the same distractor.
+                    bool changed = true;
+                    while (changed)
+                    {
+                        changed = false;
+                        for (int other = 0; other < maxSlots; other++)
+                        {
+                            if (other == s) continue;
+                            if (slotDist[other] == idx && slotEnd[other] > start)
+                            {
+                                start   = slotEnd[other];
+                                changed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (start < bestStart)
+                    {
+                        bestStart = start;
+                        bestSlot  = s;
+                    }
+                }
+
+                // Place chunk in the best slot.
+                slotEnd [bestSlot] = bestStart + dur;
+                slotDist[bestSlot] = idx;
+
+                events.Add(new FixedOccEvent { time = bestStart,       idx = idx, isOn = true,  duration = dur });
+                events.Add(new FixedOccEvent { time = bestStart + dur,  idx = idx, isOn = false, duration = 0f  });
+            }
+
+            // Sort: by time; OFF before ON at the same timestamp.
+            events.Sort((a, b) =>
+            {
+                int c = a.time.CompareTo(b.time);
+                if (c != 0) return c;
+                if (a.isOn == b.isOn) return 0;
+                return a.isOn ? 1 : -1;   // OFF first
+            });
+
+            return events;
         }
 
         // ============================================================
@@ -1848,9 +2404,9 @@ namespace MoxoCPT
 
             var p = _pending[idx];
 
-            if (strictExactSchedule)
+            if (_usePlannedDistractorOffRows)
             {
-                // STRICT: write exact planned values so CSV totals are perfectly equal (no jitter).
+                // Planned OFF times (strict + condition catalog).
                 LoggingDistractors.AppendDistractorEvent(
                     p,
                     eventType: "OFF",
@@ -2038,7 +2594,16 @@ namespace MoxoCPT
                 "dp_elapsed_onset_ms",
                 "dp_elapsed_offset_ms",
                 "active_count_at_onset",
-                "active_set_at_onset"
+                "active_set_at_onset",
+                "distractor_base_seed",
+                "distractor_combined_seed",
+                "distractor_mode",
+                "dp_budget_seconds",
+                "min_on_seconds",
+                "max_on_seconds",
+                "on_step_seconds",
+                "single_presentations_per_distractor",
+                "no_adjacent_episode_overlap"
             };
 #endif
 
@@ -2081,6 +2646,10 @@ namespace MoxoCPT
                 string dpOn       = (p.dpElapsedOnsetMs >= 0) ? p.dpElapsedOnsetMs.ToString(inv) : "";
                 string planned    = (p.plannedDurationMs >= 0) ? p.plannedDurationMs.ToString(inv) : "";
                 string w          = p.weightTarget.ToString(inv);
+                string dpBudget   = _cachedDpBudgetSeconds.ToString(inv);
+                string minOn      = _cachedMinOnSeconds.ToString(inv);
+                string maxOn      = _cachedMaxOnSeconds.ToString(inv);
+                string onStep     = _cachedOnStepSeconds.ToString(inv);
 
                 var row = string.Join(CSVSeperator, new[]
                 {
@@ -2101,7 +2670,16 @@ namespace MoxoCPT
                     dpOn,
                     dpElapsedOffsetMs,
                     p.activeCountAtOnset.ToString(inv),
-                    Escape(p.activeSetAtOnset)
+                    Escape(p.activeSetAtOnset),
+                    _cachedBaseSeed.ToString(inv),
+                    _cachedCombinedSeed.ToString(inv),
+                    Escape(_cachedMode),
+                    dpBudget,
+                    minOn,
+                    maxOn,
+                    onStep,
+                    _cachedSinglePresentationsPerDistractor.ToString(inv),
+                    _cachedNoAdjacentEpisodeOverlap ? "true" : "false"
                 });
 
                 using (var sw = File.AppendText(path))
@@ -2114,6 +2692,37 @@ namespace MoxoCPT
 
             private static string _cachedIslandId = "";
             public static void SetCachedIslandId(string islandId) => _cachedIslandId = islandId ?? "";
+            private static int _cachedBaseSeed = 0;
+            private static int _cachedCombinedSeed = 0;
+            private static string _cachedMode = "";
+            private static float _cachedDpBudgetSeconds = 0f;
+            private static float _cachedMinOnSeconds = 0f;
+            private static float _cachedMaxOnSeconds = 0f;
+            private static float _cachedOnStepSeconds = 0f;
+            private static int _cachedSinglePresentationsPerDistractor = 0;
+            private static bool _cachedNoAdjacentEpisodeOverlap = false;
+
+            public static void SetRunMetadata(
+                int baseSeed,
+                int combinedSeed,
+                string mode,
+                float dpBudgetSeconds,
+                float minOnSeconds,
+                float maxOnSeconds,
+                float onStepSeconds,
+                int singlePresentationsPerDistractor,
+                bool noAdjacentEpisodeOverlap)
+            {
+                _cachedBaseSeed = baseSeed;
+                _cachedCombinedSeed = combinedSeed;
+                _cachedMode = mode ?? "";
+                _cachedDpBudgetSeconds = dpBudgetSeconds;
+                _cachedMinOnSeconds = minOnSeconds;
+                _cachedMaxOnSeconds = maxOnSeconds;
+                _cachedOnStepSeconds = onStepSeconds;
+                _cachedSinglePresentationsPerDistractor = singlePresentationsPerDistractor;
+                _cachedNoAdjacentEpisodeOverlap = noAdjacentEpisodeOverlap;
+            }
 
 #if UNITY_EDITOR
             private static string GetCSVPath()
@@ -2197,6 +2806,15 @@ namespace MoxoCPT
                 sb.Append(FirebaseService.JN("dp_elapsed_offset_ms",   dpOffL));
                 sb.Append(FirebaseService.JN("active_count_at_onset",  p.activeCountAtOnset));
                 sb.Append(FirebaseService.JS("active_set_at_onset",    p.activeSetAtOnset));
+                sb.Append(FirebaseService.JN("distractor_base_seed",   _cachedBaseSeed));
+                sb.Append(FirebaseService.JN("distractor_combined_seed", _cachedCombinedSeed));
+                sb.Append(FirebaseService.JS("distractor_mode",        _cachedMode));
+                sb.Append(FirebaseService.JN("dp_budget_seconds",      _cachedDpBudgetSeconds));
+                sb.Append(FirebaseService.JN("min_on_seconds",         _cachedMinOnSeconds));
+                sb.Append(FirebaseService.JN("max_on_seconds",         _cachedMaxOnSeconds));
+                sb.Append(FirebaseService.JN("on_step_seconds",        _cachedOnStepSeconds));
+                sb.Append(FirebaseService.JN("single_presentations_per_distractor", _cachedSinglePresentationsPerDistractor));
+                sb.Append(FirebaseService.JB("no_adjacent_episode_overlap", _cachedNoAdjacentEpisodeOverlap));
 
                 svc.PostJson(path, FirebaseService.WrapJson(sb.ToString()));
             }
