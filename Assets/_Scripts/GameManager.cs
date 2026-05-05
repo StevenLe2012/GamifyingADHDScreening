@@ -11,28 +11,18 @@ public class GameManager : MonoBehaviour
     public static event Action<GameState> OnGameStateChanged;
 
     // --- Participant metadata ---
-    [Header("Experiment – Participant ID (structured)")]
+    [Header("Experiment – Participant ID")]
+    [Tooltip("5-digit participant code (e.g. 10042). Set via login screen, URL ?num=, or here.")]
     [SerializeField] private string participantNumber = "";
-    [SerializeField] private string participantLastName = "";
-    [SerializeField] private string sessionDate = ""; // yyyy-MM-dd; blank → today
-    [SerializeField] private string participantId = ""; // legacy free-form
+    [SerializeField] private string participantId = ""; // legacy free-form fallback
 
     public string ParticipantNumber => participantNumber;
-    public string ParticipantLastName => participantLastName;
-    public string SessionDateISO
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(sessionDate))
-                sessionDate = DateTime.Today.ToString("yyyy-MM-dd");
-            return sessionDate;
-        }
-    }
 
-    private static string PadNumber(string raw)
+    private static string PadCode(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return "";
-        if (int.TryParse(raw, out var n)) return n.ToString("D3");
+        // If it's a plain integer, zero-pad to 5 digits.
+        if (int.TryParse(raw.Trim(), out var n)) return n.ToString("D5");
         return raw.Trim();
     }
 
@@ -46,30 +36,15 @@ public class GameManager : MonoBehaviour
         return sb.ToString();
     }
 
-    public string CompositeParticipantId
-    {
-        get
-        {
-            var num  = Sanitize(PadNumber(participantNumber));
-            var last = Sanitize(participantLastName);
-            var date = Sanitize(SessionDateISO);
-
-            var parts = new List<string>();
-            if (!string.IsNullOrEmpty(num))  parts.Add(num);
-            if (!string.IsNullOrEmpty(last)) parts.Add(last);
-            if (!string.IsNullOrEmpty(date)) parts.Add(date);
-
-            return parts.Count > 0 ? string.Join("_", parts) : "";
-        }
-    }
-
     public string ParticipantId
     {
         get
         {
-            var composite = CompositeParticipantId;
-            if (!string.IsNullOrWhiteSpace(composite)) return composite;
-            if (!string.IsNullOrWhiteSpace(participantId)) return Sanitize(participantId);
+            var code = PadCode(participantNumber);
+            var date = DateTime.Today.ToString("yyyy-MM-dd");
+
+            if (!string.IsNullOrWhiteSpace(code)) return $"{code}_{date}";
+            if (!string.IsNullOrWhiteSpace(participantId)) return $"{Sanitize(participantId)}_{date}";
             return "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
         }
     }
@@ -115,7 +90,7 @@ public class GameManager : MonoBehaviour
         //
         // Supported URL parameters:
         //   ?num=001            → participantNumber  (padded to 3 digits)
-        //   ?last=SMITH         → participantLastName
+
         //   ?date=2026-03-17    → sessionDate (ISO yyyy-MM-dd)
         //   ?pid=MY_ID          → participantId (legacy free-form)
         //
@@ -129,12 +104,6 @@ public class GameManager : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(ParticipantSession.Number))
                 participantNumber = ParticipantSession.Number;
-
-            if (!string.IsNullOrEmpty(ParticipantSession.LastName))
-                participantLastName = ParticipantSession.LastName;
-
-            if (!string.IsNullOrEmpty(ParticipantSession.SessionDate))
-                sessionDate = ParticipantSession.SessionDate;
         }
 
         Debug.Log($"[GameManager] Resolved ParticipantId = '{ParticipantId}'");
@@ -314,15 +283,13 @@ public class GameManager : MonoBehaviour
         {
             string url = Application.absoluteURL;
 
-            string num  = GetQueryParam(url, "num");
-            string last = GetQueryParam(url, "last");
-            string date = GetQueryParam(url, "date");
-            string pid  = GetQueryParam(url, "pid");
+            // ?num=12345  → 5-digit participant code
+            // ?pid=MY_ID  → legacy free-form fallback
+            string num = GetQueryParam(url, "num");
+            string pid = GetQueryParam(url, "pid");
 
-            if (!string.IsNullOrEmpty(num))  participantNumber   = num;
-            if (!string.IsNullOrEmpty(last)) participantLastName = last;
-            if (!string.IsNullOrEmpty(date)) sessionDate         = date;
-            if (!string.IsNullOrEmpty(pid))  participantId       = pid;
+            if (!string.IsNullOrEmpty(num)) participantNumber = num;
+            if (!string.IsNullOrEmpty(pid)) participantId     = pid;
 
             Debug.Log($"[GameManager] URL → ParticipantId = '{ParticipantId}'");
         }

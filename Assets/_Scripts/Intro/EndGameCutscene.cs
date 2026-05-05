@@ -60,6 +60,7 @@ public class EndGameCutscene : MonoBehaviour
 
     VideoPlayer _vp;
     bool _isPlaying;
+    bool _finished;
     string _currentFile;
 
     void Awake()
@@ -67,8 +68,19 @@ public class EndGameCutscene : MonoBehaviour
         // Keep ending image hidden until the video finishes.
         if (endingImage) endingImage.gameObject.SetActive(false);
 
+        // Auto-fallback: if RawImage/RenderTexture not configured but renderToCamera is false,
+        // automatically switch to CameraNearPlane so the video is always visible.
+        if (!renderToCamera && rawImage == null && tempRenderTexture == null)
+        {
+            renderToCamera = true;
+            if (log) Debug.Log("[EndGameCutscene] No RawImage/RenderTexture assigned — auto-switching to CameraNearPlane rendering.");
+        }
+
         if (renderToCamera && !targetCamera)
             targetCamera = Camera.main;
+
+        if (!targetCamera && renderToCamera)
+            Debug.LogWarning("[EndGameCutscene] renderToCamera=true but no camera found! Video may not be visible.");
 
         // Build VideoPlayer once.
         _vp = gameObject.AddComponent<VideoPlayer>();
@@ -102,24 +114,28 @@ public class EndGameCutscene : MonoBehaviour
         }
 
         _vp.loopPointReached += OnVideoFinished;
+
+        if (log) Debug.Log($"[EndGameCutscene] Awake complete. renderToCamera={renderToCamera}, camera={targetCamera?.name ?? "none"}, rawImage={rawImage?.name ?? "none"}, rt={tempRenderTexture?.name ?? "none"}");
     }
 
     // These two methods are what you will hook from Dialogue option UnityEvents.
     public void PlayEnding1()
     {
+        if (log) Debug.Log("[EndGameCutscene] PlayEnding1() called.");
         PlayFile(ending1FileName);
     }
 
     public void PlayEnding2()
     {
+        if (log) Debug.Log("[EndGameCutscene] PlayEnding2() called.");
         PlayFile(ending2FileName);
     }
 
     void PlayFile(string fileName)
     {
-        if (_isPlaying)
+        if (_isPlaying || _finished)
         {
-            if (log) Debug.LogWarning("[EndGameCutscene] Already playing; ignoring new request.");
+            if (log) Debug.LogWarning("[EndGameCutscene] Already playing or finished; ignoring new request.");
             return;
         }
 
@@ -256,6 +272,9 @@ public class EndGameCutscene : MonoBehaviour
 
     void Finish()
     {
+        if (_finished) return;
+        _finished = true;
+
         CleanUpVideo();
 
         if (renderToCamera && _vp != null && _vp.targetCamera != null)

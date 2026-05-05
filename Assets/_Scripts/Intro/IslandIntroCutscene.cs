@@ -100,6 +100,66 @@ public class IslandIntroCutscene : MonoBehaviour
         _vp.loopPointReached += OnVideoFinished;
     }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+    void Start()
+    {
+        // Warm the browser's HTTP cache for every configured cutscene video so that later
+        // Prepare() calls complete much faster (video metadata is already cached).
+        StartCoroutine(CoPreBufferAllWebGL());
+    }
+
+    IEnumerator CoPreBufferAllWebGL()
+    {
+        if (cutscenes == null || cutscenes.Length == 0) yield break;
+
+        // Give the scene a moment to fully settle before hammering the network.
+        yield return new WaitForSecondsRealtime(3f);
+
+        if (log) Debug.Log("[IslandIntroCutscene] Background pre-cache starting for all cutscene videos.");
+
+        // Use a dedicated temporary VideoPlayer so we never touch _vp and cannot
+        // interfere with a real cutscene that may start while we are pre-caching.
+        VideoPlayer tempVp = gameObject.AddComponent<VideoPlayer>();
+        tempVp.playOnAwake = false;
+        tempVp.source = VideoSource.Url;
+        tempVp.renderMode = VideoRenderMode.APIOnly; // decode only, no visual output
+        tempVp.audioOutputMode = VideoAudioOutputMode.None;
+
+        foreach (var entry in cutscenes)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.videoFileName)) continue;
+            if (_isPlaying) break; // a real cutscene started — stop pre-caching
+
+            string url = Application.streamingAssetsPath + "/" + entry.videoFileName.Trim();
+            if (log) Debug.Log($"[IslandIntroCutscene] Pre-caching: {entry.videoFileName}");
+
+            tempVp.url = url;
+            tempVp.Prepare();
+
+            // Wait for prepare (or give up after 10 s) so the browser downloads the moov atom.
+            float elapsed = 0f;
+            while (!tempVp.isPrepared && elapsed < 10f && !_isPlaying)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (_isPlaying) break; // real cutscene kicked off mid-wait
+
+            tempVp.Stop();
+            tempVp.url = "";
+
+            if (log) Debug.Log($"[IslandIntroCutscene] Pre-cached '{entry.videoFileName}' in {elapsed:F1}s");
+
+            // Small gap so we don't saturate the connection between videos.
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+
+        Destroy(tempVp);
+        if (log) Debug.Log("[IslandIntroCutscene] Background pre-cache complete.");
+    }
+#endif
+
     /// <summary>
     /// Entry point from IslandSelectionUI. Plays cutscene if islandId matches; otherwise travels immediately.
     /// </summary>

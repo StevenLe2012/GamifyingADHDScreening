@@ -138,14 +138,13 @@ public class EyeTrackLogger : MonoBehaviour
     // -------- Public API (call from your game) --------
 
     // Prepare to record:
-    private (string num, string last, string date, string id) GetMetaFromGM()
+    private (string num, string date, string id) GetMetaFromGM()
     {
         var gm = GameManager.Instance;
         string num  = gm != null ? gm.ParticipantNumber : "";
-        string last = gm != null ? gm.ParticipantLastName : "";
-        string date = gm != null ? gm.SessionDateISO : DateTime.Today.ToString("yyyy-MM-dd");
+        string date = DateTime.Today.ToString("yyyy-MM-dd");
         string id   = gm != null ? gm.ParticipantId : $"P_{DateTime.Now:yyyyMMdd_HHmmss}";
-        return (Sanitize(num), Sanitize(last), Sanitize(date), Sanitize(id));
+        return (Sanitize(num), Sanitize(date), Sanitize(id));
     }
 
     private static string Sanitize(string s)
@@ -158,7 +157,7 @@ public class EyeTrackLogger : MonoBehaviour
 
     private string BuildDataPathFromGM()
     {
-        var (num, last, date, id) = GetMetaFromGM();
+        var (num, date, id) = GetMetaFromGM();
         var fileName = $"{filePrefix}_{id}.csv";
         var folder   = Path.Combine(Environment.CurrentDirectory, "Logs", "EyeTrack");
         Directory.CreateDirectory(folder);
@@ -169,17 +168,17 @@ public class EyeTrackLogger : MonoBehaviour
     //Hami: Add Island Name
     private string[] BuildHeaderWithMeta(string[] originalHeader)
     {
-        var metaHeader = new[] { "ParticipantNumber", "LastName", "SessionDate", "IslandId", "IslandName" };
+        var metaHeader = new[] { "ParticipantCode", "SessionDate", "IslandId", "IslandName" };
         return metaHeader.Concat(originalHeader).ToArray();
     }
 
     private string[] PrependMeta(string[] row)
     {
-        var (num, last, date, _) = GetMetaFromGM();
+        var (num, date, _) = GetMetaFromGM();
         var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
-        string iid = island ? island.islandId : "";
+        string iid   = island ? island.islandId    : "";
         string iname = island ? island.displayName : "";
-        return new[] { num, last, date, iid, iname }.Concat(row).ToArray();
+        return new[] { num, date, iid, iname }.Concat(row).ToArray();
     }
     //END CHANGE
 
@@ -223,7 +222,7 @@ public class EyeTrackLogger : MonoBehaviour
 #if UNITY_EDITOR
         if (alsoWriteEditorCopy)
         {
-            var (num, last, date, id) = GetMetaFromGM();
+            var (num, date, id) = GetMetaFromGM();
             _editorMirrorPath = Path.Combine(
                 Application.dataPath, "Resources", "ParticipantData", "EyeTrack",
                 $"{filePrefix}_{id}.csv"

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -122,20 +123,45 @@ public class IntroBoot : MonoBehaviour
         // Determine whether participant info was already supplied via URL params.
         // If so the login screen is skipped (researcher mode).
 #if UNITY_WEBGL && !UNITY_EDITOR
-        bool urlHasId = Application.absoluteURL.Contains("?num=")  ||
-                        Application.absoluteURL.Contains("&num=")  ||
-                        Application.absoluteURL.Contains("?last=") ||
-                        Application.absoluteURL.Contains("&last=") ||
-                        Application.absoluteURL.Contains("?pid=")  ||
-                        Application.absoluteURL.Contains("&pid=");
+        string absUrl = Application.absoluteURL ?? "";
+        bool urlHasId = UrlHasParticipantIdQueryKey(absUrl);
 #else
         bool urlHasId = false;
 #endif
 
         bool needLogin = loginScreen != null && !urlHasId && !ParticipantSession.WasSubmitted;
 
+        // Skip thumbnail + video ONLY when the URL explicitly sets fast=1 or skipintro=1
+        // (parsed safely — no substring false positives from hashes or nested URLs).
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // ── WebGL flow ───────────────────────────────────────────────────────────────
+        bool skipAllIntro = urlHasId && UrlRequestsFastIntroSkip(absUrl);
+        if (log) Debug.Log($"[IntroBoot] WebGL url='{absUrl}' urlHasId={urlHasId} skipAllIntro={skipAllIntro} needLogin={needLogin}");
+#else
+        bool skipAllIntro = false;
+#endif
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (skipAllIntro)
+        {
+            // ── Fast-start: straight to Main (black screen while loading) ─────────────
+            if (log) Debug.Log("[IntroBoot] Fast-start: ?fast=1 or ?skipintro=1 — skipping thumbnail + intro video.");
+            if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;  // stay black during load
+            preload = SceneManager.LoadSceneAsync(mainSceneName);
+            if (preload != null) preload.allowSceneActivation = false;
+
+            if (preload != null)
+            {
+                while (preload.progress < 0.9f) yield return null;
+                preload.allowSceneActivation = true;
+            }
+            else
+            {
+                SceneManager.LoadScene(mainSceneName);
+            }
+            yield break; // done — skip the rest of CoRun
+        }
+
+        // ── Normal WebGL flow ────────────────────────────────────────────────────────
         //   1. Thumbnail → player presses Enter → audio unlocked
         //   2. Login screen pops up over thumbnail → player fills in + clicks Start
         //   3. Fade to black → intro video plays
@@ -162,7 +188,7 @@ public class IntroBoot : MonoBehaviour
         }
         else
         {
-            // No login needed (URL params supplied) — thumbnail + buffer wait only.
+            // No login needed (URL supplied num/pid) — thumbnail + buffer wait only.
             SetLabel(loadingText);
             if (log) Debug.Log("[IntroBoot] WebGL: waiting for video to buffer…");
             preload = SceneManager.LoadSceneAsync(mainSceneName);
@@ -374,5 +400,56 @@ public class IntroBoot : MonoBehaviour
         if (vp.isPlaying) vp.Stop();
         // Do not Release() the Inspector-assigned RenderTexture.
         vp.url = "";
+    }
+
+    /// <summary>Query string only (?foo=bar&…), no leading ?, fragment stripped.</summary>
+    static string WebGlRawQueryString(string absoluteUrl)
+    {
+        if (string.IsNullOrEmpty(absoluteUrl)) return "";
+        int q = absoluteUrl.IndexOf('?');
+        if (q < 0) return "";
+        string rest = absoluteUrl.Substring(q + 1);
+        int hash = rest.IndexOf('#');
+        if (hash >= 0) rest = rest.Substring(0, hash);
+        return rest;
+    }
+
+    static bool TryGetQueryValue(string query, string key, out string value)
+    {
+        value = null;
+        if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(key)) return false;
+        foreach (var part in query.Split('&'))
+        {
+            if (string.IsNullOrEmpty(part)) continue;
+            int eq = part.IndexOf('=');
+            string k = eq >= 0 ? part.Substring(0, eq) : part;
+            string v = eq >= 0 ? part.Substring(eq + 1) : "";
+            if (!string.Equals(k, key, StringComparison.OrdinalIgnoreCase)) continue;
+            try { value = Uri.UnescapeDataString(v); }
+            catch { value = v; }
+            return true;
+        }
+        return false;
+    }
+
+    static bool UrlHasParticipantIdQueryKey(string absoluteUrl)
+    {
+        string q = WebGlRawQueryString(absoluteUrl);
+        return TryGetQueryValue(q, "num", out _) || TryGetQueryValue(q, "pid", out _);
+    }
+
+    /// <summary>
+    /// Explicit opt-in only: <c>?num=…&amp;fast=1</c> or <c>skipintro=1</c> (value may be "true").
+    /// </summary>
+    static bool UrlRequestsFastIntroSkip(string absoluteUrl)
+    {
+        string query = WebGlRawQueryString(absoluteUrl);
+        if (TryGetQueryValue(query, "fast", out var v) &&
+            (v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)))
+            return true;
+        if (TryGetQueryValue(query, "skipintro", out v) &&
+            (v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)))
+            return true;
+        return false;
     }
 }

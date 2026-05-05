@@ -7,19 +7,19 @@ using UnityEngine;
 /// </summary>
 public static class ParticipantSession
 {
-    /// <summary>Participant number exactly as typed (e.g. "1", "042").</summary>
+    /// <summary>5-digit participant code exactly as typed (e.g. "10042").</summary>
     public static string Number       { get; set; } = "";
 
-    /// <summary>Participant's last name exactly as typed.</summary>
+    /// <summary>Not collected — kept for backward compatibility only.</summary>
     public static string LastName     { get; set; } = "";
 
-    /// <summary>Session date in ISO format (yyyy-MM-dd).</summary>
+    /// <summary>Not included in participant ID — kept for backward compatibility only.</summary>
     public static string SessionDate  { get; set; } = "";
 
     /// <summary>True once the login form has been successfully submitted.</summary>
     public static bool   WasSubmitted { get; set; } = false;
 
-    /// <summary>Clears all stored data (call if you want a fresh session).</summary>
+    /// <summary>Clears all stored data.</summary>
     public static void Reset()
     {
         Number       = "";

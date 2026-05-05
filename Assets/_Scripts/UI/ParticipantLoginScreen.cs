@@ -1,22 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Login form shown before the intro video on WebGL.
-/// Collects participant number and last name. Session date is set automatically
-/// to today — participants do not need to enter it.
-/// Generated ID format: 001_LASTNAME_YYYY-MM-DD
+/// Collects a 5-digit participant code only — no name or date.
+/// Generated ID format: 12345  (exactly as typed, zero-padded to 5 digits)
 ///
 /// Setup in Unity:
 ///   1. Create a full-screen Canvas in the IntroBoot scene (Sort Order = 10 so it sits on top).
 ///   2. Add a panel with:
-///        - TMP_InputField  → numberField    (placeholder: "Participant number", content type: Integer Number)
-///        - TMP_InputField  → lastNameField  (placeholder: "Last name")
-///        - TMP_Text        → idPreviewLabel (shows the generated ID live)
+///        - TMP_InputField  → codeField      (placeholder: "Enter 5-digit code", content type: Integer Number)
+///        - TMP_Text        → idPreviewLabel (shows the ID live — optional)
 ///        - TMP_Text        → errorLabel     (validation messages, hidden by default)
 ///        - Button          → startButton    (label: "Start")
 ///   3. Assign all references in the Inspector.
@@ -25,8 +21,7 @@ using UnityEngine.UI;
 public class ParticipantLoginScreen : MonoBehaviour
 {
     [Header("Input Fields")]
-    [SerializeField] private TMP_InputField numberField;
-    [SerializeField] private TMP_InputField lastNameField;
+    [SerializeField] private TMP_InputField codeField;
 
     [Header("Feedback")]
     [SerializeField] private TMP_Text idPreviewLabel;
@@ -42,15 +37,16 @@ public class ParticipantLoginScreen : MonoBehaviour
 
     void Awake()
     {
-        // Restrict number field to 3 characters (001–999).
-        if (numberField != null) numberField.characterLimit = 3;
+        // Restrict to exactly 5 characters.
+        if (codeField != null)
+        {
+            codeField.characterLimit = 5;
+            codeField.contentType = TMP_InputField.ContentType.IntegerNumber;
+            codeField.onValueChanged.AddListener(_ => RefreshPreview());
+        }
 
         if (errorLabel != null)
             errorLabel.gameObject.SetActive(false);
-
-        // Live preview updates as the user types.
-        if (numberField   != null) numberField.onValueChanged.AddListener(_   => RefreshPreview());
-        if (lastNameField != null) lastNameField.onValueChanged.AddListener(_ => RefreshPreview());
 
         if (startButton != null)
             startButton.onClick.AddListener(OnStartClicked);
@@ -62,14 +58,17 @@ public class ParticipantLoginScreen : MonoBehaviour
 
     void Update()
     {
-        // Allow Space to submit when neither input field is actively focused,
-        // so typing a space inside the last-name field still works normally.
+        // Allow Enter or Space to submit when the code field is not focused.
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            OnStartClicked();
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            bool numberFocused   = numberField   != null && numberField.isFocused;
-            bool lastNameFocused = lastNameField != null && lastNameField.isFocused;
-
-            if (!numberFocused && !lastNameFocused)
+            bool codeFocused = codeField != null && codeField.isFocused;
+            if (!codeFocused)
                 OnStartClicked();
         }
     }
@@ -78,35 +77,31 @@ public class ParticipantLoginScreen : MonoBehaviour
 
     void OnStartClicked()
     {
-        string number   = numberField   != null ? numberField.text.Trim()   : "";
-        string lastName = lastNameField != null ? lastNameField.text.Trim() : "";
+        string code = codeField != null ? codeField.text.Trim() : "";
 
         // --- Validation ---
-        if (string.IsNullOrWhiteSpace(number))
+        if (string.IsNullOrWhiteSpace(code))
         {
-            ShowError("Please enter the participant number.");
+            ShowError("Please enter your 5-digit participant code.");
             return;
         }
 
-        if (!int.TryParse(number, out int parsedNum) || parsedNum < 1 || parsedNum > 999)
+        if (!int.TryParse(code, out int parsedCode) || parsedCode < 0)
         {
-            ShowError("Participant number must be 1–999 (e.g. 001, 042).");
+            ShowError("Participant code must be a number (e.g. 10042).");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(lastName))
+        if (code.Length != 5)
         {
-            ShowError("Please enter the participant's last name.");
+            ShowError($"Code must be exactly 5 digits (e.g. 10042). You entered {code.Length} digit(s).");
             return;
         }
-
-        // Session date is always today — no participant input needed.
-        string today = DateTime.Today.ToString("yyyy-MM-dd");
 
         // --- Save to static holder so GameManager can read it after scene load ---
-        ParticipantSession.Number       = number;
-        ParticipantSession.LastName     = lastName;
-        ParticipantSession.SessionDate  = today;
+        ParticipantSession.Number       = code;          // stored as-is (5 digits)
+        ParticipantSession.LastName     = "";            // not collected
+        ParticipantSession.SessionDate  = "";            // not included in ID
         ParticipantSession.WasSubmitted = true;
 
         HideError();
@@ -120,29 +115,10 @@ public class ParticipantLoginScreen : MonoBehaviour
     {
         if (idPreviewLabel == null) return;
 
-        string id = BuildPreviewId();
-        idPreviewLabel.text = string.IsNullOrEmpty(id)
-            ? "Your ID will appear here"
-            : $"Your ID:  {id}";
-    }
-
-    string BuildPreviewId()
-    {
-        string num  = numberField   != null ? numberField.text.Trim()   : "";
-        string last = Sanitize(lastNameField != null ? lastNameField.text : "");
-        // Date is always today — shown in preview so participant can verify.
-        string date = Sanitize(DateTime.Today.ToString("yyyy-MM-dd"));
-
-        // Mirror GameManager.PadNumber: pad numeric strings to 3 digits.
-        if (int.TryParse(num, out int n))
-            num = n.ToString("D3");
-        num = Sanitize(num);
-
-        var parts = new List<string>();
-        if (!string.IsNullOrEmpty(num))  parts.Add(num);
-        if (!string.IsNullOrEmpty(last)) parts.Add(last);
-        if (!string.IsNullOrEmpty(date)) parts.Add(date);
-        return string.Join("_", parts);
+        string code = codeField != null ? codeField.text.Trim() : "";
+        idPreviewLabel.text = string.IsNullOrEmpty(code)
+            ? "Your participant code will appear here"
+            : $"Participant ID:  {code}";
     }
 
     // ── Error helpers ─────────────────────────────────────────────────────────
@@ -158,22 +134,5 @@ public class ParticipantLoginScreen : MonoBehaviour
     {
         if (errorLabel != null)
             errorLabel.gameObject.SetActive(false);
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Mirrors GameManager.Sanitize — keeps letters, digits, hyphens, underscores,
-    /// uppercases everything. Ensures the preview matches the actual stored ID.
-    /// </summary>
-    static string Sanitize(string s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return "";
-        var upper = s.Trim().ToUpperInvariant();
-        var sb = new StringBuilder(upper.Length);
-        foreach (char c in upper)
-            if (char.IsLetterOrDigit(c) || c == '-' || c == '_')
-                sb.Append(c);
-        return sb.ToString();
     }
 }
