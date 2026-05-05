@@ -14,6 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 8bef25087910b6b45bb1adf156b1425d, type: 3}
   subtitle: "Ekonn: how often do you feel overly active, as if something inside you
-    is pushing you to keep moving or doing things \u2014 like you\u2019re driven
-    by a motor?"
+    is pushing you to keep moving or doing things, like you\u2019re driven by a motor?"
   character: Ekonn

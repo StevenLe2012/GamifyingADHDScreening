@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Answer
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 5a71acbdb0296b149b6f917fbd0eb56e, type: 3}
-  subtitle: "Ekonn: Answer honestly \u2014 the magic depends on it."
+  subtitle: 'Ekonn: Answer honestly, the magic depends on it.'
   character: Ekonn

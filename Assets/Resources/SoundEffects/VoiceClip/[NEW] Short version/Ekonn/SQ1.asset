@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SQ1
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 299dde932afeaf44f90abf3c6a950bee, type: 3}
-  subtitle: "Ekonn: Imagine you\u2019ve had to sit still for a long time \u2014 perhaps
+  subtitle: "Ekonn: Imagine you\u2019ve had to sit still for a long time, perhaps
     listening to an over-talkative wizard."
   character: Ekonn

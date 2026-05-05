@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 712111c0b462ffd4fadd7d186fcc8d35, type: 3}
   subtitle: "Ekonn: The Dragon Lord sealed those islands against my magic. I can\u2019t
-    enter - but you can."
+    enter, but you can."
   character: Ekonn

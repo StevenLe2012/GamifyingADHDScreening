@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: The result
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: d14f32f1b19bda24cade69f4159dfe60, type: 3}
-  subtitle: 'Ekonn: The results are clear. The summoning affected your location -
-    but not your mind. .'
+  subtitle: 'Ekonn: The results are clear. The summoning affected your location,
+    but not your mind.'
   character: Ekonn

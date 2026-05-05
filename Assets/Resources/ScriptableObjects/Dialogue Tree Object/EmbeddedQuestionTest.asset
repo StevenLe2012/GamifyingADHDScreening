@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EmbeddedQuestionTest
   m_EditorClassIdentifier: 
   npcName: Ekonn
-  defaultState: Intro
+  defaultState: BeginGame
   scriptableCallbackNames: []
   dialogueUnits:
   - requiredStateKey: Intro

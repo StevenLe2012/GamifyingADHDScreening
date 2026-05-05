@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 410087040}
-  m_IndirectSpecularColor: {r: 0.5793563, g: 0.4682107, b: 0.6671819, a: 1}
+  m_IndirectSpecularColor: {r: 0.58145386, g: 0.47004518, b: 0.6692787, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -51533,8 +51533,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   State: 0
   participantNumber: 
-  participantLastName: 
-  sessionDate: 
   participantId: 
   logStateChangeCallStack: 0
   respectUIFocusGuard: 1
@@ -63759,7 +63757,7 @@ MonoBehaviour:
   moveSpeed: 5
   gravity: 0
   playerCamera: {fileID: 77373609}
-  mouseSensitivity: 6
+  mouseSensitivity: 0.5
   verticalLookLimit: 80
   allowMovement: 0
 --- !u!143 &1715809109

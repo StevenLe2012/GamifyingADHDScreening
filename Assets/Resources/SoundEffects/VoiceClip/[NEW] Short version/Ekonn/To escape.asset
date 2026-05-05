@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: To escape
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: c8165bdd14a228b4fa91cc4f8d312887, type: 3}
-  subtitle: 'Ekonn:  To escape, you must collect four rare gems - one from each island. '
+  subtitle: 'Ekonn:  To escape, you must collect four rare gems: one from each island. '
   character: Ekonn
