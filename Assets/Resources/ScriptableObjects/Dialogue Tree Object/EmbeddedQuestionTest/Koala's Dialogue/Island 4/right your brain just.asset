@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: right your brain just
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 86c306799f0a06f468cd1f55572ae5f4, type: 3}
-  subtitle: 'Koala: Right? Your brain just goes - skulls, normal, moving on.'
+  subtitle: 'Koala: Right? Your brain just goes: skulls, normal, moving on.'
   character: Koala

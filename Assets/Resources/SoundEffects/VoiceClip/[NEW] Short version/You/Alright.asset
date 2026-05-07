@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: Alright
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: e311e01ac5127364d9139ce8f3d787f7, type: 3}
-  subtitle: "You: \u2026Alright.\n"
+  subtitle: 'You: Alright.
+
+'
   character: You

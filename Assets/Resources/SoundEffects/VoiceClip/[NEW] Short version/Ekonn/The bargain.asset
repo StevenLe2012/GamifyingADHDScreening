@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: The bargain
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: db5f047bbbc9f734b9830619344fec85, type: 3}
-  subtitle: "Ekonn: The bargain ended\u2026 but my freedom did not. I was deceived."
+  subtitle: 'Ekonn: The bargain ended, but my freedom did not. I was deceived.'
   character: Ekonn

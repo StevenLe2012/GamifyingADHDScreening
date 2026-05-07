@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: That kind of
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: ddb9b00263e8e864ebf48d86853ebe22, type: 3}
-  subtitle: " That kind of upfront thinking makes my brain want to just\u2026 not."
+  subtitle: ' That kind of upfront thinking makes my brain want to just not.'
   character: Koala

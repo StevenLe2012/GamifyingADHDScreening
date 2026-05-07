@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 410087040}
-  m_IndirectSpecularColor: {r: 0.58145386, g: 0.47004518, b: 0.6692787, a: 1}
+  m_IndirectSpecularColor: {r: 0.57941, g: 0.4683427, b: 0.6673383, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -4533,6 +4533,7 @@ MonoBehaviour:
   showWelcomeOnAwake: 1
   allowPressAtoStart: 1
   fadeSpeed: 10
+  lockMouseLookWhileIntroVisible: 1
   resultsTitle: RESULT
   resultsBodyTemplate: "You collected {HIT} out of {TOTAL} targets, with {FA} missteps
     along the way.\n\nEach step brings you closer to finding your way home.\n\nWhen
@@ -5330,6 +5331,8 @@ MonoBehaviour:
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
+  trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
+  trainingWindowVolume: 1
   perCardSeconds: 3
   targetCard: {fileID: 1350871891}
   nonTargetCards:
@@ -9677,8 +9680,8 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 231812271}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.22090998}
-  m_LocalScale: {x: 0.13895166, y: 0.24383867, z: 0.5911229}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 965482456}
@@ -9686,8 +9689,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 6.127365, y: -10.8437805}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 0, y: -200}
+  m_SizeDelta: {x: 800, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &231812273
 MonoBehaviour:
@@ -9772,7 +9775,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: -27.913437, y: 0, z: 74.05877, w: 0}
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -10083,17 +10086,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: b7780b7c98b41f540b0a1331af8a4c22,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b7780b7c98b41f540b0a1331af8a4c22,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.78
+      value: 0.801
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b7780b7c98b41f540b0a1331af8a4c22,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.4
+      value: -0.402
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b7780b7c98b41f540b0a1331af8a4c22,
         type: 3}
@@ -12995,7 +12998,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 280953442}
   m_LocalRotation: {x: -0, y: 0.7011015, z: -0, w: 0.7130616}
-  m_LocalPosition: {x: 11.86, y: 34.54, z: -0.1}
+  m_LocalPosition: {x: 11.86, y: 33.93, z: -0.1}
   m_LocalScale: {x: 2.7457666, y: 2.7457666, z: 2.7457666}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -16439,7 +16442,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 371806870}
   m_LocalRotation: {x: -0, y: -0.92858404, z: -0, w: -0.37112233}
-  m_LocalPosition: {x: 4.23, y: 23.8, z: 11.36}
+  m_LocalPosition: {x: 4.72, y: 23.8, z: 9.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -26031,14 +26034,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 569067843}
-  m_LocalRotation: {x: -0, y: 0.9957151, z: -0, w: 0.092474215}
-  m_LocalPosition: {x: -4.48, y: 24.94, z: 14.19}
+  m_LocalRotation: {x: 0.056946926, y: 0.8989679, z: -0.11705891, w: 0.41822362}
+  m_LocalPosition: {x: -2.69, y: 26.48, z: 13.98}
   m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1480944395}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: -550.612, z: 0}
+  m_LocalEulerAnglesHint: {x: 14.957, y: -589.86304, z: 0.265}
 --- !u!114 &569067845
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26917,6 +26920,16 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4965628946055167041, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: buttonPressSfx
+      value: 
+      objectReference: {fileID: 8300000, guid: f3431b10b1f58494f9ba99ce677f5290, type: 3}
+    - target: {fileID: 4965628946055167041, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: buttonPressSfxVolume
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167043, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
       propertyPath: redoBody
@@ -26957,6 +26970,11 @@ PrefabInstance:
         type: 3}
       propertyPath: replayTrainingTitle
       value: Let's try again!
+      objectReference: {fileID: 0}
+    - target: {fileID: 4965628946055167043, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: narrativeCameraSwitchDelaySeconds
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -28657,14 +28675,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 657733631}
-  m_LocalRotation: {x: 0.001870258, y: 0.9979161, z: 0.034211773, w: 0.05467684}
-  m_LocalPosition: {x: -3.9, y: 25.11, z: 13.14}
+  m_LocalRotation: {x: 0.06318303, y: 0.90615726, z: -0.14611575, w: 0.39183837}
+  m_LocalPosition: {x: -1.56, y: 25.69, z: 14.3}
   m_LocalScale: {x: 0.74999976, y: 0.75, z: 0.74999976}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1696822314}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: -3.904, y: 173.713, z: 0.429}
+  m_LocalEulerAnglesHint: {x: 18.32, y: 133.231, z: 0}
 --- !u!114 &657733633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28753,12 +28771,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -32145,14 +32163,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 783022817}
-  m_LocalRotation: {x: -0, y: -0.9666618, z: -0, w: -0.25605652}
+  m_LocalRotation: {x: -0, y: -0.9420305, z: -0, w: -0.3355274}
   m_LocalPosition: {x: 3.51, y: 25.33, z: 4.88}
   m_LocalScale: {x: 0.86932504, y: 0.86932504, z: 0.86932504}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 389405173}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: -209.672, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -219.209, z: 0}
 --- !u!114 &783022819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33252,14 +33270,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 825949379}
-  m_LocalRotation: {x: 0.0025815675, y: 0.99975497, z: 0.016612934, w: 0.014403404}
-  m_LocalPosition: {x: -3.52, y: 24.73, z: 15.17}
+  m_LocalRotation: {x: 0.038116764, y: 0.9328884, z: -0.09009667, w: 0.3466251}
+  m_LocalPosition: {x: 0.39, y: 26.02, z: 15.38}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 210100977}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: -1.899, y: 178.344, z: 0.323}
+  m_LocalEulerAnglesHint: {x: 11.217, y: 139.283, z: 0.506}
 --- !u!114 &825949381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33514,7 +33532,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 827171396}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 21.46, y: 36.46, z: 1.91}
+  m_LocalPosition: {x: 21.46, y: 35.93, z: 1.91}
   m_LocalScale: {x: 1.7759868, y: 1.7759868, z: 1.7759868}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -33545,7 +33563,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 828421269}
-  m_LocalRotation: {x: 0.011823216, y: -0.6981806, z: 0.013946816, w: 0.71568817}
+  m_LocalRotation: {x: 0.000114065115, y: -0.6983153, z: 0.0025237722, w: 0.7157858}
   m_LocalPosition: {x: 17.79, y: 38.54, z: 1.65}
   m_LocalScale: {x: 1.1326, y: 1.1326, z: 1.1326}
   m_ConstrainProportionsScale: 0
@@ -33554,7 +33572,7 @@ Transform:
   - {fileID: 1685997016}
   m_Father: {fileID: 2020309368}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 2.086, y: -88.578, z: 0.198}
+  m_LocalEulerAnglesHint: {x: 0.211, y: -88.584, z: 0.198}
 --- !u!4 &829370593 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4136849051728004718, guid: f883bf36f09f1974b804eee7ea45465d,
@@ -34684,14 +34702,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 877062277}
-  m_LocalRotation: {x: -0, y: 0.99800247, z: -0, w: 0.063174754}
-  m_LocalPosition: {x: -3.53, y: 26.26, z: 10.5}
+  m_LocalRotation: {x: 0.044940867, y: 0.9092921, z: -0.1177789, w: 0.39660597}
+  m_LocalPosition: {x: -1.3, y: 27.94, z: 10.06}
   m_LocalScale: {x: 0.74999976, y: 0.75, z: 0.74999976}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 389405173}
   m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 172.756, z: 0}
+  m_LocalEulerAnglesHint: {x: 14.468, y: 132.781, z: -0.692}
 --- !u!114 &877062279
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36202,6 +36220,8 @@ MonoBehaviour:
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
+  trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
+  trainingWindowVolume: 1
   perCardSeconds: 3
   targetCard: {fileID: 2021071827}
   nonTargetCards:
@@ -39149,7 +39169,7 @@ RectTransform:
   m_GameObject: {fileID: 965482455}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 19.257744, y: 10.97404, z: 4.5268}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 231812272}
@@ -39159,7 +39179,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -1820, y: -980}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &965482457
 MonoBehaviour:
@@ -39183,7 +39203,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: ec6d1e06cf254704892a0f6598bacd3a, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -46106,6 +46126,8 @@ MonoBehaviour:
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
+  trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
+  trainingWindowVolume: 1
   perCardSeconds: 3
   targetCard: {fileID: 1725550738}
   nonTargetCards:
@@ -51015,6 +51037,8 @@ MonoBehaviour:
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
+  trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
+  trainingWindowVolume: 1
   perCardSeconds: 3
   targetCard: {fileID: 1822047889}
   nonTargetCards:
@@ -63757,9 +63781,10 @@ MonoBehaviour:
   moveSpeed: 5
   gravity: 0
   playerCamera: {fileID: 77373609}
-  mouseSensitivity: 0.5
+  mouseSensitivity: 2
   verticalLookLimit: 80
   allowMovement: 0
+  allowMouseLook: 1
 --- !u!143 &1715809109
 CharacterController:
   m_ObjectHideFlags: 0
@@ -63803,6 +63828,7 @@ MonoBehaviour:
   moxoPriority: 50
   playerController: {fileID: 1715809108}
   lockCursorDuringMoxo: 1
+  relockCursorOnExit: 1
   log: 1
 --- !u!114 &1715809111
 MonoBehaviour:
@@ -67988,6 +68014,16 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5104753105002371776, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: buttonPressSfx
+      value: 
+      objectReference: {fileID: 8300000, guid: f3431b10b1f58494f9ba99ce677f5290, type: 3}
+    - target: {fileID: 5104753105002371776, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: buttonPressSfxVolume
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371778, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: replayPromptVoice
@@ -68012,6 +68048,11 @@ PrefabInstance:
         type: 3}
       propertyPath: replayTrainingTitle
       value: Let's try again!
+      objectReference: {fileID: 0}
+    - target: {fileID: 5104753105002371778, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: narrativeCameraSwitchDelaySeconds
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -75192,6 +75233,16 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171800, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: buttonPressSfx
+      value: 
+      objectReference: {fileID: 8300000, guid: f3431b10b1f58494f9ba99ce677f5290, type: 3}
+    - target: {fileID: 3043736677474171800, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: buttonPressSfxVolume
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171802, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
       propertyPath: redoTitle
@@ -75221,6 +75272,16 @@ PrefabInstance:
         type: 3}
       propertyPath: replayTrainingTitle
       value: Let's try again!
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171802, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: postMoxoFaceLeftOffsetDegrees
+      value: -100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171802, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: narrativeCameraSwitchDelaySeconds
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -78509,7 +78570,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2118718472}
   m_LocalRotation: {x: -0, y: -0.999612, z: -0, w: -0.027854502}
-  m_LocalPosition: {x: -2.96, y: 27.39, z: 10.54}
+  m_LocalPosition: {x: -2.2, y: 27.39, z: 10.58}
   m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -79958,6 +80019,21 @@ PrefabInstance:
         type: 3}
       propertyPath: replayTrainingTitle
       value: Let's try again!
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512416057125173680, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: narrativeCameraSwitchDelaySeconds
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512416057125173682, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: buttonPressSfx
+      value: 
+      objectReference: {fileID: 8300000, guid: f3431b10b1f58494f9ba99ce677f5290, type: 3}
+    - target: {fileID: 2512416057125173682, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: buttonPressSfxVolume
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}

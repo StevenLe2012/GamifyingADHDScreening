@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: So I almost
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 181a7ae60653a444d8851adc88bc3986, type: 3}
-  subtitle: "You: \u2026So I almost died?"
+  subtitle: 'You: So I almost died?'
   character: You

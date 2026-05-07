@@ -703,10 +703,13 @@ public class IslandSelectionUI : MonoBehaviour
                 if (Keyboard.current.rightArrowKey.wasPressedThisFrame) { MoveGrid(+1, 0); handled = true; }
             }
 
-            if (Keyboard.current.spaceKey.wasPressedThisFrame)
+            bool pressedConfirm = Keyboard.current.spaceKey.wasPressedThisFrame ||
+                                  Keyboard.current.enterKey.wasPressedThisFrame ||
+                                  Keyboard.current.numpadEnterKey.wasPressedThisFrame;
+            if (pressedConfirm)
             {
                 if (Time.unscaledTime >= _ignoreUntilUnscaled) Activate();
-                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored SPACE (within ignore window).", this);
+                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored confirm (Space/Enter) within ignore window.", this);
                 handled = true;
             }
 
@@ -735,10 +738,12 @@ public class IslandSelectionUI : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.RightArrow)) MoveGrid(+1, 0);
             }
 
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Space) ||
+                Input.GetKeyDown(KeyCode.Return) ||
+                Input.GetKeyDown(KeyCode.KeypadEnter))
             {
                 if (Time.unscaledTime >= _ignoreUntilUnscaled) Activate();
-                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored SPACE (legacy; within ignore window).", this);
+                else if (logVerbose) Debug.Log("[IslandSelectionUI] Ignored confirm (legacy Space/Enter) within ignore window.", this);
             }
 
             if (Input.GetKeyDown(KeyCode.R))

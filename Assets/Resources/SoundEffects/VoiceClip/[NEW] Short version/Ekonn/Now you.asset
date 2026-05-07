@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Now you
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 0113d92f4424a5743bf5da0915fd6bb6, type: 3}
-  subtitle: "Ekonn: Now\u2026 you want to go home, right?"
+  subtitle: 'Ekonn: Now, you want to go home, right?'
   character: Ekonn

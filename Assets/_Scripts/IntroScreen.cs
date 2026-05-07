@@ -666,6 +666,7 @@ public class IntroScreen : MonoBehaviour
     [SerializeField] private bool showWelcomeOnAwake = true;
     [SerializeField] private bool allowPressAtoStart = true;
     [SerializeField] private float fadeSpeed = 10f;
+    [SerializeField] private bool lockMouseLookWhileIntroVisible = true;
 
     [Header("Results UI")]
     [SerializeField] private string resultsTitle = "Results";
@@ -813,6 +814,8 @@ public class IntroScreen : MonoBehaviour
     private bool _isVisible;
     private bool _starting;
     private UnityEvent _currentStart;
+    private DesktopArrowController _desktopLook;
+    private bool _isFirstWelcomeActive;
 
     // NEW: replay training action
     private UnityEvent _currentReplayTraining;
@@ -831,6 +834,19 @@ public class IntroScreen : MonoBehaviour
 
     private static readonly Regex s_CountdownSuffix = new Regex(@"\s*\(\d+\)\s*$", RegexOptions.Compiled);
     private static string StripCountdownSuffix(string s) => string.IsNullOrEmpty(s) ? s : s_CountdownSuffix.Replace(s, "");
+
+    private void ApplyWelcomeMouseLookLock(bool visible)
+    {
+        if (!lockMouseLookWhileIntroVisible || _desktopLook == null) return;
+
+        // Apply only for the first welcome intro panel.
+        bool shouldLockLook = visible && _isFirstWelcomeActive;
+        _desktopLook.SetLookAngleFrozen(shouldLockLook);
+
+        // Once the first welcome closes, never treat later panels as "first welcome".
+        if (!visible && _isFirstWelcomeActive)
+            _isFirstWelcomeActive = false;
+    }
 
     // ---------- Voice Over ----------
     private void PlayVoiceInternal(AudioClip clip)
@@ -883,6 +899,8 @@ public class IntroScreen : MonoBehaviour
 
         if (!replayTrainingButtonLabel && replayTrainingButton)
             replayTrainingButtonLabel = replayTrainingButton.GetComponentInChildren<TextMeshProUGUI>();
+
+        _desktopLook = FindObjectOfType<DesktopArrowController>(true);
 
         if (startButton) startButton.onClick.AddListener(OnStartClicked);
 
@@ -957,6 +975,7 @@ public class IntroScreen : MonoBehaviour
     {
         // NEVER show training button here
         SetReplayTrainingVisible(false);
+        _isFirstWelcomeActive = true;
 
         ApplyPreset(welcomePreset);
         if (startButtonLabel) startButtonLabel.text = StripCountdownSuffix(startButtonLabel.text);
@@ -1203,6 +1222,8 @@ public class IntroScreen : MonoBehaviour
         // Safety: if HideInstant is called externally (e.g. a timeout), clear the pending flag
         // so we don't accidentally re-run training when neither button was pressed.
         ReplayTrainingPending = false;
+
+        ApplyWelcomeMouseLookLock(visible: false);
     }
 
     private System.Collections.IEnumerator CoFadeOutAndBegin()
@@ -1220,6 +1241,7 @@ public class IntroScreen : MonoBehaviour
         _isVisible = false;
         if (localCharacter) localCharacter.SetActive(false);
         gameObject.SetActive(false);
+        ApplyWelcomeMouseLookLock(visible: false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
 
@@ -1259,6 +1281,8 @@ public class IntroScreen : MonoBehaviour
             EventSystem.current.SetSelectedGameObject(null);
 
         if (localCharacter) localCharacter.SetActive(visible);
+
+        ApplyWelcomeMouseLookLock(visible);
 
         if (visible) StartTypingEffect();
         else         StopTyping();

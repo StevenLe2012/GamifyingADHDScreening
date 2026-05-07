@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Okaybut-Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: "Okay but\u2026 Hearts only? The whole kingdom runs on Hearts?"
+  subtitle: Okay but Hearts only? The whole kingdom runs on Hearts?
   character: Koala

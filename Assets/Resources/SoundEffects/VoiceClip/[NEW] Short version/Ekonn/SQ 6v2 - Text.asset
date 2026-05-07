@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SQ 6v2 - Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: "Ekonn: Outside of Falkor\u2026how often do you have trouble remembering
-    appointments or obligations?"
+  subtitle: 'Ekonn: Outside of Falkor, how often do you have trouble remembering
+    appointments or obligations?'
   character: Ekonn

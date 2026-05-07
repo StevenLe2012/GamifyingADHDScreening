@@ -57,6 +57,11 @@ public class IntroBoot : MonoBehaviour
 
     VideoPlayer vp;
     AsyncOperation preload;
+    bool isVideoActive;
+    bool videoEnded;
+    bool appSuspended;
+    bool resumeAfterAppReturn;
+    float ignoreSkipInputUntil;
 
     void Awake()
     {
@@ -233,6 +238,11 @@ public class IntroBoot : MonoBehaviour
 #endif
 
         yield return PrepareAndPlay();
+        if (!isVideoActive)
+        {
+            // Prepare failed / skipped by timeout path; continue without entering playback loop.
+            goto AfterPlayback;
+        }
 
         // Fade in underlying frame quickly
         if (fadeToBlack && fadeGroup)
@@ -240,11 +250,18 @@ public class IntroBoot : MonoBehaviour
 
         // Wait for video to finish (or skip if allowed).
         float t = 0f;
-        while (vp.isPlaying)
+        while (!videoEnded)
         {
-            t += Time.unscaledDeltaTime;
+            if (appSuspended)
+            {
+                yield return null;
+                continue;
+            }
 
-            if (allowSkip && t > minUnskippableSeconds && AnySkipPressed())
+            if (vp != null && vp.isPlaying)
+                t += Time.unscaledDeltaTime;
+
+            if (allowSkip && t > minUnskippableSeconds && Time.unscaledTime >= ignoreSkipInputUntil && AnySkipPressed())
             {
                 if (log) Debug.Log("[IntroBoot] Skipped.");
                 break;
@@ -253,6 +270,7 @@ public class IntroBoot : MonoBehaviour
             yield return null;
         }
 
+AfterPlayback:
         // Fade to black — screen is now fully black before any scene loading starts.
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, fadeGroup.alpha, 1f, fadeDuration));
@@ -302,6 +320,7 @@ public class IntroBoot : MonoBehaviour
         if (!vp.isPrepared)
         {
             if (log) Debug.LogWarning("[IntroBoot] WebGL: skipping video (never became prepared).");
+            isVideoActive = false;
             yield break;
         }
 #else
@@ -316,32 +335,78 @@ public class IntroBoot : MonoBehaviour
         if (!vp.isPrepared)
         {
             if (log) Debug.LogWarning("[IntroBoot] Video did not prepare in time — skipping.");
+            isVideoActive = false;
             yield break;
         }
 #endif
 
         if (log) Debug.Log("[IntroBoot] Playing.");
+        videoEnded = false;
+        appSuspended = false;
+        resumeAfterAppReturn = false;
+        isVideoActive = true;
+        ignoreSkipInputUntil = Time.unscaledTime + 0.25f;
         vp.Play();
     }
 
     void OnVideoFinished(VideoPlayer player)
     {
+        if (!isVideoActive) return;
+        if (appSuspended) return;
+        videoEnded = true;
         if (log) Debug.Log("[IntroBoot] Video finished.");
         // Let CoRun handle transition; nothing else here.
+    }
+
+    void OnApplicationPause(bool pauseStatus)
+    {
+        HandleAppVisibilityChanged(!pauseStatus);
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        HandleAppVisibilityChanged(hasFocus);
+    }
+
+    void HandleAppVisibilityChanged(bool isVisibleAndFocused)
+    {
+        if (vp == null || !isVideoActive) return;
+
+        if (!isVisibleAndFocused)
+        {
+            appSuspended = true;
+            resumeAfterAppReturn = vp.isPlaying;
+            if (resumeAfterAppReturn)
+                vp.Pause();
+            return;
+        }
+
+        appSuspended = false;
+        ignoreSkipInputUntil = Time.unscaledTime + 0.35f;
+        if (resumeAfterAppReturn && !vp.isPlaying)
+            vp.Play();
+
+        resumeAfterAppReturn = false;
     }
 
     bool AnySkipPressed()
     {
         var kb = Keyboard.current;
         var gp = Gamepad.current;
-        if ((kb != null && (kb.anyKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame)) ||
-            (gp != null && (gp.startButton.wasPressedThisFrame || gp.aButton.wasPressedThisFrame)))
+
+        // Do not treat Space as skip during intro playback.
+        if ((kb != null && (kb.escapeKey.wasPressedThisFrame ||
+                            kb.enterKey.wasPressedThisFrame ||
+                            kb.numpadEnterKey.wasPressedThisFrame)) ||
+            (gp != null && gp.startButton.wasPressedThisFrame))
             return true;
 
 #if !UNITY_WEBGL
-        // On WebGL, Input.anyKeyDown includes mouse button presses which would cause an
-        // accidental skip when the player clicks anywhere on the video. Use keyboard only.
-        if (Input.anyKeyDown) return true;
+        // Keep legacy input support without using Space as a skip key.
+        if (Input.GetKeyDown(KeyCode.Escape) ||
+            Input.GetKeyDown(KeyCode.Return) ||
+            Input.GetKeyDown(KeyCode.KeypadEnter))
+            return true;
 #endif
         return false;
     }
@@ -396,6 +461,10 @@ public class IntroBoot : MonoBehaviour
     void CleanUpVideo()
     {
         if (vp == null) return;
+        isVideoActive = false;
+        appSuspended = false;
+        resumeAfterAppReturn = false;
+        videoEnded = false;
         vp.loopPointReached -= OnVideoFinished;
         if (vp.isPlaying) vp.Stop();
         // Do not Release() the Inspector-assigned RenderTexture.

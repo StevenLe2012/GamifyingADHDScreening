@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SQ4
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: c7d01382d80a8f9429e1202a5b03b4c2, type: 3}
-  subtitle: 'Koala: When something feels that heavy before you even start - how often
+  subtitle: 'Koala: When something feels that heavy before you even start, how often
     do you end up putting it off?'
   character: Koala

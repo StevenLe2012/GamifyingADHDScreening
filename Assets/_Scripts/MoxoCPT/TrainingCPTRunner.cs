@@ -386,6 +386,9 @@ public class TrainingCPTRunner : MonoBehaviour
     [SerializeField] private AudioClip correctClip;
     [SerializeField] private AudioClip incorrectClip;
     [Range(0f, 1f)] [SerializeField] private float sfxVolume = 1f;
+    [Tooltip("Optional 3-second cue played during each training card window (replaces on-screen 3s timer).")]
+    [SerializeField] private AudioClip trainingWindowClip;
+    [Range(0f, 1f)] [SerializeField] private float trainingWindowVolume = 1f;
 
     [Header("Timing")]
     [Tooltip("Seconds each training card is shown; a countdown is displayed in the note.")]
@@ -535,6 +538,24 @@ public class TrainingCPTRunner : MonoBehaviour
             Vector3 pos = listener ? listener.transform.position : Vector3.zero;
             AudioSource.PlayClipAtPoint(clip, pos, Mathf.Clamp01(sfxVolume));
         }
+    }
+
+    private void PlayTrainingWindowCue()
+    {
+        if (!trainingWindowClip) return;
+
+        if (audioSource && !audioSource.gameObject.activeInHierarchy)
+            audioSource.gameObject.SetActive(true);
+
+        if (audioSource && audioSource.enabled)
+            audioSource.PlayOneShot(trainingWindowClip, Mathf.Clamp01(trainingWindowVolume));
+    }
+
+    private void StopTrainingWindowCue()
+    {
+        if (!audioSource || !audioSource.enabled) return;
+        if (audioSource.isPlaying)
+            audioSource.Stop();
     }
 
     private void AutoBindCardsIfNeeded()
@@ -707,7 +728,10 @@ public class TrainingCPTRunner : MonoBehaviour
             string note = isInstruction ? instructionNote : (isTarget ? targetNote : nonTargetNote);
 
             if (hintUI)
-                hintUI.ShowExploreHint(seconds, note, "");
+                hintUI.ShowDialogueOptionsHint(note);
+
+            if (!isInstruction)
+                PlayTrainingWindowCue();
 
             bool pressed = false;
             bool feedbackShown = false;
@@ -733,6 +757,7 @@ public class TrainingCPTRunner : MonoBehaviour
                 if (confirm)
                 {
                     pressed = true;
+                    StopTrainingWindowCue();
 
                     // NEW: instruction can be skipped early (optional)
                     if (isInstruction && allowSkipInstructionOnPress)
@@ -756,6 +781,7 @@ public class TrainingCPTRunner : MonoBehaviour
             // NEW: instruction has no correctness feedback; just proceed
             if (isInstruction)
             {
+                StopTrainingWindowCue();
                 if (hintUI) hintUI.Hide();
                 step.card.gameObject.SetActive(false);
                 continue;
@@ -774,11 +800,13 @@ public class TrainingCPTRunner : MonoBehaviour
             if (feedbackHoldSeconds > 0f)
                 yield return new WaitForSecondsRealtime(feedbackHoldSeconds);
 
+            StopTrainingWindowCue();
             if (hintUI) hintUI.Hide();
             HideAllFeedback();
             step.card.gameObject.SetActive(false);
         }
 
+        StopTrainingWindowCue();
         TurnAllTrainingCards(false);
         _active = false;
 

@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Collecting
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: d6995418595c6df459e61130a2a81f39, type: 3}
-  subtitle: "Kola: Collecting the right flags over and over \n- same motion, same
-    check, every time. \r\n\r\n"
+  subtitle: "Kola: Collecting the right flags over and over:\nsame motion, same check,
+    every time. \r\n\r\n"
   character: Koala

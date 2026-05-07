@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: That sounds
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: f593cc5778e1c924691e88fb40da2ec9, type: 3}
-  subtitle: "That sounds\u2026 really hard. But you\u2019re doing great here."
+  subtitle: "That sounds really hard. But you\u2019re doing great here."
   character: Koala

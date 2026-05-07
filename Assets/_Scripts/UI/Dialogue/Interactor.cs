@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 
 public class Interactor : MonoBehaviour
 {
-    [Header("Input (Space only)")]
-    [Tooltip("Only SPACE will confirm/interact. Gamepad/Enter are ignored.")]
+    [Header("Input (Space / Enter)")]
+    [Tooltip("SPACE, ENTER, and NUMPAD ENTER will confirm/interact.")]
     [SerializeField] private bool spaceToInteract = true;
 
     [Header("Range")]
@@ -47,13 +47,16 @@ public class Interactor : MonoBehaviour
         // Input + debounce
         if (!spaceToInteract || Keyboard.current == null) return;
         if (Time.unscaledTime < _debounceUntilUnscaled) return;
-        if (!Keyboard.current.spaceKey.wasPressedThisFrame) return;
+        bool pressedSpace = Keyboard.current.spaceKey.wasPressedThisFrame;
+        bool pressedEnter = Keyboard.current.enterKey.wasPressedThisFrame ||
+                            Keyboard.current.numpadEnterKey.wasPressedThisFrame;
+        if (!(pressedSpace || pressedEnter)) return;
 
         _debounceUntilUnscaled = Time.unscaledTime + interactDebounceSeconds;
 
         UpdateInteractables();
         Interact();
-        Debug.Log("[Interactor] SPACE pressed → Interact()");
+        Debug.Log("[Interactor] Confirm key pressed (Space/Enter) -> Interact()");
     }
 
     private void Interact()

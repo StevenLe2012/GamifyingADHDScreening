@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: I mean
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: c323c3c2e7f30214e8125610f166f3cb, type: 3}
-  subtitle: "I mean\u2026 how people handle challenges.\n"
+  subtitle: 'I mean, how people handle challenges.
+
+'
   character: Koala

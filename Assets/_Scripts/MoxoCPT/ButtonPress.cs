@@ -28,6 +28,14 @@ namespace MoxoCPT
         [Tooltip("Minimum unscaled seconds between accepted presses.")]
         [SerializeField] private float pressDebounceSeconds = 0.075f;
 
+        [Header("Press Feedback SFX")]
+        [Tooltip("Optional sound played when a CPT press is accepted (target or non-target).")]
+        [SerializeField] private AudioClip buttonPressSfx;
+        [Tooltip("Optional audio source for buttonPressSfx. If empty, one is created on this object.")]
+        [SerializeField] private AudioSource buttonPressAudioSource;
+        [Range(0f, 1f)]
+        [SerializeField] private float buttonPressSfxVolume = 1f;
+
         [Header("Diagnostics")]
         [Tooltip("Log the reason every time a Space/A press is detected but blocked by a gate.")]
         [SerializeField] private bool logBlockedPresses = true;
@@ -79,7 +87,9 @@ namespace MoxoCPT
                                   && actionPress.action.WasPressedThisFrame();
             bool pressedGamepad = Gamepad.current  != null && Gamepad.current.buttonSouth.wasPressedThisFrame;
             bool pressedSpace   = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
-            bool anyPress       = pressedAction || pressedGamepad || pressedSpace;
+            bool pressedEnter   = Keyboard.current != null &&
+                                  (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame);
+            bool anyPress       = pressedAction || pressedGamepad || pressedSpace || pressedEnter;
 
             // ── Gate 0 – Suppress leaked UI space (skipped during CPT) ───────────────
             if (!isCPT && respectSuppressSpaceThisFrame && UIInputFocus.SuppressNow)
@@ -94,6 +104,17 @@ namespace MoxoCPT
             {
                 if (anyPress && logBlockedPresses)
                     Debug.LogWarning($"[ButtonPress] BLOCKED Gate1_NotCPT  state={gm.State}  isCPT={isCPT}");
+                return;
+            }
+
+            // ── Gate 1b – MOXO run must be active ────────────────────────────────────
+            // Results UI can still be shown while GameState is CPT; in that phase
+            // card press SFX should be silent.
+            var moxo = MoxoCPTManager.Instance;
+            if (isCPT && (moxo == null || moxo.isGameOver))
+            {
+                if (anyPress && logBlockedPresses)
+                    Debug.LogWarning("[ButtonPress] BLOCKED Gate1b_NotActiveRun  CPT but game is over.");
                 return;
             }
 
@@ -131,16 +152,34 @@ namespace MoxoCPT
             if (!anyPress) return;
 
             // ── Press accepted ────────────────────────────────────────────────────────
-            char pressedKey = pressedAction ? 'I' : pressedGamepad ? 'A' : 'S';
+            char pressedKey = pressedAction ? 'I' : pressedGamepad ? 'A' : (pressedEnter ? 'E' : 'S');
             _debounceUntilUnscaled = Time.unscaledTime + pressDebounceSeconds;
 
             Debug.Log($"[ButtonPress] ✓ CPT press consumed  key={pressedKey}  pressCount={Interact._pressCount + 1}  state={gm.State}");
 
             Interact._pressCount++;
+            PlayPressSfx();
 
             var logger = EyeTrackLogger.I ?? FindObjectOfType<EyeTrackLogger>(true);
             if (logger != null && logger.IsLogging)
                 logger.RegisterPress(pressedKey.ToString());
+        }
+
+        private void PlayPressSfx()
+        {
+            if (buttonPressSfx == null) return;
+
+            if (buttonPressAudioSource == null)
+            {
+                buttonPressAudioSource = GetComponent<AudioSource>();
+                if (buttonPressAudioSource == null)
+                    buttonPressAudioSource = gameObject.AddComponent<AudioSource>();
+
+                buttonPressAudioSource.playOnAwake = false;
+                buttonPressAudioSource.spatialBlend = 0f;
+            }
+
+            buttonPressAudioSource.PlayOneShot(buttonPressSfx, Mathf.Clamp01(buttonPressSfxVolume));
         }
     }
 }

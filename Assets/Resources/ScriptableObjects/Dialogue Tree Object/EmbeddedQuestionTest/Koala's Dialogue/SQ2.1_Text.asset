@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SQ2.1_Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: "Kola: When you have a task that needs organizing - like sorting stuff,
-    planning steps\u2026how often does it feel hard to get everything in the right
-    order?"
+  subtitle: 'Kola: When you have a task that needs organizing: like sorting stuff,
+    planning steps, how often does it feel hard to get everything in the right order?'
   character: Koala

@@ -1792,6 +1792,7 @@ namespace MoxoCPT
         [SerializeField] private float cameraAcquireTimeoutSeconds = 2.0f;
         [SerializeField] private bool logCamera = true;
         [SerializeField] private float maxAnchorDistanceFallback = 80f;
+        [SerializeField] private float narrativeCameraSwitchDelaySeconds = 3f;
 
         [Header("Safeguard (Replay If No Real Participation)")]
         [SerializeField] private bool enableSafeguard = true;
@@ -1818,6 +1819,11 @@ namespace MoxoCPT
 
         private Coroutine _cameraCo;
         private bool _moxoCameraActive = false;
+        private Coroutine _delayedNarrativeCameraExitCo;
+        private DesktopArrowController _transitionLookController;
+        private Quaternion _preMoxoBodyRotation;
+        private float _preMoxoPitch;
+        private bool _hasPreMoxoLookPose;
 
         // NEW: lock GameState to CPT while running / showing results / showing replay prompt
         private bool _lockStateToCpt = false;
@@ -1865,9 +1871,10 @@ namespace MoxoCPT
             var gp = Gamepad.current;
 
             bool pressedSpace = kb != null && kb.spaceKey.wasPressedThisFrame;
+            bool pressedEnter = kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame);
             bool pressedA = gp != null && gp.buttonSouth.wasPressedThisFrame;
 
-            if (pressedSpace || pressedA)
+            if (pressedSpace || pressedEnter || pressedA)
                 _cptKeyPresses++;
         }
 
@@ -2140,6 +2147,19 @@ namespace MoxoCPT
             isGameOver = false;
             _cptKeyPresses = 0;
 
+            // Cache desktop look pose before MOXO takes camera control.
+            _transitionLookController ??= FindObjectOfType<DesktopArrowController>(true);
+            if (_transitionLookController != null)
+            {
+                // Prefer deterministic per-island anchor orientation.
+                if (!TryGetCurrentIslandAnchorLookPose(out _preMoxoBodyRotation, out _preMoxoPitch))
+                {
+                    _preMoxoBodyRotation = _transitionLookController.transform.rotation;
+                    _preMoxoPitch = _transitionLookController.GetCurrentPitch();
+                }
+                _hasPreMoxoLookPose = true;
+            }
+
             CPTScoreRuntime.I?.ResetScore();
             SetCardsActiveSafe(true);
 
@@ -2236,9 +2256,8 @@ namespace MoxoCPT
                 Debug.LogWarning("[MOXO] IntroScreen not found; switching state immediately.");
 
                 SetCptLock(false);
-                ExitMoxoCamera();
-
                 GameManager.Instance?.UpdateGameState(GameManager.GameState.Narrative);
+                StartDelayedNarrativeCameraSwitch();
                 StartKoalaAfterGameDialogue();
             }
         }
@@ -2317,14 +2336,99 @@ namespace MoxoCPT
             intro.ShowResults(hit, total, falseAlarms, totalDistractors, () =>
             {
                 SetCptLock(false);
-                ExitMoxoCamera();
 
                 KoalaAnimBus.BroadcastToActiveKoalas(d => d.OnResultsContinue());
                 Debug.Log("[MOXO] Results Continue → Narrative.");
 
                 GameManager.Instance?.UpdateGameState(GameManager.GameState.Narrative);
+                StartDelayedNarrativeCameraSwitch();
                 StartKoalaAfterGameDialogue();
             });
+        }
+
+        private void StartDelayedNarrativeCameraSwitch()
+        {
+            if (_delayedNarrativeCameraExitCo != null)
+            {
+                StopCoroutine(_delayedNarrativeCameraExitCo);
+                _delayedNarrativeCameraExitCo = null;
+            }
+
+            SetPostMoxoLookLock(true);
+            _delayedNarrativeCameraExitCo = StartCoroutine(CoDelayedNarrativeCameraSwitch());
+        }
+
+        private IEnumerator CoDelayedNarrativeCameraSwitch()
+        {
+            float delay = Mathf.Max(0f, narrativeCameraSwitchDelaySeconds);
+            if (delay > 0f)
+                yield return new WaitForSecondsRealtime(delay);
+
+            ExitMoxoCamera();
+            MoxoStateCameraSwitch.Instance?.ExitMoxoViewNow();
+
+            // Re-apply the exact pre-MOXO look pose deterministically while still frozen.
+            if (_transitionLookController != null && _hasPreMoxoLookPose)
+                _transitionLookController.RestoreLookPose(_preMoxoBodyRotation, _preMoxoPitch);
+
+            // Hold the restored pose over multiple frames so no late update from
+            // other systems can pull camera yaw off the island anchor.
+            float holdSeconds = 0.35f;
+            float t = 0f;
+            while (t < holdSeconds)
+            {
+                if (_transitionLookController != null && _hasPreMoxoLookPose)
+                    _transitionLookController.RestoreLookPose(_preMoxoBodyRotation, _preMoxoPitch);
+
+                t += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            SetPostMoxoLookLock(false);
+            _hasPreMoxoLookPose = false;
+
+            _delayedNarrativeCameraExitCo = null;
+        }
+
+        private void SetPostMoxoLookLock(bool on)
+        {
+            _transitionLookController ??= FindObjectOfType<DesktopArrowController>(true);
+            if (_transitionLookController == null) return;
+
+            _transitionLookController.SetLookAngleFrozen(on);
+        }
+
+        private bool TryGetCurrentIslandAnchorLookPose(out Quaternion bodyRotation, out float pitch)
+        {
+            bodyRotation = Quaternion.identity;
+            pitch = 0f;
+
+            // Most reliable source: exact spawn rotation used during island teleport.
+            var travel = IslandTravelManager.I;
+            if (travel != null && travel.HasCurrentIslandSpawnRotation)
+            {
+                Vector3 se = travel.CurrentIslandSpawnRotation.eulerAngles;
+                bodyRotation = Quaternion.Euler(0f, se.y, 0f);
+                pitch = 0f;
+                return true;
+            }
+
+            string islandId = (IslandTravelManager.I?.CurrentIsland?.islandId ?? "").Trim();
+            if (string.IsNullOrEmpty(islandId)) return false;
+
+            var anchors = FindObjectsOfType<IslandAnchor>(true);
+            foreach (var a in anchors)
+            {
+                if (!a || string.IsNullOrWhiteSpace(a.islandId)) continue;
+                if (!string.Equals(a.islandId.Trim(), islandId, StringComparison.OrdinalIgnoreCase)) continue;
+
+                Vector3 e = a.transform.rotation.eulerAngles;
+                bodyRotation = Quaternion.Euler(0f, e.y, 0f);
+                pitch = 0f;
+                return true;
+            }
+
+            return false;
         }
 
         // NEW: run training again then show the "Ready" panel

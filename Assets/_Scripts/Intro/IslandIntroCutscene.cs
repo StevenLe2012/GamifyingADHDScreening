@@ -53,6 +53,10 @@ public class IslandIntroCutscene : MonoBehaviour
     IslandData _pendingIsland;
     CutsceneEntry _currentCutscene;
     bool _isPlaying;
+    bool _resumeAfterAppReturn;
+    bool _videoEnded;
+    bool _appSuspended;
+    float _ignoreSkipInputUntil;
 
     void Awake()
     {
@@ -218,6 +222,9 @@ public class IslandIntroCutscene : MonoBehaviour
     IEnumerator CoRun()
     {
         _isPlaying = true;
+        _videoEnded = false;
+        _appSuspended = false;
+        _ignoreSkipInputUntil = Time.unscaledTime + 0.2f;
 
         // Ensure visuals are enabled every time we start a cutscene
         if (renderToCamera && _vp != null && _vp.targetCamera != null)
@@ -234,11 +241,18 @@ public class IslandIntroCutscene : MonoBehaviour
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, 0.25f));
 
         float t = 0f;
-        while (_vp.isPlaying)
+        while (!_videoEnded)
         {
-            t += Time.unscaledDeltaTime;
+            if (_appSuspended)
+            {
+                yield return null;
+                continue;
+            }
 
-            if (allowSkip && t > minUnskippableSeconds && AnySkipPressed())
+            if (_vp.isPlaying)
+                t += Time.unscaledDeltaTime;
+
+            if (allowSkip && t > minUnskippableSeconds && Time.unscaledTime >= _ignoreSkipInputUntil && AnySkipPressed())
             {
                 if (log) Debug.Log("[IslandIntroCutscene] Skipped.");
                 break;
@@ -302,6 +316,7 @@ public class IslandIntroCutscene : MonoBehaviour
     void OnVideoFinished(VideoPlayer player)
     {
         if (!_isPlaying) return;
+        _videoEnded = true;
         if (log) Debug.Log("[IslandIntroCutscene] Video finished.");
         // CoRun handles the transition; nothing else here.
     }
@@ -335,6 +350,37 @@ public class IslandIntroCutscene : MonoBehaviour
         g.alpha = to;
     }
 
+    void OnApplicationPause(bool pauseStatus)
+    {
+        HandleAppVisibilityChanged(!pauseStatus);
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        HandleAppVisibilityChanged(hasFocus);
+    }
+
+    void HandleAppVisibilityChanged(bool isVisibleAndFocused)
+    {
+        if (_vp == null || !_isPlaying) return;
+
+        if (!isVisibleAndFocused)
+        {
+            _appSuspended = true;
+            _resumeAfterAppReturn = _vp.isPlaying;
+            if (_resumeAfterAppReturn)
+                _vp.Pause();
+            return;
+        }
+
+        _appSuspended = false;
+        _ignoreSkipInputUntil = Time.unscaledTime + 0.25f;
+        if (_resumeAfterAppReturn && !_vp.isPlaying)
+            _vp.Play();
+
+        _resumeAfterAppReturn = false;
+    }
+
     void FinishAndTravel()
     {
         CleanUpVideo();
@@ -358,6 +404,9 @@ public class IslandIntroCutscene : MonoBehaviour
     {
         if (_vp == null) return;
         if (_vp.isPlaying) _vp.Stop();
+        _resumeAfterAppReturn = false;
+        _appSuspended = false;
+        _videoEnded = false;
         // Do NOT Release() the RenderTexture — it is an Inspector-assigned asset shared
         // across multiple cutscene plays. Releasing it permanently frees GPU memory and
         // the next cutscene would render to a dead texture (frozen first frame, no visuals).

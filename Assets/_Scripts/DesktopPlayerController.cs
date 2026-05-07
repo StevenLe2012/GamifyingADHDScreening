@@ -15,13 +15,66 @@ public class DesktopArrowController : MonoBehaviour
     [Header("Toggles")]
     [Tooltip("If OFF, arrow-key movement (forward/back/strafe) is disabled. Mouse look still works.")]
     public bool allowMovement = true;
+    [Tooltip("If OFF, mouse-look yaw/pitch is disabled.")]
+    public bool allowMouseLook = true;
 
     private CharacterController _cc;
     private float _verticalVelocity;
     private float _pitch = 0f;
+    private bool _freezeLookAngle;
+    private Quaternion _frozenBodyRotation;
+    private float _frozenPitch;
+    private float _ignoreLookUntilUnscaledTime;
+    private float _poseGuardUntilUnscaledTime;
+    private Quaternion _guardBodyRotation;
+    private float _guardPitch;
 
     // Optional: flip at runtime
     public void SetMovementEnabled(bool on) => allowMovement = on;
+    public void SetMouseLookEnabled(bool on)
+    {
+        allowMouseLook = on;
+    }
+
+    public void SetLookAngleFrozen(bool on)
+    {
+        _freezeLookAngle = on;
+        if (on)
+        {
+            float yaw = transform.eulerAngles.y;
+            _frozenBodyRotation = Quaternion.Euler(0f, yaw, 0f);
+            _frozenPitch = _pitch;
+        }
+    }
+
+    public float GetCurrentPitch()
+    {
+        if (playerCamera != null)
+        {
+            float x = playerCamera.transform.localEulerAngles.x;
+            if (x > 180f) x -= 360f;
+            return Mathf.Clamp(x, -verticalLookLimit, verticalLookLimit);
+        }
+        return _pitch;
+    }
+
+    public void RestoreLookPose(Quaternion bodyRotation, float cameraPitch)
+    {
+        float yaw = bodyRotation.eulerAngles.y;
+        _guardBodyRotation = Quaternion.Euler(0f, yaw, 0f);
+        transform.rotation = _guardBodyRotation;
+
+        _guardPitch = Mathf.Clamp(cameraPitch, -verticalLookLimit, verticalLookLimit);
+        _pitch = _guardPitch;
+        if (playerCamera)
+            playerCamera.transform.localEulerAngles = new Vector3(_pitch, 0f, 0f);
+
+        // Prevent a one-frame/post-transition mouse delta from pulling
+        // the camera away from the restored pose.
+        Input.ResetInputAxes();
+        _ignoreLookUntilUnscaledTime = Time.unscaledTime + 0.2f;
+        _poseGuardUntilUnscaledTime = Time.unscaledTime + 0.6f;
+    }
 
     void Awake()
     {
@@ -35,9 +88,7 @@ public class DesktopArrowController : MonoBehaviour
         _cc.skinWidth = 0.02f;
 
 #if !UNITY_WEBGL
-        // On desktop/standalone we can lock the cursor immediately.
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        ApplyCursorForLookState();
 #endif
     }
 
@@ -56,12 +107,65 @@ public class DesktopArrowController : MonoBehaviour
 
     void Update()
     {
-        HandleLook();
+        KeepBodyUpright();
+
+        if (Time.unscaledTime < _poseGuardUntilUnscaledTime)
+        {
+            transform.rotation = _guardBodyRotation;
+            _pitch = _guardPitch;
+            if (playerCamera)
+                playerCamera.transform.localEulerAngles = new Vector3(_pitch, 0f, 0f);
+
+            HandleMovement();
+            return;
+        }
+
+        if (_freezeLookAngle)
+        {
+            transform.rotation = _frozenBodyRotation;
+            _pitch = _frozenPitch;
+            if (playerCamera)
+                playerCamera.transform.localEulerAngles = new Vector3(_pitch, 0f, 0f);
+        }
+        else if (allowMouseLook)
+        {
+            HandleLook();
+        }
         HandleMovement();
+    }
+
+    private void KeepBodyUpright()
+    {
+        var e = transform.eulerAngles;
+        if (Mathf.Abs(e.x) > 0.001f || Mathf.Abs(e.z) > 0.001f)
+            transform.rotation = Quaternion.Euler(0f, e.y, 0f);
+    }
+
+    private void ApplyCursorForLookState()
+    {
+        if (allowMouseLook)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
     void HandleLook()
     {
+        if (Time.unscaledTime < _ignoreLookUntilUnscaledTime)
+            return;
+
+        // Ignore mouse deltas unless pointer lock is active.
+        // This prevents camera yaw drift when other systems temporarily unlock
+        // the cursor (e.g. MOXO/results transitions across islands).
+        if (Cursor.lockState != CursorLockMode.Locked)
+            return;
+
         // Mouse X = yaw (turn left/right)
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         // Mouse Y = pitch (look up/down)

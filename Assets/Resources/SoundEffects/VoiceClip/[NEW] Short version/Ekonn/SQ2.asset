@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: SQ2
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: f1b7ebfd8b9964f42aad580d0b86783b, type: 3}
-  subtitle: "Ekonn: In your daily life\u2026"
+  subtitle: 'Ekonn: In your daily life,'
   character: Ekonn

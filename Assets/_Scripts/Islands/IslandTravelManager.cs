@@ -577,6 +577,8 @@ public class IslandTravelManager : MonoBehaviour
     private readonly Dictionary<string, Transform> _pickerAnchorById = new();
 
     public IslandData CurrentIsland { get; private set; }
+    public bool HasCurrentIslandSpawnRotation { get; private set; }
+    public Quaternion CurrentIslandSpawnRotation { get; private set; } = Quaternion.identity;
 
     private IntroScreen _lastIntro;
     private MonoBehaviour _lastCountdown;
@@ -665,6 +667,7 @@ public class IslandTravelManager : MonoBehaviour
 
         CurrentIsland = island;
         _didTrainingThisTravel = false;
+        HasCurrentIslandSpawnRotation = false;
 
         StartCoroutine(CoTravel(island));
     }
@@ -765,6 +768,8 @@ public class IslandTravelManager : MonoBehaviour
 
         root.position = dest.position;
         root.rotation = dest.rotation;
+        CurrentIslandSpawnRotation = Quaternion.Euler(0f, dest.rotation.eulerAngles.y, 0f);
+        HasCurrentIslandSpawnRotation = true;
 
         if (cc) cc.enabled = true;
 
@@ -787,6 +792,7 @@ public class IslandTravelManager : MonoBehaviour
 
         // MOXO flow (only for islands that actually have MOXO)
         ActivateMoxoForIsland(id);
+        MoxoStateCameraSwitch.Instance?.EnterMoxoViewNow();
 
         GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
         KoalaAnimBus.BroadcastToActiveKoalas(k => k.OnPrepareCPT());

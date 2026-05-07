@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: SQ8-Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: 'When something gets repetitive like that -  how well does your focus
-    usually hold up?
+  subtitle: 'When something gets repetitive like that, how well does your focus usually
+    hold up?
 
-    
+
 
 '
   character: Koala

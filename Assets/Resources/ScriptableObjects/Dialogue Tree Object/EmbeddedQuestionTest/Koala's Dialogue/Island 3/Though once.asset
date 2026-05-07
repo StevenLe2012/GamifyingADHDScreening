@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Though once
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 5d053482e97039a4f88f59e4933f85ab, type: 3}
-  subtitle: "Koala: Though once we found the right potion \n- finishing those last
-    few still felt weirdly hard to push through."
+  subtitle: 'Koala: Though once we found the right potion,
+
+    finishing those last
+    few still felt weirdly hard to push through.'
   character: Koala

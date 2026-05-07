@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Hey you
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 767f14407d6a9b149847b21602cfe85e, type: 3}
-  subtitle: "Koala: Hey\u2026 you\u2019ve made it this far. That matters more than
-    you think."
+  subtitle: "Koala: Hey, you\u2019ve made it this far. That matters more than you
+    think."
   character: Koala

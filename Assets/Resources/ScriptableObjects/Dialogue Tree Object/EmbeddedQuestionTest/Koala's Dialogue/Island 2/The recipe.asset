@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: The recipe
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: cad2ab6245d402e41bf47829f7016f57, type: 3}
-  subtitle: 'Koala:  The recipe part though -  figuring out the right combo before
+  subtitle: 'Koala:  The recipe part though, figuring out the right combo before
     even touching anything. '
   character: Koala

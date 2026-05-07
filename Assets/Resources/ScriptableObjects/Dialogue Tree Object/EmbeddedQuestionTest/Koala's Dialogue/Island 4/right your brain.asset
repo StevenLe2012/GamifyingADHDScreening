@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: right your brain
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 91e2115e5afc75c448003173d489e6dd, type: 3}
-  subtitle: "Koala: Right? Your brain goes - I know how this works now, \nI'm going
+  subtitle: "Koala: Right? Your brain goes: I know how this works now, \nI'm going
     to think about something else entirely."
   character: Koala

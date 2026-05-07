@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Before we go
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: f5a06565b33770c408f506e35c8fb2dd, type: 3}
-  subtitle: "Koala: Before we go face whatever's next\u2026 how are you actually
-    doing right now?"
+  subtitle: 'Koala: Before we go face whatever''s next, how are you actually doing
+    right now?'
   character: Koala

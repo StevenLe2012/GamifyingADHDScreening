@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: And all of that
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: bf69b287c5853444babc34a01bc01f5b, type: 3}
-  subtitle: "You: And all of that\u2026 without helping the wizard escape?\n"
+  subtitle: 'You: And all of that, without helping the wizard escape?
+
+'
   character: You

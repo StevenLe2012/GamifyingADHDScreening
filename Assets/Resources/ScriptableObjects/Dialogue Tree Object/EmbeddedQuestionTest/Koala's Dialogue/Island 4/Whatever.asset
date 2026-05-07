@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: Whatever
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 5974f6eef3f3bce45bdbd1591a84619d, type: 3}
-  subtitle: "Kola: Whatever happens next\u2026 I'm glad it's with you.\n"
+  subtitle: 'Kola: Whatever happens next, I''m glad it''s with you.
+
+'
   character: Koala

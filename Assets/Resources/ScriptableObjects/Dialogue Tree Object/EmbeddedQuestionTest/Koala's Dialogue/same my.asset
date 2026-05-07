@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: same my
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 8811669d99eecac43a08302c7f480834, type: 3}
-  subtitle: Same. My brain kept going -  ooh, Spades are right there though.
+  subtitle: 'Same. My brain kept going: ooh, Spades are right there though.'
   character: Koala

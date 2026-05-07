@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SQ1_Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: 'Kola: Once the tricky part of something is behind you - how often do
+  subtitle: 'Kola: Once the tricky part of something is behind you, how often do
     the final details still feel hard to wrap up?'
   character: Koala

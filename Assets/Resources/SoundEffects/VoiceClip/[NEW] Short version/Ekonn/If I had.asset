@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: If I had
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 2f375452eefb3254fad2b975d75ba886, type: 3}
-  subtitle: "Ekonn: If I hadn\u2019t intervened\u2026 you wouldn\u2019t have survived."
+  subtitle: "Ekonn: If I hadn\u2019t intervened, you wouldn\u2019t have survived."
   character: Ekonn

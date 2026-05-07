@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: okay they
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 40a76165ecde9634bbb548a02882e082, type: 3}
-  subtitle: "Koala: \u2026okay they were a little charming."
+  subtitle: 'Koala: okay they were a little charming.'
   character: Koala

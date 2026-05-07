@@ -1,0 +1,2 @@
+participant_id,session_id,island_id,phase,npc,required_state_key,on_enter_event_name,conversation_id,options_shown_ms,choice_time_ms,reaction_time_ms,selected_option_index,selected_option_text,options_presented_text,selection_changed_count,options_count,was_input_leak_suspected,conversation_step
+P_20260506_230302,S_20260506_230008,SKULL,Narrative,Koala_SKULL,EnergyCheck,,C_20260506_230123647,635232,635881,649,2,"Okay, a little tired","Fully charged - let's go|Pretty good, still have energy|Okay, a little tired|Running low honestly|Really wiped out",0,5,False,9
