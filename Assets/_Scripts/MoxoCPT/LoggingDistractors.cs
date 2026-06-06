@@ -40,6 +40,8 @@ namespace MoxoCPT
         {
             var inv = CultureInfo.InvariantCulture;
 
+            LoggingReport.EnsureSessionId();
+
             // Keep session id consistent with your main report
             string sessionId = !string.IsNullOrWhiteSpace(e.SessionId)
                 ? e.SessionId

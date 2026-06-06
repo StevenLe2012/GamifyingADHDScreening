@@ -14,9 +14,10 @@ namespace MoxoCPT
     ///   FirebaseService.Instance?.PostJson(path, json)  — Firebase push-key (events/choices)
     ///
     /// Data is stored under:
-    ///   umaki/cpt_trials/{participantId}/{sessionId}/t{trialIndex}
+    ///   umaki/cpt_trials/{participantId}/{sessionId}/{islandId}/t{trialIndex}
     ///   umaki/distractor_events/{participantId}/{sessionId}  (push)
     ///   umaki/dialogue_choices/{participantId}/{sessionId}   (push)
+    ///   umaki/session_summary/{participantId}/{sessionId}  (put — play time at end)
     ///
     /// Firebase Realtime Database security rules (set in console):
     ///   { "rules": { "umaki": { ".read": false, ".write": true } } }
@@ -33,6 +34,16 @@ namespace MoxoCPT
         [SerializeField] private string _rtdbUrl = DefaultRtdbUrl;
 
         public static FirebaseService Instance { get; private set; }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only opt-in. When false (default), Editor Play sessions DO NOT write
+        /// to the production Realtime Database. Set to true from a menu command or
+        /// inline in code if you specifically want to test the upload pipeline.
+        /// Has no effect in real builds — those always upload.
+        /// </summary>
+        public static bool AllowUploadInEditor = false;
+#endif
 
         // Auto-create before any scene loads so logging classes can always find it.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -74,6 +85,13 @@ namespace MoxoCPT
 
         private IEnumerator Send(string method, string path, string json)
         {
+#if UNITY_EDITOR
+            if (!AllowUploadInEditor)
+            {
+                Debug.Log($"[FirebaseService] Editor: skipping {method} → {path} (set FirebaseService.AllowUploadInEditor = true to enable).");
+                yield break;
+            }
+#endif
             var url       = $"{_rtdbUrl}/{path}.json";
             var bodyBytes = Encoding.UTF8.GetBytes(json);
 

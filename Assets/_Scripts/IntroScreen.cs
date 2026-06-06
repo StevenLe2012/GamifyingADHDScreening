@@ -939,8 +939,8 @@ public class IntroScreen : MonoBehaviour
         // ---- Two-button mode navigation (redo UI only) ----
         if (_twoButtonMode && _navButtons != null && _navButtons.Length >= 2)
         {
-            bool left  = kb != null && kb.leftArrowKey.wasPressedThisFrame;
-            bool right = kb != null && kb.rightArrowKey.wasPressedThisFrame;
+            bool left  = kb != null && (kb.leftArrowKey.wasPressedThisFrame || kb.aKey.wasPressedThisFrame);
+            bool right = kb != null && (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame);
 
             // FIX: no wrapping. Left selects Start, Right selects Replay Training.
             if (left)  { _navIndex = 0; ApplyNavSelection(); }

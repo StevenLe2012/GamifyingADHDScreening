@@ -124,8 +124,9 @@ namespace MoxoCPT
             // Simple leak heuristic: super fast is usually accidental input carryover
             bool leak = (rt >= 0 && rt < 150);
 
-            var pid       = GetCurrentParticipantId();
-            var sessionId = MoxoCPT.LoggingReport.CurrentSessionId ?? "";
+            var pid = GetCurrentParticipantId();
+            LoggingReport.EnsureSessionId();
+            var sessionId = LoggingReport.CurrentSessionId ?? "";
             var inv       = CultureInfo.InvariantCulture;
 
 #if UNITY_EDITOR
@@ -250,6 +251,9 @@ namespace MoxoCPT
         }
 #endif
 
+        private static string EffectiveIslandId()
+            => string.IsNullOrWhiteSpace(_islandId) ? "MAIN" : _islandId;
+
         private static string GetCurrentParticipantId()
         {
             var gm = GameManager.Instance;
@@ -279,7 +283,7 @@ namespace MoxoCPT
             var sb = new StringBuilder(512);
             sb.Append(FirebaseService.JS("participant_id",          pid));
             sb.Append(FirebaseService.JS("session_id",              sessionId));
-            sb.Append(FirebaseService.JS("island_id",               _islandId));
+            sb.Append(FirebaseService.JS("island_id",               EffectiveIslandId()));
             sb.Append(FirebaseService.JS("phase",                   _phase));
             sb.Append(FirebaseService.JS("npc",                     _npc));
             sb.Append(FirebaseService.JS("required_state_key",      _requiredStateKey));

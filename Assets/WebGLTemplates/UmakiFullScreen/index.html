@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Umaki - The Magical World</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+        <div id="unity-loading-hint">
+          <p>Loading may take up to 3 minutes. Please be patient and avoid switching tabs during this time.</p>
+          <p>If the progress bar does not move or the game does not load after 3 minutes, please ensure you have a stable internet connection, refresh the page, and try again. If the issue persists, please contact our research coordinator for assistance.</p>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <div id="unity-footer">
+        <div id="unity-webgl-logo"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">Umaki - The Magical World</div>
+      </div>
+    </div>
+    <script>
+
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      var warningBanner = document.querySelector("#unity-warning");
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/Umaki_WebGL.loader.js";
+      var config = {
+        dataUrl: buildUrl + "/Umaki_WebGL.data.unityweb",
+        frameworkUrl: buildUrl + "/Umaki_WebGL.framework.js.unityweb",
+        codeUrl: buildUrl + "/Umaki_WebGL.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Umaki",
+        productName: "Umaki - The Magical World",
+        productVersion: "1.0.1",
+        showBanner: unityShowBanner,
+      };
+
+      // By default Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      // Fixed 16:9 viewport for research — fullscreen black letterbox/pillarbox.
+      var UMakiAspectRatio = 16 / 9;
+
+      function umakiLayoutCanvas() {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        if (w <= 0 || h <= 0) return;
+
+        var windowAspect = w / h;
+        var cssW, cssH;
+        if (windowAspect > UMakiAspectRatio) {
+          cssH = h;
+          cssW = Math.floor(h * UMakiAspectRatio);
+        } else {
+          cssW = w;
+          cssH = Math.floor(w / UMakiAspectRatio);
+        }
+
+        var left = Math.floor((w - cssW) * 0.5);
+        var top = Math.floor((h - cssH) * 0.5);
+
+        canvas.style.width = cssW + "px";
+        canvas.style.height = cssH + "px";
+        canvas.style.left = left + "px";
+        canvas.style.top = top + "px";
+      }
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+      } else {
+        container.className = "unity-desktop";
+      }
+
+      var meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+
+      umakiLayoutCanvas();
+      window.addEventListener("resize", umakiLayoutCanvas);
+      document.addEventListener("fullscreenchange", umakiLayoutCanvas);
+      document.addEventListener("webkitfullscreenchange", umakiLayoutCanvas);
+
+      loadingBar.style.display = "flex";
+
+      window.__umakiRequestFullscreen = function () {
+        var el = document.getElementById("unity-container") || document.documentElement;
+        var req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (req) {
+          try {
+            var p = req.call(el);
+            if (p && p.then) p.then(function () { umakiLayoutCanvas(); });
+            if (p && p.catch) p.catch(function () {});
+          } catch (e) {}
+        }
+        if (window.__unityInstance && window.__unityInstance.SetFullscreen) {
+          try { window.__unityInstance.SetFullscreen(1); } catch (e2) {}
+        }
+        setTimeout(umakiLayoutCanvas, 100);
+      };
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+              }).then((unityInstance) => {
+                window.__unityInstance = unityInstance;
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                  window.__umakiRequestFullscreen();
+                };
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+
+      document.body.appendChild(script);
+
+    </script>
+  </body>
+</html>

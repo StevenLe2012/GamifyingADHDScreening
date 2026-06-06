@@ -104,6 +104,10 @@ public class ParticipantLoginScreen : MonoBehaviour
         ParticipantSession.SessionDate  = "";            // not included in ID
         ParticipantSession.WasSubmitted = true;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        WebGLFullscreen.Request();
+#endif
+
         HideError();
         gameObject.SetActive(false);
         OnSubmitted?.Invoke();

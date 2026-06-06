@@ -47,21 +47,35 @@ public class IntroBoot : MonoBehaviour
     public string loadingText = "Loading…";
 
     [Tooltip("Text shown once the video is buffered and ready to play.")]
-    public string readyText = "Press Enter to start";
+    public string readyText = "Press Enter for fullscreen and to start";
 
     [Tooltip("How long to wait for the video to buffer before giving up (seconds).")]
     public float prepareTimeout = 20f;
+
+    [Header("Loading screen — before intro video")]
+    [Tooltip("Optional override. Default: Resources/UI/LoadingPage.png")]
+    public Sprite loadingPageSprite;
+    [Tooltip("Minimum time on loading page before intro (even if video is already buffered).")]
+    public float introVideoLoadingMinSeconds = 3f;
+    [Tooltip("Fallback: stop waiting and continue after this many seconds if intro.mp4 is still not ready.")]
+    public float introVideoLoadingMaxSeconds = 60f;
+
+    [Header("Loading screen — after intro (Main scene)")]
+    [Tooltip("Minimum time on loading page after intro while Main finishes loading.")]
+    public float mainSceneLoadingMinSeconds = 0f;
+    [Tooltip("Give up waiting and activate Main after this many seconds (fallback).")]
+    public float mainSceneLoadingMaxSeconds = 120f;
 
     [Header("Diagnostics")]
     public bool log = true;
 
     VideoPlayer vp;
+    AudioSource _videoAudio;
     AsyncOperation preload;
     bool isVideoActive;
     bool videoEnded;
-    bool appSuspended;
-    bool resumeAfterAppReturn;
     float ignoreSkipInputUntil;
+    CutsceneVideoSuspend.State _suspend;
 
     void Awake()
     {
@@ -72,27 +86,34 @@ public class IntroBoot : MonoBehaviour
         if (renderToCamera && !targetCamera)
             targetCamera = Camera.main;
 
-        // Scene is preloaded later (after login) so it doesn't block the Editor on startup.
+        if (loadingPageSprite == null)
+            loadingPageSprite = VideoLoadingScreen.LoadDefaultSprite();
+
+        // Main preloads during login / intro playback; loading page shown again after intro if still finishing.
 
         // Build VideoPlayer
         vp = gameObject.AddComponent<VideoPlayer>();
         vp.playOnAwake = false;
         vp.isLooping = false;
+        vp.waitForFirstFrame = true;
+        vp.skipOnDrop = true; // Keep audio and video aligned under transient decode/network pressure.
         vp.audioOutputMode = audioEnabled ? VideoAudioOutputMode.AudioSource
                                         : VideoAudioOutputMode.None;
         if (audioEnabled)
         {
-            var audio = gameObject.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.loop = false;
-            vp.SetTargetAudioSource(0, audio);
+            _videoAudio = gameObject.AddComponent<AudioSource>();
+            _videoAudio.playOnAwake = false;
+            _videoAudio.loop = false;
+            _videoAudio.spatialBlend = 0f;
+            _videoAudio.dopplerLevel = 0f;
+            vp.SetTargetAudioSource(0, _videoAudio);
         }
 
         // Source — use string concat on WebGL to guarantee forward-slash URLs
         // (Path.Combine on Windows IL2CPP can produce backslash separators which break HTTP URLs)
         vp.source = VideoSource.Url;
 #if UNITY_WEBGL && !UNITY_EDITOR
-        vp.url = Application.streamingAssetsPath + "/" + videoFileName;
+        // URL set after full-file prefetch in PrepareAndPlay (blob playback avoids stream stutter).
 #else
         vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, videoFileName);
 #endif
@@ -111,13 +132,16 @@ public class IntroBoot : MonoBehaviour
             if (rawImage) rawImage.texture = tempRenderTexture;
         }
 
+        CutsceneWebGLVideoOutput.Configure(this, vp, ref renderToCamera, ref rawImage, ref tempRenderTexture);
+
         vp.loopPointReached += OnVideoFinished;
 
+        WebGLPageVisibility.Register(this);
+
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Start buffering the video immediately in the background so it is ready
-        // (or close to ready) by the time the user presses Enter on the thumbnail.
-        if (log) Debug.Log("[IntroBoot] WebGL: starting early video prepare…");
-        vp.Prepare();
+        // Download the full intro MP4 while the player is on thumbnail/login (same as island cutscenes).
+        WebGLVideoPrefetch.StartFile(videoFileName);
+        if (log) Debug.Log("[IntroBoot] WebGL: started full-file intro prefetch.");
 #endif
 
         StartCoroutine(CoRun());
@@ -148,22 +172,26 @@ public class IntroBoot : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
         if (skipAllIntro)
         {
-            // ── Fast-start: straight to Main (black screen while loading) ─────────────
             if (log) Debug.Log("[IntroBoot] Fast-start: ?fast=1 or ?skipintro=1 — skipping thumbnail + intro video.");
-            if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;  // stay black during load
-            preload = SceneManager.LoadSceneAsync(mainSceneName);
-            if (preload != null) preload.allowSceneActivation = false;
+            EnsureMainPreloadStarted(lowPriority: false);
+            var loadSettings = VideoLoadingScreen.DefaultSettings(
+                loadingPageSprite, mainSceneLoadingMinSeconds, mainSceneLoadingMaxSeconds, log);
 
-            if (preload != null)
-            {
-                while (preload.progress < 0.9f) yield return null;
-                preload.allowSceneActivation = true;
-            }
-            else
-            {
+            VideoLoadingScreen.ShowForSceneLoad(loadSettings, this);
+            VideoLoadingScreen.BeginSceneLoadActivates(
+                preload,
+                loadSettings,
+                () =>
+                {
+                    if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
+                    EnsureMainPreloadStarted(lowPriority: false);
+                });
+
+            yield return VideoLoadingScreen.CoWaitUntilSceneLoadFinished();
+
+            if (preload == null)
                 SceneManager.LoadScene(mainSceneName);
-            }
-            yield break; // done — skip the rest of CoRun
+            yield break;
         }
 
         // ── Normal WebGL flow ────────────────────────────────────────────────────────
@@ -181,11 +209,10 @@ public class IntroBoot : MonoBehaviour
             yield return CoWaitForEnter();
             if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed — showing login screen.");
 
-            // Step 2: login screen pops up; start preloading Main while player fills the form.
+            // Step 2: login screen — preload Main in background while participant fills the form.
             SetLabel(null);
             loginScreen.gameObject.SetActive(true);
-            preload = SceneManager.LoadSceneAsync(mainSceneName);
-            if (preload != null) preload.allowSceneActivation = false;
+            EnsureMainPreloadStarted(lowPriority: true);
             bool submitted = false;
             loginScreen.OnSubmitted += () => submitted = true;
             while (!submitted) yield return null;
@@ -193,29 +220,17 @@ public class IntroBoot : MonoBehaviour
         }
         else
         {
-            // No login needed (URL supplied num/pid) — thumbnail + buffer wait only.
-            SetLabel(loadingText);
-            if (log) Debug.Log("[IntroBoot] WebGL: waiting for video to buffer…");
-            preload = SceneManager.LoadSceneAsync(mainSceneName);
-            if (preload != null) preload.allowSceneActivation = false;
-            float elapsed = 0f;
-            while (!vp.isPrepared && elapsed < prepareTimeout)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                yield return null;
-            }
-            if (log) Debug.Log(vp.isPrepared
-                ? $"[IntroBoot] WebGL: video ready after {elapsed:0.0}s."
-                : $"[IntroBoot] WebGL: buffer timeout — proceeding anyway.");
+            // No login needed (URL supplied num/pid) — thumbnail, then Enter to continue.
             SetLabel(readyText);
+            if (log) Debug.Log("[IntroBoot] WebGL: waiting for Enter.");
             yield return CoWaitForEnter();
             if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed.");
         }
 
-        // Step 3: hide thumbnail + login, fade to black, play video.
+        // Step 3: hide thumbnail + login; loading page covers prepare before intro plays.
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
         SetLabel(null);
-        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
+        if (loginScreen) loginScreen.gameObject.SetActive(false);
         // ────────────────────────────────────────────────────────────────────────────
 #else
         // ── Editor / standalone: login on black screen then play immediately ─────────
@@ -224,6 +239,7 @@ public class IntroBoot : MonoBehaviour
         if (needLogin)
         {
             loginScreen.gameObject.SetActive(true);
+            EnsureMainPreloadStarted(lowPriority: true);
             bool submitted = false;
             loginScreen.OnSubmitted += () => submitted = true;
             if (log) Debug.Log("[IntroBoot] Editor: showing login screen.");
@@ -231,6 +247,10 @@ public class IntroBoot : MonoBehaviour
             if (log) Debug.Log($"[IntroBoot] Login: #{ParticipantSession.Number} {ParticipantSession.LastName} {ParticipantSession.SessionDate}");
 
             loginScreen.gameObject.SetActive(false);
+        }
+        else
+        {
+            EnsureMainPreloadStarted(lowPriority: true);
         }
 
         if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
@@ -250,20 +270,31 @@ public class IntroBoot : MonoBehaviour
 
         // Wait for video to finish (or skip if allowed).
         float t = 0f;
+        float stallTimer = 0f;
+        bool playbackStarted = false;
         while (!videoEnded)
         {
-            if (appSuspended)
+            if (CutsceneVideoPlayback.ShouldSkip(allowSkip, minUnskippableSeconds, t, ignoreSkipInputUntil))
+            {
+                if (log) Debug.Log("[IntroBoot] Skipped.");
+                break;
+            }
+
+            if (_suspend.AppSuspended)
             {
                 yield return null;
                 continue;
             }
 
             if (vp != null && vp.isPlaying)
-                t += Time.unscaledDeltaTime;
-
-            if (allowSkip && t > minUnskippableSeconds && Time.unscaledTime >= ignoreSkipInputUntil && AnySkipPressed())
             {
-                if (log) Debug.Log("[IntroBoot] Skipped.");
+                playbackStarted = true;
+                t += Time.unscaledDeltaTime;
+            }
+
+            if (CutsceneVideoPlayback.UpdateStallTimer(vp, playbackStarted, ref stallTimer))
+            {
+                if (log) Debug.LogWarning("[IntroBoot] Playback stalled after tab/window change — continuing.");
                 break;
             }
 
@@ -271,91 +302,168 @@ public class IntroBoot : MonoBehaviour
         }
 
 AfterPlayback:
-        // Fade to black — screen is now fully black before any scene loading starts.
-        if (fadeToBlack && fadeGroup)
-            yield return StartCoroutine(CoFade(fadeGroup, fadeGroup.alpha, 1f, fadeDuration));
+        var mainLoadSettings = VideoLoadingScreen.DefaultSettings(
+            loadingPageSprite, mainSceneLoadingMinSeconds, mainSceneLoadingMaxSeconds, log);
+
+        // Cover the last intro frame before tearing down video output.
+        VideoLoadingScreen.ShowForSceneLoad(mainLoadSettings, this);
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 1f;
 
         CleanUpVideo();
 
-        // Start async load now that the screen is black — any hitch is invisible.
-        // On WebGL preload was already started during login so this is skipped.
-        if (preload == null)
-        {
-            preload = SceneManager.LoadSceneAsync(mainSceneName);
-            if (preload != null) preload.allowSceneActivation = false;
-        }
+        if (log && preload != null)
+            Debug.Log($"[IntroBoot] Post-intro Main preload at {preload.progress * 100f:0}%.");
 
-        // Wait for load then activate.
-        if (preload != null)
-        {
-            while (preload.progress < 0.9f)
-            {
-                if (log) Debug.Log($"[IntroBoot] Loading… {preload.progress * 100:0}%");
-                yield return null;
-            }
-            preload.allowSceneActivation = true;
-        }
-        else
-        {
+        VideoLoadingScreen.BeginSceneLoadActivates(
+            preload,
+            mainLoadSettings,
+            () => EnsureMainPreloadStarted(lowPriority: false));
+
+        yield return VideoLoadingScreen.CoWaitUntilSceneLoadFinished();
+
+        if (preload == null)
             SceneManager.LoadScene(mainSceneName);
-        }
     }
 
     IEnumerator PrepareAndPlay()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // On WebGL, Prepare() was already called in Awake and we waited in CoRun.
-        // If somehow it still isn't ready, give it one more short chance.
-        if (!vp.isPrepared)
-        {
-            if (log) Debug.Log("[IntroBoot] WebGL: video not yet prepared — brief extra wait.");
-            float extra = 5f;
-            while (!vp.isPrepared && extra > 0f)
-            {
-                extra -= Time.unscaledDeltaTime;
-                yield return null;
-            }
-        }
+        var loadingMax = Mathf.Max(introVideoLoadingMaxSeconds, prepareTimeout);
+        var loadingSettings = VideoLoadingScreen.DefaultSettings(
+            loadingPageSprite, introVideoLoadingMinSeconds, loadingMax, log);
 
-        if (!vp.isPrepared)
-        {
-            if (log) Debug.LogWarning("[IntroBoot] WebGL: skipping video (never became prepared).");
-            isVideoActive = false;
-            yield break;
-        }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        yield return CoPrepareIntroWebGL(loadingSettings);
 #else
-        if (log) Debug.Log($"[IntroBoot] Preparing video: {vp.url}");
-        vp.Prepare();
-        float prepareTimer = 0f;
-        while (!vp.isPrepared && prepareTimer < prepareTimeout)
+        yield return VideoLoadingScreen.CoShowWhilePreparing(
+            vp,
+            loadingSettings,
+            this,
+            () =>
+            {
+                if (vp != null && string.IsNullOrEmpty(vp.url))
+                    vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, videoFileName);
+            },
+            hideWhenDone: false);
+#endif
+
+        if (vp == null || !vp.isPrepared)
         {
-            prepareTimer += Time.unscaledDeltaTime;
-            yield return null;
-        }
-        if (!vp.isPrepared)
-        {
-            if (log) Debug.LogWarning("[IntroBoot] Video did not prepare in time — skipping.");
+            if (log) Debug.LogWarning("[IntroBoot] Video not prepared after loading screen — skipping.");
+            VideoLoadingScreen.Hide();
             isVideoActive = false;
             yield break;
         }
-#endif
 
         if (log) Debug.Log("[IntroBoot] Playing.");
         videoEnded = false;
-        appSuspended = false;
-        resumeAfterAppReturn = false;
+        CutsceneVideoSuspend.Reset(ref _suspend);
         isVideoActive = true;
         ignoreSkipInputUntil = Time.unscaledTime + 0.25f;
+
+        SessionPlayTimeTracker.StartSession();
+
+        CutsceneWebGLVideoOutput.Show(vp);
+
+        if (!CutsceneWebGLVideoOutput.UsesOverlayPath)
+            CutsceneWorldHide.Begin(renderToCamera ? targetCamera : null);
+        if (!renderToCamera && rawImage)
+        {
+            rawImage.gameObject.SetActive(true);
+            CutsceneVideoLayout.ApplyFullscreen(rawImage);
+        }
+
         vp.Play();
+        VideoLoadingScreen.Hide();
+
+        // Preload Main in the background while intro plays (low priority — most load finishes before intro ends).
+        EnsureMainPreloadStarted(lowPriority: true);
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    /// <summary>
+    /// Wait for full-file prefetch, then prepare on blob URL. isPrepared alone is not enough on WebGL
+    /// (first frame can be ready while the rest still streams and stutters during Play).
+    /// </summary>
+    IEnumerator CoPrepareIntroWebGL(VideoLoadingScreen.Settings settings)
+    {
+        var streamUrl = WebGLVideoPrefetch.BuildStreamingAssetsUrl(videoFileName);
+        WebGLVideoPrefetch.StartFile(videoFileName);
+
+        VideoLoadingScreen.Show(settings, this);
+        yield return null;
+
+        float elapsed = 0f;
+        bool prefetched = false;
+        while (elapsed < settings.MaxSeconds)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            if (WebGLVideoPrefetch.IsReady(streamUrl) && elapsed >= settings.MinSeconds)
+            {
+                prefetched = true;
+                break;
+            }
+            yield return null;
+        }
+
+        if (log)
+            Debug.Log($"[IntroBoot] Prefetch {(prefetched ? "ready" : "timeout")} after {elapsed:0.0}s — preparing playback.");
+
+        var playbackUrl = WebGLVideoPrefetch.ResolvePlaybackFile(videoFileName);
+        if (vp.url != playbackUrl)
+        {
+            if (vp.isPlaying) vp.Stop();
+            vp.url = playbackUrl;
+        }
+
+        // Full file in blob URL — prefer smooth frames over aggressive frame drops.
+        vp.skipOnDrop = prefetched ? false : true;
+
+        if (!vp.isPrepared)
+            vp.Prepare();
+
+        float prepareWait = 0f;
+        while (!vp.isPrepared && prepareWait < prepareTimeout)
+        {
+            prepareWait += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (settings.Log)
+            Debug.Log($"[IntroBoot] Prepare done (prefetched={prefetched}, prepared={vp.isPrepared}, prepareWait={prepareWait:0.0}s).");
+    }
+#endif
+
+    void EnsureMainPreloadStarted(bool lowPriority)
+    {
+        Application.backgroundLoadingPriority = lowPriority
+            ? ThreadPriority.Low
+            : ThreadPriority.High;
+
+        if (preload != null)
+        {
+            if (log && !lowPriority)
+                Debug.Log($"[IntroBoot] Main preload boosted (progress={preload.progress * 100f:0}%).");
+            return;
+        }
+
+        preload = SceneManager.LoadSceneAsync(mainSceneName);
+        if (preload == null) return;
+
+        preload.allowSceneActivation = false;
+
+        if (log) Debug.Log($"[IntroBoot] Main preload started (priority={(lowPriority ? "low" : "high")}).");
     }
 
     void OnVideoFinished(VideoPlayer player)
     {
         if (!isVideoActive) return;
-        if (appSuspended) return;
         videoEnded = true;
         if (log) Debug.Log("[IntroBoot] Video finished.");
-        // Let CoRun handle transition; nothing else here.
+    }
+
+    public void OnBrowserVisibilityChanged(int hidden)
+    {
+        HandleAppVisibilityChanged(hidden == 0);
     }
 
     void OnApplicationPause(bool pauseStatus)
@@ -370,46 +478,22 @@ AfterPlayback:
 
     void HandleAppVisibilityChanged(bool isVisibleAndFocused)
     {
-        if (vp == null || !isVideoActive) return;
+        if (vp == null || !isVideoActive || videoEnded) return;
 
         if (!isVisibleAndFocused)
-        {
-            appSuspended = true;
-            resumeAfterAppReturn = vp.isPlaying;
-            if (resumeAfterAppReturn)
-                vp.Pause();
-            return;
-        }
-
-        appSuspended = false;
-        ignoreSkipInputUntil = Time.unscaledTime + 0.35f;
-        if (resumeAfterAppReturn && !vp.isPlaying)
-            vp.Play();
-
-        resumeAfterAppReturn = false;
+            CutsceneVideoSuspend.OnVisibilityLost(vp, ref _suspend, _videoAudio);
+        else
+            CutsceneVideoSuspend.OnVisibilityGained(
+                vp, ref _suspend, this, isVideoActive, videoEnded, _videoAudio,
+                () => ignoreSkipInputUntil = Time.unscaledTime + 0.35f,
+                () =>
+                {
+                    if (log) Debug.LogWarning("[IntroBoot] Could not resume video after focus change — continuing.");
+                    videoEnded = true;
+                });
     }
 
-    bool AnySkipPressed()
-    {
-        var kb = Keyboard.current;
-        var gp = Gamepad.current;
-
-        // Do not treat Space as skip during intro playback.
-        if ((kb != null && (kb.escapeKey.wasPressedThisFrame ||
-                            kb.enterKey.wasPressedThisFrame ||
-                            kb.numpadEnterKey.wasPressedThisFrame)) ||
-            (gp != null && gp.startButton.wasPressedThisFrame))
-            return true;
-
-#if !UNITY_WEBGL
-        // Keep legacy input support without using Space as a skip key.
-        if (Input.GetKeyDown(KeyCode.Escape) ||
-            Input.GetKeyDown(KeyCode.Return) ||
-            Input.GetKeyDown(KeyCode.KeypadEnter))
-            return true;
-#endif
-        return false;
-    }
+    bool AnySkipPressed() => CutsceneVideoPlayback.AnySkipPressed();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     // Waits until the player presses Enter or Space (satisfies the browser user-gesture
@@ -430,6 +514,8 @@ AfterPlayback:
                 break;
             yield return null;
         }
+
+        WebGLFullscreen.Request();
         yield return null; // flush — prevent the key from being seen by the skip loop
     }
 #endif
@@ -462,8 +548,11 @@ AfterPlayback:
     {
         if (vp == null) return;
         isVideoActive = false;
-        appSuspended = false;
-        resumeAfterAppReturn = false;
+        CutsceneWorldHide.End();
+        CutsceneWebGLVideoOutput.Hide();
+        if (rawImage)
+            CutsceneVideoLayout.Restore(rawImage);
+        CutsceneVideoSuspend.Reset(ref _suspend);
         videoEnded = false;
         vp.loopPointReached -= OnVideoFinished;
         if (vp.isPlaying) vp.Stop();
@@ -520,5 +609,10 @@ AfterPlayback:
             (v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)))
             return true;
         return false;
+    }
+
+    void OnDestroy()
+    {
+        CutsceneWorldHide.End();
     }
 }

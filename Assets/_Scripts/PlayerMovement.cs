@@ -181,10 +181,10 @@ public class PlayerMovement : MonoBehaviour
         if (Time.time - _lastSnapTime >= snapCooldown)
         {
             bool snapLeft  =
-                (Keyboard.current != null && Keyboard.current.leftArrowKey.wasPressedThisFrame) ||
+                (Keyboard.current != null && (Keyboard.current.leftArrowKey.wasPressedThisFrame || Keyboard.current.aKey.wasPressedThisFrame)) ||
                 (Gamepad.current  != null && Gamepad.current.dpad.left.wasPressedThisFrame);
             bool snapRight =
-                (Keyboard.current != null && Keyboard.current.rightArrowKey.wasPressedThisFrame) ||
+                (Keyboard.current != null && (Keyboard.current.rightArrowKey.wasPressedThisFrame || Keyboard.current.dKey.wasPressedThisFrame)) ||
                 (Gamepad.current  != null && Gamepad.current.dpad.right.wasPressedThisFrame);
 
             if (snapLeft)
@@ -202,10 +202,10 @@ public class PlayerMovement : MonoBehaviour
         // 3) Forward/back input (D-pad Up/Down; fallback: Up/Down arrows)
         int forwardAxis = 0;
         bool forwardHeld =
-            (Keyboard.current != null && Keyboard.current.upArrowKey.isPressed) ||
+            (Keyboard.current != null && (Keyboard.current.upArrowKey.isPressed || Keyboard.current.wKey.isPressed)) ||
             (Gamepad.current  != null && Gamepad.current.dpad.up.isPressed);
         bool backHeld =
-            (Keyboard.current != null && Keyboard.current.downArrowKey.isPressed) ||
+            (Keyboard.current != null && (Keyboard.current.downArrowKey.isPressed || Keyboard.current.sKey.isPressed)) ||
             (Gamepad.current  != null && Gamepad.current.dpad.down.isPressed);
 
         if (forwardHeld) forwardAxis = +1;

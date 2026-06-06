@@ -102,8 +102,6 @@ namespace Dialogue
 
         private void Start()
         {
-            EkonnAnimBus.EnsureStandingIdle();
-
             dialogueTree.ResetCallbacks();
             dialogueTree.SetUpDialogueUnitsDict();
 
@@ -222,6 +220,7 @@ namespace Dialogue
             string islandId = IslandTravelManager.I && IslandTravelManager.I.CurrentIsland != null ? IslandTravelManager.I.CurrentIsland.islandId : "";
             MoxoCPT.LoggingDialogueChoices.BeginConversation(dialogueTree.npcName, islandId, "Narrative");
 
+            EkonnAnimBus.EnsureStandingIdle();
 
             var first = dialogueTree.GetNextDialogueUnit();
             Handle(first);
@@ -543,7 +542,6 @@ namespace Dialogue
         {
             dialogueTree.GoToState(nextKey);
 
-            EkonnAnimBus.SitDown();
             dialogueUI.EndDialogue();
             dialogueUI?.StopAutoAdvance();
 
@@ -575,7 +573,6 @@ namespace Dialogue
         {
             dialogueTree.GoToState(nextKey);
 
-            EkonnAnimBus.SitDown();
             dialogueUI.EndDialogue();
             dialogueUI?.StopAutoAdvance();
 

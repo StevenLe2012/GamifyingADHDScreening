@@ -482,7 +482,8 @@ public class IslandSelectionUI : MonoBehaviour
     [SerializeField] private bool logVerbose = true;
 
     [Header("Control Scheme")]
-    [SerializeField] private bool useWASD = true;
+    [Tooltip("Both WASD and arrow keys are always accepted for grid navigation.")]
+    [SerializeField] private bool useWASD = true; // kept for scene compatibility; both schemes are always active
 
     [Header("Input Leak Protection")]
     [SerializeField] private float ignoreConfirmSeconds = 0.20f;
@@ -499,6 +500,7 @@ public class IslandSelectionUI : MonoBehaviour
     private readonly List<Button> _buttons = new();
     private readonly List<IslandData> _islandsInPicker = new();
     private int _index = 0;
+    private int _lastPrefetchIndex = -1;
     private float _ignoreUntilUnscaled = 0f;
 
     // NEW: pending show request (when called during Narrative)
@@ -688,20 +690,14 @@ public class IslandSelectionUI : MonoBehaviour
 
         if (Keyboard.current != null)
         {
-            if (useWASD)
-            {
-                if (Keyboard.current.wKey.wasPressedThisFrame) { MoveGrid(0, -1); handled = true; }
-                if (Keyboard.current.sKey.wasPressedThisFrame) { MoveGrid(0, +1); handled = true; }
-                if (Keyboard.current.aKey.wasPressedThisFrame) { MoveGrid(-1, 0); handled = true; }
-                if (Keyboard.current.dKey.wasPressedThisFrame) { MoveGrid(+1, 0); handled = true; }
-            }
-            else
-            {
-                if (Keyboard.current.upArrowKey.wasPressedThisFrame) { MoveGrid(0, -1); handled = true; }
-                if (Keyboard.current.downArrowKey.wasPressedThisFrame) { MoveGrid(0, +1); handled = true; }
-                if (Keyboard.current.leftArrowKey.wasPressedThisFrame) { MoveGrid(-1, 0); handled = true; }
-                if (Keyboard.current.rightArrowKey.wasPressedThisFrame) { MoveGrid(+1, 0); handled = true; }
-            }
+            if (Keyboard.current.wKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame)
+                { MoveGrid(0, -1); handled = true; }
+            if (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)
+                { MoveGrid(0, +1); handled = true; }
+            if (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)
+                { MoveGrid(-1, 0); handled = true; }
+            if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)
+                { MoveGrid(+1, 0); handled = true; }
 
             bool pressedConfirm = Keyboard.current.spaceKey.wasPressedThisFrame ||
                                   Keyboard.current.enterKey.wasPressedThisFrame ||
@@ -723,20 +719,10 @@ public class IslandSelectionUI : MonoBehaviour
 
         if (!handled && enableLegacyInputFallback)
         {
-            if (useWASD)
-            {
-                if (Input.GetKeyDown(KeyCode.W)) MoveGrid(0, -1);
-                if (Input.GetKeyDown(KeyCode.S)) MoveGrid(0, +1);
-                if (Input.GetKeyDown(KeyCode.A)) MoveGrid(-1, 0);
-                if (Input.GetKeyDown(KeyCode.D)) MoveGrid(+1, 0);
-            }
-            else
-            {
-                if (Input.GetKeyDown(KeyCode.UpArrow)) MoveGrid(0, -1);
-                if (Input.GetKeyDown(KeyCode.DownArrow)) MoveGrid(0, +1);
-                if (Input.GetKeyDown(KeyCode.LeftArrow)) MoveGrid(-1, 0);
-                if (Input.GetKeyDown(KeyCode.RightArrow)) MoveGrid(+1, 0);
-            }
+            if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) MoveGrid(0, -1);
+            if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow)) MoveGrid(0, +1);
+            if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) MoveGrid(-1, 0);
+            if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) MoveGrid(+1, 0);
 
             if (Input.GetKeyDown(KeyCode.Space) ||
                 Input.GetKeyDown(KeyCode.Return) ||
@@ -859,7 +845,23 @@ public class IslandSelectionUI : MonoBehaviour
             var go = _buttons[_index]?.gameObject;
             if (go) EventSystem.current.SetSelectedGameObject(go);
         }
+
+        PrefetchHighlightedIslandVideo();
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    void PrefetchHighlightedIslandVideo()
+    {
+        if (_index == _lastPrefetchIndex) return;
+        _lastPrefetchIndex = _index;
+        if (_index < 0 || _index >= _islandsInPicker.Count) return;
+        var island = _islandsInPicker[_index];
+        if (island == null) return;
+        CutsceneVideoPrefetch.PrefetchForIsland(island.islandId, logVerbose);
+    }
+#else
+    void PrefetchHighlightedIslandVideo() { }
+#endif
 
     public void FocusFirstSelectable()
     {
@@ -1012,6 +1014,7 @@ public class IslandSelectionUI : MonoBehaviour
     {
         _buttons.Clear();
         _islandsInPicker.Clear();
+        _lastPrefetchIndex = -1;
         if (randomIslandButton)
         {
             randomIslandButton.onClick.RemoveAllListeners();

@@ -1,0 +1,2 @@
+participant_id,session_id,island_id,phase,npc,required_state_key,on_enter_event_name,conversation_id,options_shown_ms,choice_time_ms,reaction_time_ms,selected_option_index,selected_option_text,options_presented_text,selection_changed_count,options_count,was_input_leak_suspected,conversation_step
+P_20260531_174000,S_20260531_165844,,Narrative,Ekonn,SQ3,,C_20260531_173650422,196461,197376,915,2,I forget once in a while,I always remember|I usually remember|I forget once in a while|I forget a lot|I almost always forget,0,5,False,19

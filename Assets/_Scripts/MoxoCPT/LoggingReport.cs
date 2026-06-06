@@ -15,11 +15,17 @@ namespace MoxoCPT
         // Set fresh each OnGameBeginReal() (CreateReportCSV is called there)
         public static string CurrentSessionId { get; private set; } = "";
 
+        /// <summary>Creates a session id once per browser run if not already set.</summary>
+        public static void EnsureSessionId()
+        {
+            if (!string.IsNullOrWhiteSpace(CurrentSessionId)) return;
+            CurrentSessionId = "S_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        }
+
         // ---------- PUBLIC API ----------
         public static void CreateReportCSV()
         {
-            // Always start a NEW session id per run
-            CurrentSessionId = "S_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            EnsureSessionId();
 
 #if UNITY_EDITOR
             var path = GetCSVPath();
@@ -244,9 +250,11 @@ namespace MoxoCPT
             var pid    = !string.IsNullOrWhiteSpace(r.ParticipantId) ? r.ParticipantId : GetCurrentParticipantId();
             var safePid = FirebaseService.SanitizeKey(pid);
             var safeSid = FirebaseService.SanitizeKey(sessionId);
+            var safeIsland = FirebaseService.SanitizeKey(
+                string.IsNullOrWhiteSpace(r.IslandId) ? "UNKNOWN" : r.IslandId);
             var key     = $"t{(r.TrialIndex >= 0 ? r.TrialIndex.ToString() : "x")}";
 
-            var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{key}";
+            var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{safeIsland}/{key}";
             var json = BuildCPTTrialJson(r, sessionId);
 
             svc.PutJson(path, json);

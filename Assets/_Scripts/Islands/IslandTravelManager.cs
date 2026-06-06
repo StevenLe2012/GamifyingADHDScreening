@@ -773,6 +773,10 @@ public class IslandTravelManager : MonoBehaviour
 
         if (cc) cc.enabled = true;
 
+        IslandSpawnCamera.Apply(root, dest);
+        if (!island.hasMoxoGame)
+            StartCoroutine(IslandSpawnCamera.CoHoldSpawnPose(root, dest));
+
         if (logVerbose)
             Debug.Log($"[IslandTravel] Moved to {island.displayName} ({id})");
 

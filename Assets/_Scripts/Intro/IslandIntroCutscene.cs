@@ -46,17 +46,25 @@ public class IslandIntroCutscene : MonoBehaviour
     [Tooltip("How long to wait for the video to buffer before skipping (seconds). Increase for slow connections.")]
     public float prepareTimeout = 30f;
 
+    [Header("Loading screen (before cutscene)")]
+    [Tooltip("Optional override. Default: Resources/UI/LoadingPage.png")]
+    public Sprite loadingPageSprite;
+    [Tooltip("Minimum time on loading page before cutscene (even if video is already buffered).")]
+    public float loadingScreenMinSeconds = 3f;
+    [Tooltip("Fallback: stop waiting and continue after this many seconds if the cutscene is still not ready.")]
+    public float loadingScreenMaxSeconds = 30f;
+
     [Header("Diagnostics")]
     public bool log = true;
 
     VideoPlayer _vp;
+    AudioSource _videoAudio;
     IslandData _pendingIsland;
     CutsceneEntry _currentCutscene;
     bool _isPlaying;
-    bool _resumeAfterAppReturn;
     bool _videoEnded;
-    bool _appSuspended;
     float _ignoreSkipInputUntil;
+    CutsceneVideoSuspend.State _suspend;
 
     void Awake()
     {
@@ -74,20 +82,23 @@ public class IslandIntroCutscene : MonoBehaviour
         _vp = gameObject.AddComponent<VideoPlayer>();
         _vp.playOnAwake = false;
         _vp.isLooping = false;
+        _vp.waitForFirstFrame = true;
+        _vp.skipOnDrop = true; // Prefer frame drops over A/V drift on WebGL.
         _vp.audioOutputMode = audioEnabled ? VideoAudioOutputMode.AudioSource
                                            : VideoAudioOutputMode.None;
         if (audioEnabled)
         {
-            var audio = gameObject.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.loop = false;
-            _vp.SetTargetAudioSource(0, audio);
+            _videoAudio = gameObject.AddComponent<AudioSource>();
+            _videoAudio.playOnAwake = false;
+            _videoAudio.loop = false;
+            _videoAudio.spatialBlend = 0f;
+            _videoAudio.dopplerLevel = 0f;
+            _vp.SetTargetAudioSource(0, _videoAudio);
         }
 
         // Source (we assign url right before play in case filename changes).
         _vp.source = VideoSource.Url;
 
-        // Output
         if (renderToCamera)
         {
             _vp.renderMode = VideoRenderMode.CameraNearPlane;
@@ -101,68 +112,12 @@ public class IslandIntroCutscene : MonoBehaviour
             if (rawImage) rawImage.texture = tempRenderTexture;
         }
 
+        CutsceneWebGLVideoOutput.Configure(this, _vp, ref renderToCamera, ref rawImage, ref tempRenderTexture);
+
         _vp.loopPointReached += OnVideoFinished;
+
+        WebGLPageVisibility.Register(this);
     }
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-    void Start()
-    {
-        // Warm the browser's HTTP cache for every configured cutscene video so that later
-        // Prepare() calls complete much faster (video metadata is already cached).
-        StartCoroutine(CoPreBufferAllWebGL());
-    }
-
-    IEnumerator CoPreBufferAllWebGL()
-    {
-        if (cutscenes == null || cutscenes.Length == 0) yield break;
-
-        // Give the scene a moment to fully settle before hammering the network.
-        yield return new WaitForSecondsRealtime(3f);
-
-        if (log) Debug.Log("[IslandIntroCutscene] Background pre-cache starting for all cutscene videos.");
-
-        // Use a dedicated temporary VideoPlayer so we never touch _vp and cannot
-        // interfere with a real cutscene that may start while we are pre-caching.
-        VideoPlayer tempVp = gameObject.AddComponent<VideoPlayer>();
-        tempVp.playOnAwake = false;
-        tempVp.source = VideoSource.Url;
-        tempVp.renderMode = VideoRenderMode.APIOnly; // decode only, no visual output
-        tempVp.audioOutputMode = VideoAudioOutputMode.None;
-
-        foreach (var entry in cutscenes)
-        {
-            if (entry == null || string.IsNullOrWhiteSpace(entry.videoFileName)) continue;
-            if (_isPlaying) break; // a real cutscene started — stop pre-caching
-
-            string url = Application.streamingAssetsPath + "/" + entry.videoFileName.Trim();
-            if (log) Debug.Log($"[IslandIntroCutscene] Pre-caching: {entry.videoFileName}");
-
-            tempVp.url = url;
-            tempVp.Prepare();
-
-            // Wait for prepare (or give up after 10 s) so the browser downloads the moov atom.
-            float elapsed = 0f;
-            while (!tempVp.isPrepared && elapsed < 10f && !_isPlaying)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                yield return null;
-            }
-
-            if (_isPlaying) break; // real cutscene kicked off mid-wait
-
-            tempVp.Stop();
-            tempVp.url = "";
-
-            if (log) Debug.Log($"[IslandIntroCutscene] Pre-cached '{entry.videoFileName}' in {elapsed:F1}s");
-
-            // Small gap so we don't saturate the connection between videos.
-            yield return new WaitForSecondsRealtime(0.5f);
-        }
-
-        Destroy(tempVp);
-        if (log) Debug.Log("[IslandIntroCutscene] Background pre-cache complete.");
-    }
-#endif
 
     /// <summary>
     /// Entry point from IslandSelectionUI. Plays cutscene if islandId matches; otherwise travels immediately.
@@ -209,11 +164,9 @@ public class IslandIntroCutscene : MonoBehaviour
         _pendingIsland = island;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Start buffering immediately on WebGL so the video is ready (or close to ready)
-        // by the time the coroutine reaches PrepareAndPlay — avoids timeout on slow connections.
-        _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
-        _vp.Prepare();
-        if (log) Debug.Log($"[IslandIntroCutscene] WebGL: early prepare started for {_currentCutscene.videoFileName}");
+        // Prefetch + prepare handled in PrepareAndPlay (full-file wait before playback).
+        WebGLVideoPrefetch.StartFile(_currentCutscene.videoFileName);
+        if (log) Debug.Log($"[IslandIntroCutscene] WebGL: prefetch started for {_currentCutscene.videoFileName}");
 #endif
 
         StartCoroutine(CoRun());
@@ -223,38 +176,62 @@ public class IslandIntroCutscene : MonoBehaviour
     {
         _isPlaying = true;
         _videoEnded = false;
-        _appSuspended = false;
+        CutsceneVideoSuspend.Reset(ref _suspend);
         _ignoreSkipInputUntil = Time.unscaledTime + 0.2f;
-
-        // Ensure visuals are enabled every time we start a cutscene
-        if (renderToCamera && _vp != null && _vp.targetCamera != null)
-            _vp.targetCameraAlpha = 1f;
-        if (!renderToCamera && rawImage)
-            rawImage.gameObject.SetActive(true);
 
         if (fadeToBlack && fadeGroup)
             fadeGroup.alpha = 1f;
 
         yield return PrepareAndPlay();
+        if (!_isPlaying)
+            yield break;
+
+        CutsceneWebGLVideoOutput.Show(_vp);
+
+        if (!CutsceneWebGLVideoOutput.UsesOverlayPath)
+            CutsceneWorldHide.Begin(renderToCamera ? targetCamera : null);
+        if (!renderToCamera && rawImage)
+            CutsceneVideoLayout.ApplyFullscreen(rawImage);
+
+        if (renderToCamera && _vp != null && _vp.targetCamera != null)
+            _vp.targetCameraAlpha = 1f;
+        if (!renderToCamera && rawImage)
+            rawImage.gameObject.SetActive(true);
+
+        if (log) Debug.Log("[IslandIntroCutscene] Playing.");
+        _vp.Play();
+        VideoLoadingScreen.Hide();
 
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, 0.25f));
 
         float t = 0f;
+        float stallTimer = 0f;
+        bool playbackStarted = false;
+
         while (!_videoEnded)
         {
-            if (_appSuspended)
+            if (CutsceneVideoPlayback.ShouldSkip(allowSkip, minUnskippableSeconds, t, _ignoreSkipInputUntil))
+            {
+                if (log) Debug.Log("[IslandIntroCutscene] Skipped.");
+                break;
+            }
+
+            if (_suspend.AppSuspended)
             {
                 yield return null;
                 continue;
             }
 
             if (_vp.isPlaying)
-                t += Time.unscaledDeltaTime;
-
-            if (allowSkip && t > minUnskippableSeconds && Time.unscaledTime >= _ignoreSkipInputUntil && AnySkipPressed())
             {
-                if (log) Debug.Log("[IslandIntroCutscene] Skipped.");
+                playbackStarted = true;
+                t += Time.unscaledDeltaTime;
+            }
+
+            if (CutsceneVideoPlayback.UpdateStallTimer(_vp, playbackStarted, ref stallTimer))
+            {
+                if (log) Debug.LogWarning("[IslandIntroCutscene] Playback stalled after tab/window change — continuing.");
                 break;
             }
 
@@ -278,39 +255,51 @@ public class IslandIntroCutscene : MonoBehaviour
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // URL and Prepare() were already called in PlayIfNeeded for early buffering.
-        // Only set them here if not already prepared (safety fallback).
-        if (!_vp.isPrepared && string.IsNullOrEmpty(_vp.url))
-        {
-            _vp.url = Application.streamingAssetsPath + "/" + _currentCutscene.videoFileName;
-            _vp.Prepare();
-        }
+        var fileName = _currentCutscene.videoFileName;
+        WebGLVideoPrefetch.StartFile(fileName);
+
+        var loadingMax = Mathf.Max(loadingScreenMaxSeconds, prepareTimeout);
+        var loadingSettings = VideoLoadingScreen.DefaultSettings(
+            loadingPageSprite, loadingScreenMinSeconds, loadingMax, log);
+
+        yield return VideoLoadingScreen.CoShowWhilePreparing(
+            _vp,
+            loadingSettings,
+            this,
+            beginPrepare: () =>
+            {
+                var playbackUrl = CutsceneVideoPrefetch.ResolvePlaybackFile(fileName);
+                if (_vp.url != playbackUrl)
+                {
+                    if (_vp.isPlaying) _vp.Stop();
+                    _vp.url = playbackUrl;
+                }
+                _vp.skipOnDrop = CutsceneVideoPrefetch.IsPrefetchReady(fileName) ? false : true;
+            },
+            additionalReadyCheck: () => CutsceneVideoPrefetch.IsPrefetchReady(fileName),
+            hideWhenDone: false);
 #else
         _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentCutscene.videoFileName);
         _vp.Prepare();
-#endif
 
         if (log) Debug.Log($"[IslandIntroCutscene] Waiting for video: {_currentCutscene.videoFileName}");
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        float elapsed = 0f;
-        while (!_vp.isPrepared && elapsed < prepareTimeout)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
+        var loadingMax = Mathf.Max(loadingScreenMaxSeconds, prepareTimeout);
+        var loadingSettings = VideoLoadingScreen.DefaultSettings(
+            loadingPageSprite, loadingScreenMinSeconds, loadingMax, log);
+
+        yield return VideoLoadingScreen.CoShowWhilePreparing(_vp, loadingSettings, this, hideWhenDone: false);
+#endif
+
         if (!_vp.isPrepared)
         {
-            if (log) Debug.LogWarning($"[IslandIntroCutscene] WebGL: video did not prepare within {prepareTimeout}s, skipping.");
+            if (log) Debug.LogWarning($"[IslandIntroCutscene] Video did not prepare within loading screen — skipping.");
+            VideoLoadingScreen.Hide();
             FinishAndTravel();
             yield break;
         }
-#else
-        while (!_vp.isPrepared) yield return null;
-#endif
 
-        if (log) Debug.Log("[IslandIntroCutscene] Playing.");
-        _vp.Play();
+        if (log) Debug.Log("[IslandIntroCutscene] Prepared.");
     }
 
     void OnVideoFinished(VideoPlayer player)
@@ -318,24 +307,22 @@ public class IslandIntroCutscene : MonoBehaviour
         if (!_isPlaying) return;
         _videoEnded = true;
         if (log) Debug.Log("[IslandIntroCutscene] Video finished.");
-        // CoRun handles the transition; nothing else here.
     }
 
-    bool AnySkipPressed()
+    // WebGL: called from PageVisibility.jslib when the browser tab is hidden/shown.
+    public void OnBrowserVisibilityChanged(int hidden)
     {
-        var kb = Keyboard.current;
-        var gp = Gamepad.current;
+        HandleAppVisibilityChanged(hidden == 0);
+    }
 
-        if ((kb != null && (kb.anyKey.wasPressedThisFrame || kb.escapeKey.wasPressedThisFrame)) ||
-            (gp != null && (gp.startButton.wasPressedThisFrame || gp.aButton.wasPressedThisFrame)))
-            return true;
+    void OnApplicationPause(bool pauseStatus)
+    {
+        HandleAppVisibilityChanged(!pauseStatus);
+    }
 
-#if !UNITY_WEBGL
-        // On WebGL, Input.anyKeyDown includes mouse buttons — clicking anywhere on the video
-        // would trigger an accidental skip. Keyboard/gamepad only on WebGL.
-        if (Input.anyKeyDown) return true;
-#endif
-        return false;
+    void OnApplicationFocus(bool hasFocus)
+    {
+        HandleAppVisibilityChanged(hasFocus);
     }
 
     IEnumerator CoFade(CanvasGroup g, float from, float to, float seconds)
@@ -350,40 +337,31 @@ public class IslandIntroCutscene : MonoBehaviour
         g.alpha = to;
     }
 
-    void OnApplicationPause(bool pauseStatus)
-    {
-        HandleAppVisibilityChanged(!pauseStatus);
-    }
-
-    void OnApplicationFocus(bool hasFocus)
-    {
-        HandleAppVisibilityChanged(hasFocus);
-    }
-
     void HandleAppVisibilityChanged(bool isVisibleAndFocused)
     {
-        if (_vp == null || !_isPlaying) return;
+        if (_vp == null || !_isPlaying || _videoEnded) return;
 
         if (!isVisibleAndFocused)
-        {
-            _appSuspended = true;
-            _resumeAfterAppReturn = _vp.isPlaying;
-            if (_resumeAfterAppReturn)
-                _vp.Pause();
-            return;
-        }
-
-        _appSuspended = false;
-        _ignoreSkipInputUntil = Time.unscaledTime + 0.25f;
-        if (_resumeAfterAppReturn && !_vp.isPlaying)
-            _vp.Play();
-
-        _resumeAfterAppReturn = false;
+            CutsceneVideoSuspend.OnVisibilityLost(_vp, ref _suspend, _videoAudio);
+        else
+            CutsceneVideoSuspend.OnVisibilityGained(
+                _vp, ref _suspend, this, _isPlaying, _videoEnded, _videoAudio,
+                () => _ignoreSkipInputUntil = Time.unscaledTime + 0.35f,
+                () =>
+                {
+                    if (log) Debug.LogWarning("[IslandIntroCutscene] Could not resume video after focus change — continuing.");
+                    _videoEnded = true;
+                });
     }
 
     void FinishAndTravel()
     {
         CleanUpVideo();
+
+        CutsceneWorldHide.End();
+        CutsceneWebGLVideoOutput.Hide();
+        if (rawImage)
+            CutsceneVideoLayout.Restore(rawImage);
 
         var island = _pendingIsland;
         _pendingIsland = null;
@@ -404,13 +382,17 @@ public class IslandIntroCutscene : MonoBehaviour
     {
         if (_vp == null) return;
         if (_vp.isPlaying) _vp.Stop();
-        _resumeAfterAppReturn = false;
-        _appSuspended = false;
+        CutsceneVideoSuspend.Reset(ref _suspend);
         _videoEnded = false;
         // Do NOT Release() the RenderTexture — it is an Inspector-assigned asset shared
         // across multiple cutscene plays. Releasing it permanently frees GPU memory and
         // the next cutscene would render to a dead texture (frozen first frame, no visuals).
         _vp.url = "";
+    }
+
+    void OnDestroy()
+    {
+        CutsceneWorldHide.End();
     }
 }
 

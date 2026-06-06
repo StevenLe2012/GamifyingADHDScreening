@@ -522,7 +522,7 @@ public class KoalaDialogueHandler : MonoBehaviour
 
         var opts = GetOptionsArrayFromUnit(dialogueUnit);
         if (opts != null && opts.Length > 0)
-            ExploreHintUI.I?.ShowDialogueOptionsHint("Use the arrow keys to choose an option, then press Space to confirm.");
+            ExploreHintUI.I?.ShowDialogueOptionsHint("You can now use your mouse to look around. Use the arrow keys to select an option, then press Space to confirm.");
         else
             ExploreHintUI.I?.HideDialogueOptionsHint();
     }

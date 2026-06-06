@@ -189,16 +189,16 @@ public class DesktopArrowController : MonoBehaviour
 
         if (allowMovement)
         {
-            // Forward / back with Up / Down arrows
-            if (Input.GetKey(KeyCode.UpArrow))
+            // Forward / back with Up/Down arrows or W/S
+            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))
                 forward = 1f;
-            else if (Input.GetKey(KeyCode.DownArrow))
+            else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S))
                 forward = -1f;
 
-            // Strafe left/right with Left / Right arrows
-            if (Input.GetKey(KeyCode.RightArrow))
+            // Strafe left/right with Left/Right arrows or A/D
+            if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
                 strafe = 1f;
-            else if (Input.GetKey(KeyCode.LeftArrow))
+            else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
                 strafe = -1f;
         }
         // else: keep forward/strafe at 0 → fixed position (no planar translation)

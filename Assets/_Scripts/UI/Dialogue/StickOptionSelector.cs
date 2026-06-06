@@ -197,16 +197,16 @@ public class StickOptionSelector : MonoBehaviour
 
         if (_options.Count == 0) return;
 
-        // Navigate Left/Right **only** with keyboard arrow keys (and optionally gamepad dpad)
+        // Navigate left/right with arrow keys, WASD (A/D), or gamepad dpad
         var kb = Keyboard.current;
         var gp = Gamepad.current;
 
         bool leftPressed =
-            (kb != null && kb.leftArrowKey.wasPressedThisFrame) ||
+            (kb != null && (kb.leftArrowKey.wasPressedThisFrame || kb.aKey.wasPressedThisFrame)) ||
             (gp != null && gp.dpad.left.wasPressedThisFrame);
 
         bool rightPressed =
-            (kb != null && kb.rightArrowKey.wasPressedThisFrame) ||
+            (kb != null && (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame)) ||
             (gp != null && gp.dpad.right.wasPressedThisFrame);
 
         if (leftPressed)

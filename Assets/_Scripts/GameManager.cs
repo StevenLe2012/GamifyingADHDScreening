@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using MoxoCPT;
 using UnityEngine;
@@ -80,6 +81,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -115,6 +117,11 @@ public class GameManager : MonoBehaviour
         // Fresh session total for end-game display (four base islands only; see CPTScoreRuntime).
         CPTScoreRuntime.ResetFourIslandSessionTotal();
 
+        // Fallback when intro video is skipped (?fast=1 / prepare failed).
+        SessionPlayTimeTracker.StartSession();
+
+        GameplayCameraClip.Apply();
+
         if (string.IsNullOrWhiteSpace(participantId) && string.IsNullOrWhiteSpace(participantNumber))
             Debug.LogWarning("[GameManager] ParticipantId is empty. Pass ?num=001&last=NAME in the URL or set it in the Inspector.");
 
@@ -129,6 +136,15 @@ public class GameManager : MonoBehaviour
         else
             UpdateGameState(GameState.Explore);
 #endif
+
+        StartCoroutine(CoMarkMainVisibleForLoadingOverlay());
+    }
+
+    IEnumerator CoMarkMainVisibleForLoadingOverlay()
+    {
+        yield return null;
+        yield return null;
+        MainSceneLoadBridge.MarkReady();
     }
 
     /// <summary>

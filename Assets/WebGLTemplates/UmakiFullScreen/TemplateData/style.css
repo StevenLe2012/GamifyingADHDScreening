@@ -1,0 +1,59 @@
+body { padding: 0; margin: 0; background: #000 }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000 }
+#unity-container { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden }
+#unity-container.unity-desktop { transform: none }
+#unity-container.unity-mobile { width: 100%; height: 100% }
+#unity-canvas { background: #000; display: block; position: absolute; margin: 0; padding: 0 }
+#unity-loading-bar {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+#unity-logo {
+  width: 154px;
+  height: 130px;
+  margin: 0 auto;
+  background: url('unity-logo-dark.png') no-repeat center;
+  background-size: contain;
+}
+#unity-progress-bar-empty {
+  width: 141px;
+  height: 18px;
+  margin: 10px 0 0;
+  background: url('progress-bar-empty-dark.png') no-repeat center;
+  background-size: 141px 18px;
+}
+#unity-progress-bar-full {
+  width: 0%;
+  height: 18px;
+  margin: 0;
+  background: url('progress-bar-full-dark.png') no-repeat left center;
+  background-size: 141px 18px;
+}
+#unity-loading-hint {
+  max-width: min(520px, 92vw);
+  margin: 16px 0 0;
+  padding: 0 12px;
+  color: #ccc;
+  font: 14px/1.45 arial, sans-serif;
+  text-align: center;
+}
+#unity-loading-hint p {
+  margin: 0 0 10px;
+}
+#unity-loading-hint p:last-child {
+  margin-bottom: 0;
+}
+#unity-footer { position: relative; display: none }
+#unity-webgl-logo { float:left; width: 204px; height: 38px; background: url('webgl-logo.png') no-repeat center }
+#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
+#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
+#unity-warning { position: fixed; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none; z-index: 20 }
