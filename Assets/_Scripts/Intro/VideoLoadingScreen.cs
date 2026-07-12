@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
@@ -14,6 +15,7 @@ public static class VideoLoadingScreen
 
     static GameObject _root;
     static Image _image;
+    static TextMeshProUGUI _caption;
     static Sprite _defaultSprite;
     static bool _sceneLoadFinished;
 
@@ -144,6 +146,7 @@ public static class VideoLoadingScreen
         UnityEngine.Object.Destroy(_root);
         _root = null;
         _image = null;
+        _caption = null;
     }
 
     /// <summary>
@@ -250,6 +253,15 @@ public static class VideoLoadingScreen
         _root.SetActive(true);
     }
 
+    public static void SetCaption(string text)
+    {
+        if (_caption == null) return;
+        bool show = !string.IsNullOrWhiteSpace(text);
+        _caption.gameObject.SetActive(show);
+        if (show)
+            _caption.text = text;
+    }
+
     public static Sprite LoadDefaultSprite()
     {
         if (_defaultSprite != null)
@@ -318,6 +330,25 @@ public static class VideoLoadingScreen
 
         if (sprite != null)
             _image.sprite = sprite;
+
+        var capGo = new GameObject("Caption");
+        capGo.transform.SetParent(_root.transform, false);
+        _caption = capGo.AddComponent<TextMeshProUGUI>();
+        _caption.alignment = TextAlignmentOptions.Center;
+        _caption.fontSize = 28f;
+        _caption.color = Color.white;
+        _caption.raycastTarget = false;
+        _caption.enableWordWrapping = true;
+        var capRt = _caption.rectTransform;
+        capRt.anchorMin = new Vector2(0.5f, 0f);
+        capRt.anchorMax = new Vector2(0.5f, 0f);
+        capRt.pivot = new Vector2(0.5f, 0f);
+        capRt.anchoredPosition = new Vector2(0f, 48f);
+        capRt.sizeDelta = new Vector2(900f, 120f);
+        var outline = capGo.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(2f, -2f);
+        capGo.SetActive(false);
 
         _root.SetActive(false);
     }

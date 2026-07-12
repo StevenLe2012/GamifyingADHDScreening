@@ -127,6 +127,8 @@ namespace MoxoCPT
             var pid = GetCurrentParticipantId();
             LoggingReport.EnsureSessionId();
             var sessionId = LoggingReport.CurrentSessionId ?? "";
+            var clientUtc = LoggingReport.NowUtcIso();
+            var attempt   = LoggingReport.CurrentAttempt;
             var inv       = CultureInfo.InvariantCulture;
 
 #if UNITY_EDITOR
@@ -137,6 +139,8 @@ namespace MoxoCPT
                 // identifiers
                 Escape(pid),
                 Escape(sessionId),
+                Escape(clientUtc),
+                attempt.ToString(inv),
                 Escape(_islandId),
                 Escape(_phase),
 
@@ -169,7 +173,7 @@ namespace MoxoCPT
                 sw.WriteLine(row);
 #endif
 
-            UploadToFirebase(pid, sessionId, selectedOptionIndex, selectedOptionText,
+            UploadToFirebase(pid, sessionId, clientUtc, attempt, selectedOptionIndex, selectedOptionText,
                              choiceTimeMs, rt, leak, inv);
         }
 
@@ -178,6 +182,8 @@ namespace MoxoCPT
         {
             "participant_id",
             "session_id",
+            "client_utc",
+            "attempt",
             "island_id",
             "phase",
 
@@ -256,19 +262,14 @@ namespace MoxoCPT
 
         private static string GetCurrentParticipantId()
         {
-            var gm = GameManager.Instance;
-            var pid = (gm != null ? gm.ParticipantId : null);
-
-            if (string.IsNullOrWhiteSpace(pid))
-                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return pid;
+            LoggingReport.EnsureParticipantId();
+            return LoggingReport.CurrentParticipantId;
         }
 
         // ---------- Firebase upload ----------
 
         private static void UploadToFirebase(
-            string pid, string sessionId,
+            string pid, string sessionId, string clientUtc, int attempt,
             int selectedOptionIndex, string selectedOptionText,
             long choiceTimeMs, long rt, bool leak,
             IFormatProvider inv)
@@ -283,6 +284,8 @@ namespace MoxoCPT
             var sb = new StringBuilder(512);
             sb.Append(FirebaseService.JS("participant_id",          pid));
             sb.Append(FirebaseService.JS("session_id",              sessionId));
+            sb.Append(FirebaseService.JS("client_utc",              clientUtc));
+            sb.Append(FirebaseService.JN("attempt",                 attempt));
             sb.Append(FirebaseService.JS("island_id",               EffectiveIslandId()));
             sb.Append(FirebaseService.JS("phase",                   _phase));
             sb.Append(FirebaseService.JS("npc",                     _npc));

@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using UnityEngine.Video;
 using UnityEngine.InputSystem; // if you use the new Input System
 
@@ -47,7 +49,7 @@ public class IntroBoot : MonoBehaviour
     public string loadingText = "Loading…";
 
     [Tooltip("Text shown once the video is buffered and ready to play.")]
-    public string readyText = "Press Enter for fullscreen and to start";
+    public string readyText = "Click anywhere or press Enter to start";
 
     [Tooltip("How long to wait for the video to buffer before giving up (seconds).")]
     public float prepareTimeout = 20f;
@@ -76,6 +78,28 @@ public class IntroBoot : MonoBehaviour
     bool videoEnded;
     float ignoreSkipInputUntil;
     CutsceneVideoSuspend.State _suspend;
+    TMP_Text _runtimeStartPrompt;
+    bool _pageGestureReceived;
+    bool _awaitingUserGesture;
+    Button _thumbnailContinueButton;
+
+    const float ThumbnailMinDisplaySeconds = 1.25f;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    /// <summary>Called from IntroBridge.jslib when the browser receives a click/key outside Unity input.</summary>
+    public void OnUserGestureFromPage()
+    {
+        if (_awaitingUserGesture)
+            _pageGestureReceived = true;
+    }
+
+    /// <summary>Unity UI click target on the thumbnail (SendMessage fallback).</summary>
+    public void OnThumbnailContinueClicked()
+    {
+        if (_awaitingUserGesture)
+            _pageGestureReceived = true;
+    }
+#endif
 
     void Awake()
     {
@@ -139,7 +163,6 @@ public class IntroBoot : MonoBehaviour
         WebGLPageVisibility.Register(this);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Download the full intro MP4 while the player is on thumbnail/login (same as island cutscenes).
         WebGLVideoPrefetch.StartFile(videoFileName);
         if (log) Debug.Log("[IntroBoot] WebGL: started full-file intro prefetch.");
 #endif
@@ -195,22 +218,27 @@ public class IntroBoot : MonoBehaviour
         }
 
         // ── Normal WebGL flow ────────────────────────────────────────────────────────
-        //   1. Thumbnail → player presses Enter → audio unlocked
-        //   2. Login screen pops up over thumbnail → player fills in + clicks Start
-        //   3. Fade to black → intro video plays
-        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;   // clear so thumbnail is visible
+        // 1) Thumbnail (includes "press space to continue" artwork)
+        // 2) Login if no ?num= in URL
+        // 3) Loading page while intro.mp4 prepares
+        // 4) Intro video → Main
+        yield return CoEnsureBootUIReady();
+        EnsureThumbnailContinueButton();
+
+        if (fadeToBlack && fadeGroup) fadeGroup.alpha = 0f;
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(true);
+        if (_thumbnailContinueButton) _thumbnailContinueButton.gameObject.SetActive(true);
+        WebGLIntroBridge.HidePageStartHint();
 
         if (needLogin)
         {
-            // Step 1: thumbnail only — wait for Enter (also unlocks browser audio).
-            SetLabel(readyText);    // e.g. "Press Enter to start"
-            if (log) Debug.Log("[IntroBoot] WebGL: thumbnail shown — waiting for Enter.");
-            yield return CoWaitForEnter();
-            if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed — showing login screen.");
+            if (log) Debug.Log("[IntroBoot] WebGL: thumbnail — waiting for click, Space, or Enter.");
+            yield return CoWaitForUserGesture();
+            if (log) Debug.Log("[IntroBoot] WebGL: gesture received — showing login screen.");
 
-            // Step 2: login screen — preload Main in background while participant fills the form.
-            SetLabel(null);
+            if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
+            if (_thumbnailContinueButton) _thumbnailContinueButton.gameObject.SetActive(false);
+
             loginScreen.gameObject.SetActive(true);
             EnsureMainPreloadStarted(lowPriority: true);
             bool submitted = false;
@@ -220,16 +248,14 @@ public class IntroBoot : MonoBehaviour
         }
         else
         {
-            // No login needed (URL supplied num/pid) — thumbnail, then Enter to continue.
-            SetLabel(readyText);
-            if (log) Debug.Log("[IntroBoot] WebGL: waiting for Enter.");
-            yield return CoWaitForEnter();
-            if (log) Debug.Log("[IntroBoot] WebGL: Enter pressed.");
+            if (log) Debug.Log("[IntroBoot] WebGL: thumbnail — waiting for click, Space, or Enter.");
+            yield return CoWaitForUserGesture();
+            if (log) Debug.Log("[IntroBoot] WebGL: gesture received.");
+            EnsureMainPreloadStarted(lowPriority: true);
         }
 
-        // Step 3: hide thumbnail + login; loading page covers prepare before intro plays.
         if (thumbnailImage) thumbnailImage.gameObject.SetActive(false);
-        SetLabel(null);
+        if (_thumbnailContinueButton) _thumbnailContinueButton.gameObject.SetActive(false);
         if (loginScreen) loginScreen.gameObject.SetActive(false);
         // ────────────────────────────────────────────────────────────────────────────
 #else
@@ -333,6 +359,7 @@ AfterPlayback:
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         yield return CoPrepareIntroWebGL(loadingSettings);
+        VideoLoadingScreen.SetCaption(null);
 #else
         yield return VideoLoadingScreen.CoShowWhilePreparing(
             vp,
@@ -348,8 +375,30 @@ AfterPlayback:
 
         if (vp == null || !vp.isPrepared)
         {
-            if (log) Debug.LogWarning("[IntroBoot] Video not prepared after loading screen — skipping.");
-            VideoLoadingScreen.Hide();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (log) Debug.LogWarning("[IntroBoot] Prefetch prepare failed — trying direct stream URL.");
+            var streamUrl = WebGLVideoPrefetch.BuildStreamingAssetsUrl(videoFileName);
+            if (vp != null && !string.IsNullOrEmpty(streamUrl))
+            {
+                if (vp.isPlaying) vp.Stop();
+                vp.url = streamUrl;
+                vp.Prepare();
+                float streamWait = 0f;
+                var streamMax = Mathf.Max(prepareTimeout * 2f, 45f);
+                while (!vp.isPrepared && streamWait < streamMax)
+                {
+                    streamWait += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+                if (log) Debug.Log($"[IntroBoot] Stream prepare: prepared={vp.isPrepared}, wait={streamWait:0.0}s.");
+            }
+#endif
+        }
+
+        if (vp == null || !vp.isPrepared)
+        {
+            if (log) Debug.LogWarning("[IntroBoot] Video not prepared after loading screen — skipping intro, loading Main.");
+            VideoLoadingScreen.SetCaption("Loading game…");
             isVideoActive = false;
             yield break;
         }
@@ -386,50 +435,8 @@ AfterPlayback:
     /// </summary>
     IEnumerator CoPrepareIntroWebGL(VideoLoadingScreen.Settings settings)
     {
-        var streamUrl = WebGLVideoPrefetch.BuildStreamingAssetsUrl(videoFileName);
-        WebGLVideoPrefetch.StartFile(videoFileName);
-
-        VideoLoadingScreen.Show(settings, this);
-        yield return null;
-
-        float elapsed = 0f;
-        bool prefetched = false;
-        while (elapsed < settings.MaxSeconds)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            if (WebGLVideoPrefetch.IsReady(streamUrl) && elapsed >= settings.MinSeconds)
-            {
-                prefetched = true;
-                break;
-            }
-            yield return null;
-        }
-
-        if (log)
-            Debug.Log($"[IntroBoot] Prefetch {(prefetched ? "ready" : "timeout")} after {elapsed:0.0}s — preparing playback.");
-
-        var playbackUrl = WebGLVideoPrefetch.ResolvePlaybackFile(videoFileName);
-        if (vp.url != playbackUrl)
-        {
-            if (vp.isPlaying) vp.Stop();
-            vp.url = playbackUrl;
-        }
-
-        // Full file in blob URL — prefer smooth frames over aggressive frame drops.
-        vp.skipOnDrop = prefetched ? false : true;
-
-        if (!vp.isPrepared)
-            vp.Prepare();
-
-        float prepareWait = 0f;
-        while (!vp.isPrepared && prepareWait < prepareTimeout)
-        {
-            prepareWait += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        if (settings.Log)
-            Debug.Log($"[IntroBoot] Prepare done (prefetched={prefetched}, prepared={vp.isPrepared}, prepareWait={prepareWait:0.0}s).");
+        yield return CutsceneWebGLPrepare.CoPrepare(
+            vp, videoFileName, settings, this, prepareTimeout, log, "IntroBoot");
     }
 #endif
 
@@ -496,40 +503,184 @@ AfterPlayback:
     bool AnySkipPressed() => CutsceneVideoPlayback.AnySkipPressed();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-    // Waits until the player presses Enter or Space (satisfies the browser user-gesture
-    // requirement for audio autoplay), then yields one extra frame so that key-press is
-    // fully consumed and doesn't register as a skip in the video loop that follows.
-    IEnumerator CoWaitForEnter()
+    IEnumerator CoEnsureBootUIReady()
     {
-        var kb = Keyboard.current;
-        while (true)
-        {
-            if (kb != null && (kb.enterKey.wasPressedThisFrame ||
-                               kb.numpadEnterKey.wasPressedThisFrame ||
-                               kb.spaceKey.wasPressedThisFrame))
-                break;
-            if (Input.GetKeyDown(KeyCode.Return) ||
-                Input.GetKeyDown(KeyCode.KeypadEnter) ||
-                Input.GetKeyDown(KeyCode.Space))
-                break;
+        FixBootCanvas(thumbnailImage != null ? thumbnailImage.GetComponentInParent<Canvas>() : null);
+        if (loginScreen != null)
+            FixBootCanvas(loginScreen.GetComponentInParent<Canvas>());
+
+        Canvas.ForceUpdateCanvases();
+        for (int i = 0; i < 3; i++)
             yield return null;
+        Canvas.ForceUpdateCanvases();
+    }
+
+    static void FixBootCanvas(Canvas canvas)
+    {
+        if (canvas == null) return;
+
+        var root = canvas.GetComponent<RectTransform>();
+        if (root != null && root.localScale.sqrMagnitude < 0.001f)
+            root.localScale = Vector3.one;
+
+        var scaler = canvas.GetComponent<CanvasScaler>();
+        if (scaler != null && scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
+        {
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
         }
 
+        if (scaler != null)
+        {
+            scaler.enabled = false;
+            scaler.enabled = true;
+        }
+    }
+
+    void EnsureThumbnailContinueButton()
+    {
+        if (_thumbnailContinueButton != null || thumbnailImage == null) return;
+
+        var parent = thumbnailImage.transform.parent;
+        if (parent == null) return;
+
+        var go = new GameObject("ThumbnailContinue");
+        go.transform.SetParent(parent, false);
+        go.transform.SetAsLastSibling();
+
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        var img = go.AddComponent<Image>();
+        img.color = new Color(0f, 0f, 0f, 0.004f);
+        img.raycastTarget = true;
+
+        _thumbnailContinueButton = go.AddComponent<Button>();
+        _thumbnailContinueButton.transition = Selectable.Transition.None;
+        _thumbnailContinueButton.onClick.AddListener(OnThumbnailContinueClicked);
+        go.SetActive(false);
+    }
+
+    // Waits for click, touch, or Enter/Space (browser user-gesture for audio + fullscreen).
+    IEnumerator CoWaitForUserGesture()
+    {
+        _awaitingUserGesture = true;
+        _pageGestureReceived = false;
+        WebGLIntroBridge.Setup(gameObject.name);
+        WebGLIntroBridge.Reset();
+        WebGLIntroBridge.Disarm();
+
+        float shownAt = Time.unscaledTime;
+        while (Time.unscaledTime < shownAt + ThumbnailMinDisplaySeconds)
+            yield return null;
+
+        for (int i = 0; i < 10; i++)
+            yield return null;
+
+        WebGLIntroBridge.Arm();
+
+        while (!_pageGestureReceived && !AnyStartGesturePressedWebGL())
+            yield return null;
+
+        _awaitingUserGesture = false;
+        WebGLIntroBridge.Disarm();
+        WebGLIntroBridge.HidePageStartHint();
         WebGLFullscreen.Request();
-        yield return null; // flush — prevent the key from being seen by the skip loop
+        yield return null;
+    }
+
+    static bool AnyStartGesturePressedWebGL()
+    {
+        var mouse = Mouse.current;
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            return true;
+
+        var touch = Touchscreen.current;
+        if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+            return true;
+
+        var kb = Keyboard.current;
+        if (kb != null && (kb.enterKey.wasPressedThisFrame ||
+                           kb.numpadEnterKey.wasPressedThisFrame ||
+                           kb.spaceKey.wasPressedThisFrame))
+            return true;
+
+        return false;
     }
 #endif
 
-    void SetLabel(string text)
+    void ShowStartPrompt(string text)
     {
-        if (loadingLabel == null) return;
         if (string.IsNullOrEmpty(text))
-            loadingLabel.gameObject.SetActive(false);
-        else
+        {
+            HideStartPrompt();
+            return;
+        }
+
+        if (loadingLabel != null)
         {
             loadingLabel.gameObject.SetActive(true);
             loadingLabel.text = text;
+            return;
         }
+
+        EnsureRuntimeStartPrompt();
+        if (_runtimeStartPrompt == null) return;
+        _runtimeStartPrompt.text = text;
+        _runtimeStartPrompt.gameObject.SetActive(true);
+    }
+
+    void HideStartPrompt()
+    {
+        if (loadingLabel != null)
+            loadingLabel.gameObject.SetActive(false);
+
+        if (_runtimeStartPrompt != null)
+            _runtimeStartPrompt.gameObject.SetActive(false);
+    }
+
+    void EnsureRuntimeStartPrompt()
+    {
+        if (_runtimeStartPrompt != null) return;
+
+        Transform parent = null;
+        if (thumbnailImage != null)
+            parent = thumbnailImage.transform.parent;
+        if (parent == null && loginScreen != null)
+            parent = loginScreen.transform;
+        if (parent == null) return;
+
+        var go = new GameObject("StartPrompt");
+        go.transform.SetParent(parent, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f);
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.anchoredPosition = new Vector2(0f, 48f);
+        rt.sizeDelta = new Vector2(900f, 80f);
+
+        _runtimeStartPrompt = go.AddComponent<TextMeshProUGUI>();
+        _runtimeStartPrompt.alignment = TextAlignmentOptions.Center;
+        _runtimeStartPrompt.fontSize = 28f;
+        _runtimeStartPrompt.color = Color.white;
+        _runtimeStartPrompt.raycastTarget = false;
+        _runtimeStartPrompt.enableWordWrapping = true;
+
+        var outline = go.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        go.SetActive(false);
+    }
+
+    void SetLabel(string text)
+    {
+        ShowStartPrompt(text);
     }
 
     IEnumerator CoFade(CanvasGroup g, float from, float to, float seconds)
@@ -593,7 +744,11 @@ AfterPlayback:
     static bool UrlHasParticipantIdQueryKey(string absoluteUrl)
     {
         string q = WebGlRawQueryString(absoluteUrl);
-        return TryGetQueryValue(q, "num", out _) || TryGetQueryValue(q, "pid", out _);
+        if (TryGetQueryValue(q, "num", out var num) && !string.IsNullOrWhiteSpace(num))
+            return true;
+        if (TryGetQueryValue(q, "pid", out var pid) && !string.IsNullOrWhiteSpace(pid))
+            return true;
+        return false;
     }
 
     /// <summary>

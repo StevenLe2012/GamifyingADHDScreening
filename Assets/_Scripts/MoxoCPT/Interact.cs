@@ -11,6 +11,16 @@ namespace MoxoCPT
     // ChangeShapes never needs to clear it → no race condition.
     public static int _pressCount = 0;
 
+    // Timestamp (ms) of the most recently ACCEPTED press, on the SAME
+    // Time.realtimeSinceStartup clock used to stamp stimulus onset. Written the
+    // moment the press is registered (ButtonPress or the _buttonPressed alias);
+    // StartReport reads it when it consumes a trial's first press so reaction
+    // time is measured as (press_time − stimulus_onset) instead of a sum of
+    // Time.deltaTime. This removes the systematic frame-accumulation offset.
+    // (Residual error is one-frame quantization, which is below the browser
+    // input/display latency floor — see the RT-precision discussion.)
+    public static double LastPressRealtimeMs = -1.0;
+
     /// <summary>
     /// Fired on the exact frame a correct hit is registered (target trial + first press
     /// while the stimulus is still on screen). Subscribe to drive koala happy animation.
@@ -23,7 +33,16 @@ namespace MoxoCPT
         public static bool _buttonPressed
         {
             get => false;  // reading is meaningless now — use the counter
-            set { if (value) _pressCount++; }
+            set
+            {
+                if (value)
+                {
+                    // Stamp the press time on the same clock as stimulus onset so RT
+                    // stays exact even for presses routed through this legacy alias.
+                    LastPressRealtimeMs = Time.realtimeSinceStartupAsDouble * 1000.0;
+                    _pressCount++;
+                }
+            }
         }
 
         // --------------------------------------------------------------------
@@ -85,6 +104,11 @@ namespace MoxoCPT
             bool hadPress = false;
             float firstPressTime = -1f;
 
+            // Exact reaction time for the first press (ms), measured as
+            // press_timestamp − stimulus_onset on the realtimeSinceStartup clock.
+            // -1 until the first press is consumed.
+            double firstPressRtMs = -1.0;
+
             // ---- metadata ----
             report.TrialIndex = trialIndex;
 
@@ -95,8 +119,9 @@ namespace MoxoCPT
             report.StimulusDurationMs = Mathf.RoundToInt(stimulusDurationSeconds * 1000f);
             report.StimulusOnsetMs = stimulusOnsetMs;
 
-            // Participant/session best-effort
-            report.ParticipantId = (GameManager.Instance != null) ? GameManager.Instance.ParticipantId : "";
+            // Participant/session best-effort (cached single source of truth — see LoggingReport)
+            LoggingReport.EnsureParticipantId();
+            report.ParticipantId = LoggingReport.CurrentParticipantId;
             report.SessionId = LoggingReport.CurrentSessionId;
 
             // Island best-effort
@@ -119,6 +144,12 @@ namespace MoxoCPT
                     {
                         hadPress = true;
                         firstPressTime = timePassed;
+
+                        // Exact RT from the actual press timestamp (set by ButtonPress
+                        // this frame) minus the stimulus onset. Both are on the
+                        // Time.realtimeSinceStartup clock, so this drops the
+                        // frame-accumulation bias of the old timePassed estimate.
+                        firstPressRtMs = LastPressRealtimeMs - (double)stimulusOnsetMs;
 
                         bool stimulusIsOnNow =
                             isStimulusCurrentlyOnAtStart && (timePassed <= stimulusDurationSeconds);
@@ -156,7 +187,12 @@ namespace MoxoCPT
 
             if (hadPress)
             {
-                float rtMs = firstPressTime * 1000f;
+                // Prefer the exact press-timestamp RT. Fall back to the frame-based
+                // estimate only if the press timestamp was unavailable (e.g. a press
+                // path that never stamped LastPressRealtimeMs).
+                float rtMs = (firstPressRtMs > 0.0)
+                    ? (float)firstPressRtMs
+                    : firstPressTime * 1000f;
                 float? rt = (rtMs <= 0f) ? (float?)null : rtMs; // rule: never store 0
 
                 // ✅ Recommended split:

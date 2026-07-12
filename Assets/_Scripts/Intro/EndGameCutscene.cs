@@ -168,10 +168,11 @@ public class EndGameCutscene : MonoBehaviour
         _currentFile = fileName.Trim();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Start buffering immediately so the video is ready by the time CoRun reaches PrepareAndPlay.
-        _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
-        _vp.Prepare();
-        if (log) Debug.Log($"[EndGameCutscene] WebGL: early prepare started for {_currentFile}");
+        // Start the full-file background download immediately so the video can play from a
+        // local blob URL (no live HTTP streaming = no mid-playback buffering stalls or
+        // audio/video desync). CoPrepare in PrepareAndPlay waits for this to finish.
+        WebGLVideoPrefetch.StartFile(_currentFile);
+        if (log) Debug.Log($"[EndGameCutscene] WebGL: prefetch started for {_currentFile}");
 #endif
 
         StartCoroutine(CoRun());
@@ -251,26 +252,31 @@ public class EndGameCutscene : MonoBehaviour
 
     IEnumerator PrepareAndPlay()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // URL and Prepare() were already called in PlayFile for early buffering.
-        // Only call again if not already started (safety fallback).
-        if (!_vp.isPrepared && string.IsNullOrEmpty(_vp.url))
+        if (string.IsNullOrWhiteSpace(_currentFile))
         {
-            _vp.url = Application.streamingAssetsPath + "/" + _currentFile;
-            _vp.Prepare();
+            if (log) Debug.LogWarning("[EndGameCutscene] PrepareAndPlay with no current file; aborting.");
+            Finish();
+            yield break;
         }
-#else
-        _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentFile);
-        _vp.Prepare();
-#endif
-
-        if (log) Debug.Log($"[EndGameCutscene] Waiting for video: {_currentFile}");
 
         var loadingMax = Mathf.Max(loadingScreenMaxSeconds, prepareTimeout);
         var loadingSettings = VideoLoadingScreen.DefaultSettings(
             loadingPageSprite, loadingScreenMinSeconds, loadingMax, log);
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Wait for the full-file prefetch, then prepare on the local blob URL — same path
+        // as IslandIntroCutscene. This replaces live HTTP streaming, which was the source
+        // of the ending video's buffering stalls and audio/video desync.
+        yield return CutsceneWebGLPrepare.CoPrepare(
+            _vp, _currentFile, loadingSettings, this, prepareTimeout, log, "EndGameCutscene");
+#else
+        _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentFile);
+        _vp.Prepare();
+
+        if (log) Debug.Log($"[EndGameCutscene] Waiting for video: {_currentFile}");
+
         yield return VideoLoadingScreen.CoShowWhilePreparing(_vp, loadingSettings, this, hideWhenDone: false);
+#endif
 
         if (!_vp.isPrepared)
         {

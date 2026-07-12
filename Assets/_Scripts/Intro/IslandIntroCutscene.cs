@@ -52,7 +52,7 @@ public class IslandIntroCutscene : MonoBehaviour
     [Tooltip("Minimum time on loading page before cutscene (even if video is already buffered).")]
     public float loadingScreenMinSeconds = 3f;
     [Tooltip("Fallback: stop waiting and continue after this many seconds if the cutscene is still not ready.")]
-    public float loadingScreenMaxSeconds = 30f;
+    public float loadingScreenMaxSeconds = 60f;
 
     [Header("Diagnostics")]
     public bool log = true;
@@ -256,28 +256,12 @@ public class IslandIntroCutscene : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         var fileName = _currentCutscene.videoFileName;
-        WebGLVideoPrefetch.StartFile(fileName);
-
         var loadingMax = Mathf.Max(loadingScreenMaxSeconds, prepareTimeout);
         var loadingSettings = VideoLoadingScreen.DefaultSettings(
             loadingPageSprite, loadingScreenMinSeconds, loadingMax, log);
 
-        yield return VideoLoadingScreen.CoShowWhilePreparing(
-            _vp,
-            loadingSettings,
-            this,
-            beginPrepare: () =>
-            {
-                var playbackUrl = CutsceneVideoPrefetch.ResolvePlaybackFile(fileName);
-                if (_vp.url != playbackUrl)
-                {
-                    if (_vp.isPlaying) _vp.Stop();
-                    _vp.url = playbackUrl;
-                }
-                _vp.skipOnDrop = CutsceneVideoPrefetch.IsPrefetchReady(fileName) ? false : true;
-            },
-            additionalReadyCheck: () => CutsceneVideoPrefetch.IsPrefetchReady(fileName),
-            hideWhenDone: false);
+        yield return CutsceneWebGLPrepare.CoPrepare(
+            _vp, fileName, loadingSettings, this, prepareTimeout, log, "IslandIntroCutscene");
 #else
         _vp.url = System.IO.Path.Combine(Application.streamingAssetsPath, _currentCutscene.videoFileName);
         _vp.Prepare();

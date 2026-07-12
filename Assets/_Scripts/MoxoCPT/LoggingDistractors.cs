@@ -47,6 +47,12 @@ namespace MoxoCPT
                 ? e.SessionId
                 : LoggingReport.CurrentSessionId;
 
+            // Absolute wall-clock timestamp for this event (shared by CSV + Firebase).
+            string clientUtc = LoggingReport.NowUtcIso();
+
+            // Attempt number for the CPT run this event belongs to.
+            int attempt = LoggingReport.CurrentAttempt;
+
             // Optional blanks
             string trialIndex     = (e.TrialIndex >= 0) ? e.TrialIndex.ToString(inv) : "";
             string phaseTrialIndex = (e.PhaseTrialIndex >= 0) ? e.PhaseTrialIndex.ToString(inv) : "";
@@ -73,6 +79,8 @@ namespace MoxoCPT
             {
                 Escape(e.ParticipantId),
                 Escape(sessionId),
+                Escape(clientUtc),
+                attempt.ToString(inv),
 
                 Escape(e.IslandId),
                 Escape(e.Phase),
@@ -100,7 +108,7 @@ namespace MoxoCPT
                 sw.WriteLine(row);
 #endif
 
-            UploadToFirebase(e, sessionId);
+            UploadToFirebase(e, sessionId, clientUtc, attempt);
         }
 
         // ---------------- Data container ----------------
@@ -139,6 +147,8 @@ namespace MoxoCPT
         {
             "participant_id",
             "session_id",
+            "client_utc",
+            "attempt",
 
             "island_id",
             "phase",
@@ -201,18 +211,13 @@ namespace MoxoCPT
 
         private static string GetCurrentParticipantId()
         {
-            var gm = GameManager.Instance;
-            var pid = (gm != null ? gm.ParticipantId : null);
-
-            if (string.IsNullOrWhiteSpace(pid))
-                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return pid;
+            LoggingReport.EnsureParticipantId();
+            return LoggingReport.CurrentParticipantId;
         }
 
         // ---------------- Firebase upload ----------------
 
-        private static void UploadToFirebase(DistractorEvent e, string sessionId)
+        private static void UploadToFirebase(DistractorEvent e, string sessionId, string clientUtc, int attempt)
         {
             var svc = FirebaseService.Instance;
             if (svc == null) return;
@@ -225,6 +230,8 @@ namespace MoxoCPT
             var sb = new StringBuilder(512);
             sb.Append(FirebaseService.JS("participant_id",         pid));
             sb.Append(FirebaseService.JS("session_id",             sessionId));
+            sb.Append(FirebaseService.JS("client_utc",             clientUtc));
+            sb.Append(FirebaseService.JN("attempt",                attempt));
             sb.Append(FirebaseService.JS("island_id",              e.IslandId));
             sb.Append(FirebaseService.JS("phase",                  e.Phase));
             sb.Append(FirebaseService.JN("trial_index",            e.TrialIndex));

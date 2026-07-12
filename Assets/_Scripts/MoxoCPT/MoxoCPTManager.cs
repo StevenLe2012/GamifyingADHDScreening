@@ -2165,6 +2165,11 @@ namespace MoxoCPT
 
             LoggingReport.CreateReportCSV();
 
+            // Start a new attempt for this island so a replay of the SAME island
+            // doesn't overwrite the previous attempt's trials and so distractor /
+            // dialogue rows logged during this run are tagged with the same attempt.
+            LoggingReport.BeginCptAttempt(CurrentIslandId());
+
             // LOCK CPT immediately (prevents other scripts from pulling to Explore/Narrative)
             SetCptLock(true);
 

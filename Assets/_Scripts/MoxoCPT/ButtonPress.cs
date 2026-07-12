@@ -157,6 +157,10 @@ namespace MoxoCPT
 
             Debug.Log($"[ButtonPress] ✓ CPT press consumed  key={pressedKey}  pressCount={Interact._pressCount + 1}  state={gm.State}");
 
+            // Stamp the exact press time (same clock as stimulus onset) BEFORE
+            // incrementing the counter, so StartReport computes RT as
+            // press_time − stimulus_onset rather than from accumulated frames.
+            Interact.LastPressRealtimeMs = Time.realtimeSinceStartupAsDouble * 1000.0;
             Interact._pressCount++;
             PlayPressSfx();
 

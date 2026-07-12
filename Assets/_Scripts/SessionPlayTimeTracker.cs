@@ -186,16 +186,31 @@ public class SessionPlayTimeTracker : MonoBehaviour
         sb.Append(FirebaseService.JN("tab_hidden_duration_ms", hiddenMs));
         sb.Append(FirebaseService.JN("tab_hidden_count", _tabHiddenCount));
 
+        // Frame-cadence quality during the CPT. Frame rate caps RT precision in WebGL,
+        // so these let the analysis flag/exclude sessions whose timing is untrustworthy.
+        // Values are -1 / 0 when no CPT frames were sampled (treated as blank in CSV).
+        sb.Append(FirebaseService.JN("cpt_frame_samples", CptPerformanceMonitor.FrameSamples));
+        sb.Append(FirebaseService.JN("cpt_median_fps", Round1(CptPerformanceMonitor.MedianFps)));
+        sb.Append(FirebaseService.JN("cpt_p05_fps", Round1(CptPerformanceMonitor.P05Fps)));
+        sb.Append(FirebaseService.JN("cpt_frame_ms_median", Round2(CptPerformanceMonitor.FrameMsMedian)));
+        sb.Append(FirebaseService.JN("cpt_frame_ms_iqr", Round2(CptPerformanceMonitor.FrameMsIqr)));
+        sb.Append(FirebaseService.JN("cpt_long_frame_count", CptPerformanceMonitor.LongFrameCount));
+
         svc.PutJson(path, FirebaseService.WrapJson(sb.ToString()));
     }
 
+    // Round to a fixed number of decimals and narrow to float for FirebaseService.JN.
+    // Sentinels (< 0) pass through unchanged so the CSV converter can blank them.
+    static float Round1(double v) => v < 0 ? -1f : (float)Math.Round(v, 1);
+    static float Round2(double v) => v < 0 ? -1f : (float)Math.Round(v, 2);
+
     static string ResolveParticipantId()
     {
-        if (GameManager.Instance != null)
-        {
-            var id = GameManager.Instance.ParticipantId;
-            if (!string.IsNullOrWhiteSpace(id)) return id;
-        }
+        // Use the cached single source of truth so the summary's participant_id
+        // matches every other collection (see LoggingReport.EnsureParticipantId).
+        LoggingReport.EnsureParticipantId();
+        if (!string.IsNullOrWhiteSpace(LoggingReport.CurrentParticipantId))
+            return LoggingReport.CurrentParticipantId;
 
         if (!string.IsNullOrWhiteSpace(ParticipantSession.Number))
             return $"{ParticipantSession.Number}_{DateTime.Today:yyyy-MM-dd}";

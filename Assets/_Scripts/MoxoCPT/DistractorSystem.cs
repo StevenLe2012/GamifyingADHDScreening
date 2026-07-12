@@ -2579,6 +2579,8 @@ namespace MoxoCPT
             {
                 "participant_id",
                 "session_id",
+                "client_utc",
+                "attempt",
                 "island_id",
                 "phase",
                 "event_type",
@@ -2628,8 +2630,11 @@ namespace MoxoCPT
             {
                 var inv = CultureInfo.InvariantCulture;
 
-                string pid       = (GameManager.Instance != null) ? (GameManager.Instance.ParticipantId ?? "") : "";
+                LoggingReport.EnsureParticipantId();
+                string pid       = LoggingReport.CurrentParticipantId ?? "";
                 string sessionId = LoggingReport.CurrentSessionId ?? "";
+                string clientUtc = LoggingReport.NowUtcIso();
+                int    attempt   = LoggingReport.CurrentAttempt;
                 string islandId  = _cachedIslandId;
                 const string phase = "DP";
 
@@ -2655,6 +2660,8 @@ namespace MoxoCPT
                 {
                     Escape(pid),
                     Escape(sessionId),
+                    Escape(clientUtc),
+                    attempt.ToString(inv),
                     Escape(islandId),
                     phase,
                     eventType,
@@ -2687,7 +2694,7 @@ namespace MoxoCPT
 #endif
 
                 UploadToFirebase(p, eventType, offsetMs, dpElapsedOffsetMs,
-                                 actualDurationMs, pid, sessionId, islandId, phase, inv);
+                                 actualDurationMs, pid, sessionId, clientUtc, attempt, islandId, phase, inv);
             }
 
             private static string _cachedIslandId = "";
@@ -2727,7 +2734,8 @@ namespace MoxoCPT
 #if UNITY_EDITOR
             private static string GetCSVPath()
             {
-                string pid = (GameManager.Instance != null) ? (GameManager.Instance.ParticipantId ?? "") : "";
+                LoggingReport.EnsureParticipantId();
+                string pid = LoggingReport.CurrentParticipantId ?? "";
                 if (string.IsNullOrWhiteSpace(pid))
                     pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
@@ -2771,6 +2779,8 @@ namespace MoxoCPT
                 string actualDurationMs,
                 string pid,
                 string sessionId,
+                string clientUtc,
+                int attempt,
                 string islandId,
                 string phase,
                 CultureInfo inv)
@@ -2790,6 +2800,8 @@ namespace MoxoCPT
                 var sb = new System.Text.StringBuilder(512);
                 sb.Append(FirebaseService.JS("participant_id",         pid));
                 sb.Append(FirebaseService.JS("session_id",             sessionId));
+                sb.Append(FirebaseService.JS("client_utc",             clientUtc));
+                sb.Append(FirebaseService.JN("attempt",                attempt));
                 sb.Append(FirebaseService.JS("island_id",              islandId));
                 sb.Append(FirebaseService.JS("phase",                  phase));
                 sb.Append(FirebaseService.JS("event_type",             eventType));

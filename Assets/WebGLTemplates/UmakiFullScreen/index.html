@@ -16,11 +16,16 @@
           <div id="unity-progress-bar-full"></div>
         </div>
         <div id="unity-loading-hint">
-          <p>Loading may take up to 3 minutes. Please be patient and avoid switching tabs during this time.</p>
-          <p>If the progress bar does not move or the game does not load after 3 minutes, please ensure you have a stable internet connection, refresh the page, and try again. If the issue persists, please contact our research coordinator for assistance.</p>
+          <p id="unity-loading-status">Loading game files… This first download is about <strong>420 MB</strong>.</p>
+          <p>On a fast connection this takes a few minutes. On slower networks (including some regions in Asia) it can take <strong>10–20 minutes</strong>. Please keep this tab open and do not refresh.</p>
+          <p id="unity-loading-percent" style="font-size: 20px; margin-top: 12px;">0%</p>
+          <p>If the percentage stays at 0% for more than 2 minutes, check your internet connection, try a different network (e.g. mobile hotspot), or contact the research coordinator.</p>
         </div>
       </div>
       <div id="unity-warning"> </div>
+      <div id="unity-start-hint">
+        <p>Click anywhere on the game or press Enter to start</p>
+      </div>
       <div id="unity-footer">
         <div id="unity-webgl-logo"></div>
         <div id="unity-fullscreen-button"></div>
@@ -32,9 +37,43 @@
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var loadingBar = document.querySelector("#unity-loading-bar");
+      var startHint = document.querySelector("#unity-start-hint");
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var fullscreenButton = document.querySelector("#unity-fullscreen-button");
       var warningBanner = document.querySelector("#unity-warning");
+      var loadingStatus = document.querySelector("#unity-loading-status");
+      var loadingPercent = document.querySelector("#unity-loading-percent");
+      var lastProgress = 0;
+      var lastProgressAt = Date.now();
+      var stallWarned = false;
+
+      function setLoadingPercent(p) {
+        var pct = Math.round(100 * p);
+        progressBarFull.style.width = pct + "%";
+        if (loadingPercent) loadingPercent.textContent = pct + "%";
+        if (p > lastProgress + 0.001) {
+          lastProgress = p;
+          lastProgressAt = Date.now();
+          stallWarned = false;
+        }
+      }
+
+      function showLoadError(msg) {
+        loadingBar.style.display = "flex";
+        unityShowBanner(msg, "error");
+        if (loadingStatus) loadingStatus.textContent = "Download failed. Please try again or contact the research coordinator.";
+      }
+
+      setInterval(function() {
+        if (!loadingBar || loadingBar.style.display === "none") return;
+        var stalledMs = Date.now() - lastProgressAt;
+        if (!stallWarned && stalledMs > 120000 && lastProgress < 0.02) {
+          stallWarned = true;
+          unityShowBanner(
+            "Download seems slow or stalled. Large file (~420 MB) — try a stable Wi‑Fi or mobile hotspot, keep this tab open, and wait up to 20 minutes.",
+            "warning");
+        }
+      }, 15000);
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -144,17 +183,23 @@
 
       var script = document.createElement("script");
       script.src = loaderUrl;
+      script.onerror = function() {
+        showLoadError("Could not download the game loader. Check your internet connection or try another network.");
+      };
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
+          setLoadingPercent(progress);
               }).then((unityInstance) => {
                 window.__unityInstance = unityInstance;
                 loadingBar.style.display = "none";
+                if (startHint) startHint.style.display = "none";
+                canvas.setAttribute("tabindex", "0");
+                canvas.focus();
                 fullscreenButton.onclick = () => {
                   window.__umakiRequestFullscreen();
                 };
               }).catch((message) => {
-                alert(message);
+                showLoadError(String(message));
               });
             };
 

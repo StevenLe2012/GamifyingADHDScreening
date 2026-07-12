@@ -56,8 +56,18 @@ public class ParticipantLoginScreen : MonoBehaviour
 
     // ── Keyboard shortcut ─────────────────────────────────────────────────────
 
+    float _ignoreSubmitUntil;
+
+    void OnEnable()
+    {
+        _ignoreSubmitUntil = Time.unscaledTime + 1.0f;
+    }
+
     void Update()
     {
+        if (Time.unscaledTime < _ignoreSubmitUntil)
+            return;
+
         // Allow Enter or Space to submit when the code field is not focused.
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {

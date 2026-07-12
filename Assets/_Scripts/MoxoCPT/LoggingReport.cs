@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
@@ -12,14 +13,70 @@ namespace MoxoCPT
     {
         private const string CSVSeperator = ",";
 
-        // Set fresh each OnGameBeginReal() (CreateReportCSV is called there)
+        // Stable for the whole browser run (set once via EnsureSessionId). It is
+        // intentionally NOT reset per CPT run — narrative dialogue and the play-time
+        // summary share it. Re-runs of the same island are separated by CurrentAttempt.
         public static string CurrentSessionId { get; private set; } = "";
+
+        // Resolved once per browser run and reused everywhere. This is the single
+        // source of truth for participant_id across ALL collections, so the value
+        // (and its embedded date) cannot drift mid-session — even across midnight.
+        public static string CurrentParticipantId { get; private set; } = "";
 
         /// <summary>Creates a session id once per browser run if not already set.</summary>
         public static void EnsureSessionId()
         {
             if (!string.IsNullOrWhiteSpace(CurrentSessionId)) return;
             CurrentSessionId = "S_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        }
+
+        /// <summary>
+        /// Resolves the participant id ONCE (from GameManager, falling back to a
+        /// timestamp) and caches it for the rest of the run. All loggers must read
+        /// CurrentParticipantId rather than re-querying GameManager, otherwise the
+        /// value can change between calls (e.g. the timestamp fallback, or a
+        /// midnight date rollover) and break joins across collections.
+        /// </summary>
+        public static void EnsureParticipantId()
+        {
+            if (!string.IsNullOrWhiteSpace(CurrentParticipantId)) return;
+
+            var gm = GameManager.Instance;
+            var pid = (gm != null) ? gm.ParticipantId : null;
+
+            if (string.IsNullOrWhiteSpace(pid))
+                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            CurrentParticipantId = pid;
+        }
+
+        /// <summary>UTC wall-clock timestamp (ISO-8601) for the current moment.</summary>
+        public static string NowUtcIso() => DateTime.UtcNow.ToString("o");
+
+        // ---------- Attempt tracking ----------
+        // The same island's CPT can be re-run within ONE browser session (the
+        // "Let's try that again" safeguard / Replay Training). session_id stays
+        // stable across the whole run (so it still joins to the narrative dialogue
+        // and the play-time summary), and this per-island attempt counter keeps
+        // each re-run cleanly separated instead of overwriting the previous one.
+        private static readonly Dictionary<string, int> _attemptByIsland =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>1-based attempt number for the CPT run currently in progress.</summary>
+        public static int CurrentAttempt { get; private set; } = 1;
+
+        /// <summary>
+        /// Call once at the start of every real CPT run (OnGameBeginReal). Increments
+        /// the attempt counter for that island and updates CurrentAttempt so all
+        /// trial/distractor rows logged during the run are tagged with the right attempt.
+        /// </summary>
+        public static void BeginCptAttempt(string islandId)
+        {
+            var key = string.IsNullOrWhiteSpace(islandId) ? "UNKNOWN" : islandId.Trim();
+            _attemptByIsland.TryGetValue(key, out var n);
+            n += 1;
+            _attemptByIsland[key] = n;
+            CurrentAttempt = n;
         }
 
         // ---------- PUBLIC API ----------
@@ -46,6 +103,12 @@ namespace MoxoCPT
             string sessionId = !string.IsNullOrWhiteSpace(report.SessionId)
                 ? report.SessionId
                 : CurrentSessionId;
+
+            // Absolute wall-clock timestamp for this trial (shared by CSV + Firebase).
+            string clientUtc = NowUtcIso();
+
+            // Attempt number for the CPT run this trial belongs to.
+            int attempt = CurrentAttempt;
 
             // reaction_time_ms: blank if null
             string rt = report.ReactionTimeMs.HasValue
@@ -106,6 +169,8 @@ namespace MoxoCPT
             {
                 Escape(report.ParticipantId),
                 Escape(sessionId),
+                Escape(clientUtc),
+                attempt.ToString(inv),
 
                 trialIndex,
 
@@ -147,7 +212,7 @@ namespace MoxoCPT
                 sw.WriteLine(row);
 #endif
 
-            UploadToFirebase(report, sessionId);
+            UploadToFirebase(report, sessionId, clientUtc, attempt);
         }
 
         // ---------- INTERNALS ----------
@@ -155,6 +220,8 @@ namespace MoxoCPT
         {
             "participant_id",
             "session_id",
+            "client_utc",
+            "attempt",
 
             "trial_index",
 
@@ -231,18 +298,13 @@ namespace MoxoCPT
 
         private static string GetCurrentParticipantId()
         {
-            var gm = GameManager.Instance;
-            var pid = (gm != null ? gm.ParticipantId : null);
-
-            if (string.IsNullOrWhiteSpace(pid))
-                pid = "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            return pid;
+            EnsureParticipantId();
+            return CurrentParticipantId;
         }
 
         // ---------- Firebase upload ----------
 
-        private static void UploadToFirebase(Report r, string sessionId)
+        private static void UploadToFirebase(Report r, string sessionId, string clientUtc, int attempt)
         {
             var svc = FirebaseService.Instance;
             if (svc == null) return;
@@ -254,17 +316,21 @@ namespace MoxoCPT
                 string.IsNullOrWhiteSpace(r.IslandId) ? "UNKNOWN" : r.IslandId);
             var key     = $"t{(r.TrialIndex >= 0 ? r.TrialIndex.ToString() : "x")}";
 
-            var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{safeIsland}/{key}";
-            var json = BuildCPTTrialJson(r, sessionId);
+            // Attempt segment keeps re-runs of the SAME island from overwriting each
+            // other (this path uses PUT, so without it a replay would clobber attempt 1).
+            var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{safeIsland}/a{attempt}/{key}";
+            var json = BuildCPTTrialJson(r, sessionId, clientUtc, attempt);
 
             svc.PutJson(path, json);
         }
 
-        private static string BuildCPTTrialJson(Report r, string sessionId)
+        private static string BuildCPTTrialJson(Report r, string sessionId, string clientUtc, int attempt)
         {
             var sb = new StringBuilder(512);
             sb.Append(FirebaseService.JS("participant_id",              r.ParticipantId));
             sb.Append(FirebaseService.JS("session_id",                  sessionId));
+            sb.Append(FirebaseService.JS("client_utc",                  clientUtc));
+            sb.Append(FirebaseService.JN("attempt",                     attempt));
             sb.Append(FirebaseService.JN("trial_index",                 r.TrialIndex));
             sb.Append(FirebaseService.JS("phase",                       r.Phase));
             sb.Append(FirebaseService.JN("phase_trial_index",           r.PhaseTrialIndex));
