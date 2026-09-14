@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MoxoCPT;
 using UnityEngine;
@@ -24,6 +25,11 @@ public class EndGameCutscene : MonoBehaviour
     public bool allowSkip = true;
     public float minUnskippableSeconds = 1.5f;
 
+    [Tooltip("Shown as a browser-level notification banner (outside Unity's UI, bottom of the page) for as " +
+             "long as the video plays, so the participant knows they can skip to the results screen. Only " +
+             "shown when allowSkip is true.")]
+    public string skipHintMessage = "Press ENTER to skip to your results";
+
     [Header("Rendering")]
     [Tooltip("If true, renders on camera near plane. If false, uses RenderTexture + RawImage.")]
     public bool renderToCamera = false;
@@ -46,6 +52,27 @@ public class EndGameCutscene : MonoBehaviour
 
     [Tooltip("Optional TextMeshPro: digits only (same total). Use this OR fourIslandTotalScoreDigits.")]
     public TextMeshProUGUI fourIslandTotalScoreDigitsTMP;
+
+    [Header("Post-Ending Redirect (WebGL)")]
+    [Tooltip("On WebGL, pressing Space on the ending screen redirects the browser tab to this URL " +
+             "(e.g. Prolific completion link). The ending image already shows the instruction to the participant.")]
+    public string redirectUrl = "https://app.prolific.com/submissions/complete?cc=CVJKWPDM";
+
+    [Tooltip("If set, appends the participant ID to redirectUrl as this query param (default \"num\", matching " +
+             "the same param Umaki reads on the way in from Prolific, e.g. &num=24756_2026-07-12), so a " +
+             "downstream survey (e.g. Qualtrics embedded data) can capture it and join its responses to this " +
+             "game session. Leave blank to redirect with no ID appended.")]
+    public string participantIdQueryParam = "num";
+
+    [Tooltip("If true, echoes a counterbalance/condition flag (e.g. Qualtrics's __js_condition) from THIS " +
+             "page's own incoming URL back out onto redirectUrl, under jsConditionQueryParam, so a value set " +
+             "by a survey BEFORE the game survives the round trip to whatever survey comes AFTER the game. " +
+             "Uncheck to revert to the old num-only redirect with no code changes.")]
+    public bool forwardJsCondition = true;
+
+    [Tooltip("Query param name for the counterbalance flag, both when reading it from this page's own URL " +
+             "and when appending it to redirectUrl. Must match whatever the upstream survey names it.")]
+    public string jsConditionQueryParam = "__js_condition";
 
     [Header("WebGL Buffering")]
     [Tooltip("How long to wait for the video to buffer before skipping (seconds). Increase for slow connections.")]
@@ -208,11 +235,14 @@ public class EndGameCutscene : MonoBehaviour
         _vp.Play();
         VideoLoadingScreen.Hide();
 
+        if (allowSkip)
+            WebGLSkipHint.Show(skipHintMessage);
+
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, 0.25f));
 
         float t = 0f;
-        float stallTimer = 0f;
+        var stallState = new CutsceneVideoPlayback.StallRecoveryState();
         bool playbackStarted = false;
 
         while (!_videoEnded)
@@ -235,14 +265,16 @@ public class EndGameCutscene : MonoBehaviour
                 t += Time.unscaledDeltaTime;
             }
 
-            if (CutsceneVideoPlayback.UpdateStallTimer(_vp, playbackStarted, ref stallTimer))
+            if (CutsceneVideoPlayback.TickStallRecovery(_vp, _videoAudio, playbackStarted, ref stallState, log, "EndGameCutscene"))
             {
-                if (log) Debug.LogWarning("[EndGameCutscene] Playback stalled after tab/window change — continuing.");
+                if (log) Debug.LogWarning("[EndGameCutscene] Playback unrecoverable — continuing.");
                 break;
             }
 
             yield return null;
         }
+
+        WebGLSkipHint.Hide();
 
         if (fadeToBlack && fadeGroup)
             yield return StartCoroutine(CoFade(fadeGroup, fadeGroup.alpha, 1f, fadeDuration));
@@ -387,7 +419,60 @@ public class EndGameCutscene : MonoBehaviour
             yield return null;
 
         if (log) Debug.Log("[EndGameCutscene] Ending screen displayed.");
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        yield return CoWaitForSpaceThenRedirect();
+#endif
     }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    IEnumerator CoWaitForSpaceThenRedirect()
+    {
+        // Ignore any residual Space press left over from skipping the video.
+        float ignoreUntil = Time.unscaledTime + 0.2f;
+        while (true)
+        {
+            var kb = Keyboard.current;
+            if (Time.unscaledTime >= ignoreUntil && kb != null && kb.spaceKey.wasPressedThisFrame)
+                break;
+            yield return null;
+        }
+
+        string finalUrl = BuildRedirectUrlWithParticipantId();
+        if (log) Debug.Log($"[EndGameCutscene] Space pressed on ending screen — redirecting to {finalUrl}");
+        WebGLRedirect.Go(finalUrl);
+    }
+
+    string BuildRedirectUrlWithParticipantId()
+    {
+        string url = redirectUrl;
+        if (string.IsNullOrWhiteSpace(url)) return url;
+
+        if (!string.IsNullOrWhiteSpace(participantIdQueryParam))
+        {
+            string pid = GameManager.Instance != null ? GameManager.Instance.ParticipantCode : null;
+            if (!string.IsNullOrWhiteSpace(pid))
+                url = AppendQueryParam(url, participantIdQueryParam, pid);
+        }
+
+        // Toggleable independently of the participant ID above — uncheck forwardJsCondition in the
+        // Inspector to revert to the old num-only redirect without touching code.
+        if (forwardJsCondition && !string.IsNullOrWhiteSpace(jsConditionQueryParam))
+        {
+            string jsCond = GameManager.Instance != null ? GameManager.Instance.JsCondition : null;
+            if (!string.IsNullOrWhiteSpace(jsCond))
+                url = AppendQueryParam(url, jsConditionQueryParam, jsCond);
+        }
+
+        return url;
+    }
+
+    static string AppendQueryParam(string url, string key, string value)
+    {
+        char separator = url.Contains("?") ? '&' : '?';
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
+    }
+#endif
 
 #if UNITY_EDITOR
     IEnumerator CoShowEndingScreenThenExitEditor()

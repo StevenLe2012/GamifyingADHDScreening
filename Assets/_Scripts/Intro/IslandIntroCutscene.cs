@@ -206,7 +206,7 @@ public class IslandIntroCutscene : MonoBehaviour
             yield return StartCoroutine(CoFade(fadeGroup, 1f, 0f, 0.25f));
 
         float t = 0f;
-        float stallTimer = 0f;
+        var stallState = new CutsceneVideoPlayback.StallRecoveryState();
         bool playbackStarted = false;
 
         while (!_videoEnded)
@@ -229,9 +229,9 @@ public class IslandIntroCutscene : MonoBehaviour
                 t += Time.unscaledDeltaTime;
             }
 
-            if (CutsceneVideoPlayback.UpdateStallTimer(_vp, playbackStarted, ref stallTimer))
+            if (CutsceneVideoPlayback.TickStallRecovery(_vp, _videoAudio, playbackStarted, ref stallState, log, "IslandIntroCutscene"))
             {
-                if (log) Debug.LogWarning("[IslandIntroCutscene] Playback stalled after tab/window change — continuing.");
+                if (log) Debug.LogWarning("[IslandIntroCutscene] Playback unrecoverable — continuing.");
                 break;
             }
 

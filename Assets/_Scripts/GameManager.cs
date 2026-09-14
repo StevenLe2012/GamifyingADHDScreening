@@ -17,7 +17,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private string participantNumber = "";
     [SerializeField] private string participantId = ""; // legacy free-form fallback
 
+    [Tooltip("Counterbalance/condition flag read verbatim from this page's own URL (e.g. Qualtrics's " +
+             "__js_condition), if present, so it can be echoed back out on the post-ending redirect. " +
+             "Empty if this run's URL never had it (e.g. Study 1, or before this was wired up).")]
+    [SerializeField] private string jsCondition = "";
+
     public string ParticipantNumber => participantNumber;
+    public string JsCondition => jsCondition;
 
     private static string PadCode(string raw)
     {
@@ -41,11 +47,22 @@ public class GameManager : MonoBehaviour
     {
         get
         {
-            var code = PadCode(participantNumber);
             var date = DateTime.Today.ToString("yyyy-MM-dd");
+            var code = ParticipantCode;
+            return code.StartsWith("P_") ? code : $"{code}_{date}";
+        }
+    }
 
-            if (!string.IsNullOrWhiteSpace(code)) return $"{code}_{date}";
-            if (!string.IsNullOrWhiteSpace(participantId)) return $"{Sanitize(participantId)}_{date}";
+    /// <summary>Same resolution as ParticipantId (num > pid > timestamp fallback) but without the
+    /// trailing "_yyyy-MM-dd" join suffix — use this when only the raw participant code is wanted
+    /// (e.g. echoing ?num= back out to a downstream survey redirect).</summary>
+    public string ParticipantCode
+    {
+        get
+        {
+            var code = PadCode(participantNumber);
+            if (!string.IsNullOrWhiteSpace(code)) return code;
+            if (!string.IsNullOrWhiteSpace(participantId)) return Sanitize(participantId);
             return "P_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
         }
     }
@@ -301,13 +318,16 @@ public class GameManager : MonoBehaviour
 
             // ?num=12345  → 5-digit participant code
             // ?pid=MY_ID  → legacy free-form fallback
+            // ?__js_condition=0/1 → Qualtrics counterbalance flag, echoed back out on redirect
             string num = GetQueryParam(url, "num");
             string pid = GetQueryParam(url, "pid");
+            string jsCond = GetQueryParam(url, "__js_condition");
 
             if (!string.IsNullOrEmpty(num)) participantNumber = num;
             if (!string.IsNullOrEmpty(pid)) participantId     = pid;
+            if (!string.IsNullOrEmpty(jsCond)) jsCondition    = jsCond;
 
-            Debug.Log($"[GameManager] URL → ParticipantId = '{ParticipantId}'");
+            Debug.Log($"[GameManager] URL → ParticipantId = '{ParticipantId}', JsCondition = '{jsCondition}'");
         }
         catch (Exception e)
         {

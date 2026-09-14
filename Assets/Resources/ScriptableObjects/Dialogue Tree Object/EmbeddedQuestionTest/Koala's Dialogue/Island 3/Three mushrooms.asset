@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Three mushrooms
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: ad141d58f6b29354da70cd7bd2771d89, type: 3}
-  subtitle: 'Kola: Three mushrooms on the label. That''s it. That''s all we needed
+  subtitle: 'Koala: Three mushrooms on the label. That''s it. That''s all we needed
     to know.'
   character: Koala

@@ -1584,6 +1584,10 @@ namespace MoxoCPT
                 KoalaStandIdle();
 
                 float dpSeconds = ComputePhaseSeconds(_dpPlan, trialsPerPhase);
+                // Harmless no-op unless trialLockedSoaSchedule is enabled on the DistractorSystem —
+                // StartDP only receives a wall-clock budget, not a trial count, but the trial-locked
+                // mode's balanced rotation needs the trial count up front.
+                distractors?.SetTrialLockedTotalTrials(trialsPerPhase);
                 distractors?.StartDP(_currentIslandId, _runSeed, dpSeconds);
             }
             else
@@ -1627,6 +1631,11 @@ namespace MoxoCPT
                 if (showProgressDisplay) progressDisplay?.UpdateCount(globalStartIndex + i + 1);
 
                 long onsetMs = (long)(Time.realtimeSinceStartup * 1000.0f);
+
+                // Harmless no-op unless trialLockedSoaSchedule is enabled — fires exactly one
+                // distractor at onsetMs + fixed SOA, for a fixed duration, independent of isi.
+                if (phaseName == "DP")
+                    distractors?.OnTrialStimulusOnset(onsetMs, dur, isi);
 
                 var report = new Report();
                 report.ResetReport();

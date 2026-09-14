@@ -5318,8 +5318,11 @@ MonoBehaviour:
   correctCanvas: {fileID: 428820774}
   incorrectCanvas: {fileID: 1397526291}
   hintUI: {fileID: 856385492}
-  targetNote: "TARGET \u2014 Press Space (only ONCE)"
-  nonTargetNote: "NON-TARGET \u2014 Don\u2019t press Space"
+  targetNote: "<color=green>TARGET \u2014 Press the Spacebar ONCE</color>"
+  nonTargetNote: "<color=red>NON-TARGET \u2014 Don\u2019t press Space</color>"
+  preTrainingNote: Press the Spacebar ONCE as quickly as possible, even if the TARGET
+    has disappeared
+  preTrainingNoteSeconds: 3
   instructionCard: {fileID: 0}
   instructionNote: PREVIEW OF ALL CARDS
   instructionSeconds: 5
@@ -5327,13 +5330,17 @@ MonoBehaviour:
   allowSkipInstructionOnPress: 0
   lockCardUntilCountdownEnds: 1
   feedbackHoldSeconds: 0.7
+  interCardIntervalSeconds: 1
+  trainingCompleteNote: Heads up! The cards will disappear much faster in the actual
+    game. Stay focused and react quickly!
+  trainingCompleteNoteSeconds: 3
   audioSource: {fileID: 0}
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
   trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
   trainingWindowVolume: 1
-  perCardSeconds: 3
+  perCardSeconds: 2
   targetCard: {fileID: 1350871891}
   nonTargetCards:
   - {fileID: 1247118905}
@@ -5342,7 +5349,7 @@ MonoBehaviour:
   - {fileID: 376538976}
   - {fileID: 898139150}
   totalTargetsInTraining: 2
-  totalNonTargetsInTraining: 3
+  totalNonTargetsInTraining: 2
   interleaveTargets: 1
   trainingRoot: {fileID: 0}
   logVerbose: 1
@@ -26979,8 +26986,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
+      propertyPath: allowOverlap
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
       propertyPath: maxOnSeconds
       value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: maxSimultaneous
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -26991,6 +27008,11 @@ PrefabInstance:
         type: 3}
       propertyPath: includeComboEpisodes
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: trialLockedSoaSchedule
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -27026,7 +27048,7 @@ PrefabInstance:
         type: 3}
       propertyPath: entries.Array.data[0].clip
       value: 
-      objectReference: {fileID: 8300000, guid: c3c64a533a95e244b9ee1d0a997fb175, type: 3}
+      objectReference: {fileID: 8300000, guid: 6bae7f9855c835746a9ff3f951a2d907, type: 3}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
       propertyPath: entries.Array.data[1].clip
@@ -27051,7 +27073,7 @@ PrefabInstance:
         type: 3}
       propertyPath: entries.Array.data[5].clip
       value: 
-      objectReference: {fileID: 8300000, guid: bb191876b6c3d764bbc633567888f23d, type: 3}
+      objectReference: {fileID: 8300000, guid: c8b12ee1e7542a042a72c939e8a4545b, type: 3}
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
       propertyPath: entries.Array.data[0].weight
@@ -27085,7 +27107,7 @@ PrefabInstance:
     - target: {fileID: 4965628946055167047, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
       propertyPath: singlePresentationsPerDistractor
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4965628946055167100, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -27294,6 +27316,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
+      propertyPath: isiMaxSeconds
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
       propertyPath: midPhaseAudio
       value: 
       objectReference: {fileID: 8300000, guid: 6dbaf978da194ad40bea75b3d0870621, type: 3}
@@ -27340,7 +27367,7 @@ PrefabInstance:
     - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
       propertyPath: maxConsecutiveSameDuration
-      value: 4
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -27389,6 +27416,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
+      propertyPath: dpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[2].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
       propertyPath: ndpBuckets.Array.data[0].nonTargetCount
       value: 5
       objectReference: {fileID: 0}
@@ -27401,6 +27443,21 @@ PrefabInstance:
         type: 3}
       propertyPath: ndpBuckets.Array.data[2].nonTargetCount
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[2].durationSeconds
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 8799840781638363115, guid: 44a09d4ecce842d4b9f584279a19cc96,
         type: 3}
@@ -36212,8 +36269,11 @@ MonoBehaviour:
   correctCanvas: {fileID: 215409144}
   incorrectCanvas: {fileID: 1130365510}
   hintUI: {fileID: 856385492}
-  targetNote: "TARGET \u2014 Press Space (only ONCE)"
-  nonTargetNote: "NON-TARGET \u2014 Don\u2019t press Space"
+  targetNote: "<color=green>TARGET \u2014 Press the Spacebar ONCE</color>"
+  nonTargetNote: "<color=red>NON-TARGET \u2014 Don\u2019t press Space</color>"
+  preTrainingNote: Press the Spacebar ONCE as quickly as possible, even if the TARGET
+    has disappeared
+  preTrainingNoteSeconds: 3
   instructionCard: {fileID: 0}
   instructionNote: PREVIEW OF ALL CARDS
   instructionSeconds: 5
@@ -36221,13 +36281,17 @@ MonoBehaviour:
   allowSkipInstructionOnPress: 0
   lockCardUntilCountdownEnds: 1
   feedbackHoldSeconds: 0.7
+  interCardIntervalSeconds: 1
+  trainingCompleteNote: Heads up! The cards will disappear much faster in the actual
+    game. Stay focused and react quickly!
+  trainingCompleteNoteSeconds: 3
   audioSource: {fileID: 0}
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
   trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
   trainingWindowVolume: 1
-  perCardSeconds: 3
+  perCardSeconds: 2.5
   targetCard: {fileID: 2021071827}
   nonTargetCards:
   - {fileID: 590120664}
@@ -36236,7 +36300,7 @@ MonoBehaviour:
   - {fileID: 871995104}
   - {fileID: 686921679}
   totalTargetsInTraining: 2
-  totalNonTargetsInTraining: 3
+  totalNonTargetsInTraining: 2
   interleaveTargets: 1
   trainingRoot: {fileID: 0}
   logVerbose: 1
@@ -39206,7 +39270,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: ec6d1e06cf254704892a0f6598bacd3a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 5ae9410862a5a7746a583f18679d1fa0, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -41190,8 +41254,9 @@ MonoBehaviour:
   ending1FileName: Ending1.mp4
   ending2FileName: Ending2.mp4
   audioEnabled: 1
-  allowSkip: 0
+  allowSkip: 1
   minUnskippableSeconds: 1.5
+  skipHintMessage: Press ENTER to skip to your results
   renderToCamera: 1
   targetCamera: {fileID: 77373609}
   rawImage: {fileID: 0}
@@ -41202,7 +41267,14 @@ MonoBehaviour:
   endingImage: {fileID: 965482457}
   fourIslandTotalScoreDigits: {fileID: 0}
   fourIslandTotalScoreDigitsTMP: {fileID: 231812273}
+  redirectUrl: https://imtllucca.fra1.qualtrics.com/jfe/form/SV_6szI7WcNstqbWHI
+  participantIdQueryParam: num
+  forwardJsCondition: 1
+  jsConditionQueryParam: __js_condition
   prepareTimeout: 30
+  loadingPageSprite: {fileID: 0}
+  loadingScreenMinSeconds: 3
+  loadingScreenMaxSeconds: 30
   editorEndingPreviewHoldSeconds: 10
   log: 1
 --- !u!1001 &1029786256
@@ -46118,8 +46190,11 @@ MonoBehaviour:
   correctCanvas: {fileID: 2132615915}
   incorrectCanvas: {fileID: 1593292998}
   hintUI: {fileID: 856385492}
-  targetNote: "TARGET \u2014 Press Space (only ONCE)"
-  nonTargetNote: "NON-TARGET \u2014 Don\u2019t press Space"
+  targetNote: "<color=green>TARGET \u2014 Press the Spacebar ONCE</color>"
+  nonTargetNote: "<color=red>NON-TARGET \u2014 Don\u2019t press Space</color>"
+  preTrainingNote: Press the Spacebar ONCE as quickly as possible, even if the TARGET
+    has disappeared
+  preTrainingNoteSeconds: 3
   instructionCard: {fileID: 0}
   instructionNote: PREVIEW OF ALL CARDS
   instructionSeconds: 5
@@ -46127,13 +46202,17 @@ MonoBehaviour:
   allowSkipInstructionOnPress: 0
   lockCardUntilCountdownEnds: 1
   feedbackHoldSeconds: 0.7
+  interCardIntervalSeconds: 1
+  trainingCompleteNote: Heads up! The cards will disappear much faster in the actual
+    game. Stay focused and react quickly!
+  trainingCompleteNoteSeconds: 3
   audioSource: {fileID: 0}
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
   trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
   trainingWindowVolume: 1
-  perCardSeconds: 3
+  perCardSeconds: 2
   targetCard: {fileID: 1725550738}
   nonTargetCards:
   - {fileID: 2082263241}
@@ -46142,7 +46221,7 @@ MonoBehaviour:
   - {fileID: 1188794523}
   - {fileID: 1960291104}
   totalTargetsInTraining: 2
-  totalNonTargetsInTraining: 3
+  totalNonTargetsInTraining: 2
   interleaveTargets: 1
   trainingRoot: {fileID: 1122154088}
   logVerbose: 1
@@ -51029,8 +51108,11 @@ MonoBehaviour:
   correctCanvas: {fileID: 145904222}
   incorrectCanvas: {fileID: 1864344890}
   hintUI: {fileID: 856385492}
-  targetNote: "TARGET \u2014 Press Space (only ONCE)"
-  nonTargetNote: "NON-TARGET \u2014 Don\u2019t press Space"
+  targetNote: "<color=green>TARGET \u2014 Press the Spacebar ONCE</color>"
+  nonTargetNote: "<color=red>NON-TARGET \u2014 Don\u2019t press Space</color>"
+  preTrainingNote: Press the Spacebar ONCE as quickly as possible, even if the TARGET
+    has disappeared
+  preTrainingNoteSeconds: 3
   instructionCard: {fileID: 0}
   instructionNote: PREVIEW OF ALL CARDS
   instructionSeconds: 5
@@ -51038,13 +51120,17 @@ MonoBehaviour:
   allowSkipInstructionOnPress: 0
   lockCardUntilCountdownEnds: 1
   feedbackHoldSeconds: 0.7
+  interCardIntervalSeconds: 1
+  trainingCompleteNote: Heads up! The cards will disappear much faster in the actual
+    game. Stay focused and react quickly!
+  trainingCompleteNoteSeconds: 3
   audioSource: {fileID: 0}
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
   sfxVolume: 1
   trainingWindowClip: {fileID: 8300000, guid: 5ea7e68c944e21b418c238fde968caee, type: 3}
   trainingWindowVolume: 1
-  perCardSeconds: 3
+  perCardSeconds: 2
   targetCard: {fileID: 1822047889}
   nonTargetCards:
   - {fileID: 1363256457}
@@ -51053,7 +51139,7 @@ MonoBehaviour:
   - {fileID: 771530855}
   - {fileID: 1834072613}
   totalTargetsInTraining: 2
-  totalNonTargetsInTraining: 3
+  totalNonTargetsInTraining: 2
   interleaveTargets: 1
   trainingRoot: {fileID: 534942632}
   logVerbose: 1
@@ -51563,6 +51649,7 @@ MonoBehaviour:
   State: 0
   participantNumber: 
   participantId: 
+  jsCondition: 
   logStateChangeCallStack: 0
   respectUIFocusGuard: 1
   suppressAfterNarrativeSeconds: 0.25
@@ -68061,8 +68148,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
+      propertyPath: allowOverlap
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
       propertyPath: maxOnSeconds
       value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: maxSimultaneous
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -68073,6 +68170,11 @@ PrefabInstance:
         type: 3}
       propertyPath: includeComboEpisodes
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: trialLockedSoaSchedule
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -68118,7 +68220,7 @@ PrefabInstance:
         type: 3}
       propertyPath: entries.Array.data[2].clip
       value: 
-      objectReference: {fileID: 8300000, guid: 2e8c00b6735e8684988055d296acdcc8, type: 3}
+      objectReference: {fileID: 8300000, guid: 8014a2e314d166e4c91d1c451f5bb302, type: 3}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: entries.Array.data[3].clip
@@ -68128,12 +68230,12 @@ PrefabInstance:
         type: 3}
       propertyPath: entries.Array.data[4].clip
       value: 
-      objectReference: {fileID: 8300000, guid: 2c9596df9aa8702449bb7db65f14e795, type: 3}
+      objectReference: {fileID: 8300000, guid: e969b8322f488d643a890a456b27eb0f, type: 3}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: entries.Array.data[5].clip
       value: 
-      objectReference: {fileID: 8300000, guid: debb6f7283f86a249856ae8f68d8f4c6, type: 3}
+      objectReference: {fileID: 8300000, guid: 870cd80be53a5164194b0a1d6f9c952a, type: 3}
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: entries.Array.data[0].weight
@@ -68167,7 +68269,7 @@ PrefabInstance:
     - target: {fileID: 5104753105002371782, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: singlePresentationsPerDistractor
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5104753105002371836, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -68366,6 +68468,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
+      propertyPath: isiMaxSeconds
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
       propertyPath: midPhaseAudio
       value: 
       objectReference: {fileID: 8300000, guid: a67dec55533259341acc9cbb4b082139, type: 3}
@@ -68417,7 +68524,7 @@ PrefabInstance:
     - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
       propertyPath: maxConsecutiveSameDuration
-      value: 4
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -68466,6 +68573,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
+      propertyPath: dpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[2].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
       propertyPath: ndpBuckets.Array.data[0].nonTargetCount
       value: 5
       objectReference: {fileID: 0}
@@ -68478,6 +68600,21 @@ PrefabInstance:
         type: 3}
       propertyPath: ndpBuckets.Array.data[2].nonTargetCount
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[2].durationSeconds
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 8656371764792787306, guid: 6d21f2d0711427541ba91fed8822c670,
         type: 3}
@@ -72152,6 +72289,9 @@ MonoBehaviour:
   fadeGroup: {fileID: 0}
   fadeDuration: 0.35
   prepareTimeout: 30
+  loadingPageSprite: {fileID: 0}
+  loadingScreenMinSeconds: 3
+  loadingScreenMaxSeconds: 60
   log: 1
 --- !u!1 &1947499195
 GameObject:
@@ -75086,6 +75226,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
+      propertyPath: isiMaxSeconds
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
       propertyPath: midPhaseAudio
       value: 
       objectReference: {fileID: 8300000, guid: 68f9d46a4b3662a4792ba4d8aa34c66a, type: 3}
@@ -75132,7 +75277,7 @@ PrefabInstance:
     - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
       propertyPath: maxConsecutiveSameDuration
-      value: 4
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -75181,6 +75326,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
+      propertyPath: dpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[2].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
       propertyPath: ndpBuckets.Array.data[0].nonTargetCount
       value: 5
       objectReference: {fileID: 0}
@@ -75193,6 +75353,21 @@ PrefabInstance:
         type: 3}
       propertyPath: ndpBuckets.Array.data[2].nonTargetCount
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[2].durationSeconds
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 1498471376915521586, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -75291,8 +75466,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
+      propertyPath: allowOverlap
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
       propertyPath: maxOnSeconds
       value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: maxSimultaneous
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -75303,6 +75488,11 @@ PrefabInstance:
         type: 3}
       propertyPath: includeComboEpisodes
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
+        type: 3}
+      propertyPath: trialLockedSoaSchedule
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -75397,7 +75587,7 @@ PrefabInstance:
     - target: {fileID: 3043736677474171806, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
       propertyPath: singlePresentationsPerDistractor
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3043736677474171812, guid: f883bf36f09f1974b804eee7ea45465d,
         type: 3}
@@ -79633,6 +79823,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
+      propertyPath: isiMaxSeconds
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: isiMinSeconds
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
       propertyPath: midPhaseAudio
       value: 
       objectReference: {fileID: 8300000, guid: 3ed854ead6e10f043ad8b5ff68b4d3ac, type: 3}
@@ -79679,7 +79879,7 @@ PrefabInstance:
     - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: maxConsecutiveSameDuration
-      value: 4
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
@@ -79728,6 +79928,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
+      propertyPath: dpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: dpBuckets.Array.data[2].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
       propertyPath: ndpBuckets.Array.data[0].nonTargetCount
       value: 5
       objectReference: {fileID: 0}
@@ -79740,6 +79955,21 @@ PrefabInstance:
         type: 3}
       propertyPath: ndpBuckets.Array.data[2].nonTargetCount
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[0].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[1].durationSeconds
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: ndpBuckets.Array.data[2].durationSeconds
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 2029927924062347800, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
@@ -80043,8 +80273,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
+      propertyPath: allowOverlap
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
       propertyPath: maxOnSeconds
       value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: maxSimultaneous
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
@@ -80058,6 +80298,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
+      propertyPath: trialLockedSoaSchedule
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
       propertyPath: dpPlannedDurationSeconds
       value: 68
       objectReference: {fileID: 0}
@@ -80066,6 +80311,16 @@ PrefabInstance:
       propertyPath: entries.Array.data[4].obj
       value: 
       objectReference: {fileID: 1822610818}
+    - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: entries.Array.data[1].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 3537e6aaf5787f9419aafc0ff04d21e6, type: 3}
+    - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
+        type: 3}
+      propertyPath: entries.Array.data[5].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 4cf8a9b69c942d148a343d148f693a24, type: 3}
     - target: {fileID: 2512416057125173684, guid: a9f366228146f294aafd18dda36fd7ad,
         type: 3}
       propertyPath: entries.Array.data[0].weight

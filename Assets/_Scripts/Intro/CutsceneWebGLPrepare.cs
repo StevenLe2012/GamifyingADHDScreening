@@ -52,7 +52,12 @@ public static class CutsceneWebGLPrepare
             vp.url = playbackUrl;
         }
 
-        vp.skipOnDrop = prefetched ? false : true;
+        // Always drop frames to catch up rather than block on them — matches the
+        // skipOnDrop=true set at VideoPlayer creation. Forcing this false once
+        // prefetched used to freeze the visible frame (audio kept advancing) if
+        // decode/GPU upload hitched even briefly, since the player would refuse
+        // to skip the stuck frame to resync.
+        vp.skipOnDrop = true;
 
         if (!vp.isPrepared)
             vp.Prepare();

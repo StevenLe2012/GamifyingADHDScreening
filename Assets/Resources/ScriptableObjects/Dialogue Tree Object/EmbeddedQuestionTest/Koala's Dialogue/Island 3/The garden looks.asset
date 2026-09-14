@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: The garden looks
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1f40afca05517a24a831ac9057549306, type: 3}
-  subtitle: 'Kola: The garden looks so much better now.'
+  subtitle: 'Koala: The garden looks so much better now.'
   character: Koala

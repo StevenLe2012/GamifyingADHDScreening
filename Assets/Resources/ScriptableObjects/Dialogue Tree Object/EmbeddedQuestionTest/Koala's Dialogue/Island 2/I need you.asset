@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: I need you
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: d3e394dd5529f6049be349df12bc9ece, type: 3}
-  subtitle: 'Kola: I need you to know I almost kept one of those donuts.'
+  subtitle: 'Koala: I need you to know I almost kept one of those donuts.'
   character: Koala

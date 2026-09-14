@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Skulls watching
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 175140337ba3eba43ad0e382b5554779, type: 3}
-  subtitle: 'Kola: The skulls watching us the whole time? A little unsettling.
+  subtitle: 'Koala: The skulls watching us the whole time? A little unsettling.
 
 '
   character: Koala

@@ -349,10 +349,17 @@ public class TrainingCPTRunner : MonoBehaviour
     [Header("Explore Hint UI (notes shown during training)")]
     [Tooltip("Assign the ExploreHintUI in the scene (same one you use for countdowns).")]
     [SerializeField] private ExploreHintUI hintUI;
-    [Tooltip("Message to show while a TARGET is displayed.")]
-    [SerializeField] private string targetNote = "TARGET — Press Space";
-    [Tooltip("Message to show while a NON-TARGET is displayed.")]
-    [SerializeField] private string nonTargetNote = "NON-TARGET — Don’t press Space";
+    [Tooltip("Message to show while a TARGET is displayed. Supports TMP rich text (e.g. <color=green>).")]
+    [SerializeField] private string targetNote = "<color=green>TARGET — Press the Spacebar ONCE</color>";
+    [Tooltip("Message to show while a NON-TARGET is displayed. Supports TMP rich text (e.g. <color=red>).")]
+    [SerializeField] private string nonTargetNote = "<color=red>NON-TARGET — Don’t press Space</color>";
+
+    [Header("Pre-Training Note")]
+    [Tooltip("Shown once, as a static message (no countdown), before the first training card appears.")]
+    [SerializeField] private string preTrainingNote =
+        "Press the Spacebar ONCE as quickly as possible, even if the TARGET has disappeared";
+    [Tooltip("How long the pre-training note displays before training begins (seconds).")]
+    [SerializeField] private float preTrainingNoteSeconds = 3f;
 
     // ===================== NEW: INSTRUCTION CARD + NOTE =====================
     [Header("Instruction (NEW)")]
@@ -379,6 +386,20 @@ public class TrainingCPTRunner : MonoBehaviour
     [Header("Feedback Display")]
     [Tooltip("How long to keep Correct/Incorrect visible before moving to the next card.")]
     [SerializeField] private float feedbackHoldSeconds = 0.7f;
+
+    [Tooltip("Gap after a card disappears before the next one appears (seconds), to slow the pace down " +
+             "for training. A press during this gap still counts as the card's response (e.g. a late press " +
+             "on a target still scores correct) — feedback is only finalized once this gap elapses with no " +
+             "press. The hint note stays on screen unchanged during the gap and only updates once the next " +
+             "card appears.")]
+    [SerializeField] private float interCardIntervalSeconds = 1f;
+
+    [Header("Training Complete Note")]
+    [Tooltip("Shown once after the last training card, to prepare the player for real game speed.")]
+    [SerializeField] private string trainingCompleteNote =
+        "Heads up! The cards will disappear much faster in the actual game. Stay focused and react quickly!";
+    [Tooltip("How long the training-complete note stays on screen before hiding.")]
+    [SerializeField] private float trainingCompleteNoteSeconds = 3f;
 
     [Header("Audio (optional)")]
     [Tooltip("If null, the script will create a hidden 2D AudioSource at runtime.")]
@@ -708,6 +729,17 @@ public class TrainingCPTRunner : MonoBehaviour
         if (perCardSeconds < 0.25f) perCardSeconds = 0.5f;
         if (instructionSeconds < 0.25f) instructionSeconds = 0.5f;
 
+        // One-time heads-up before the first training card appears (static message, no countdown ticker).
+        // Deliberately no HideDialogueOptionsHint() here — the first card's ShowDialogueOptionsHint
+        // (top of the loop below) overwrites this text directly, same as every card-to-card transition.
+        // Hiding here first would race an untracked fade-out coroutine against that immediate re-show
+        // and could deactivate the hint right after the first card's note appears.
+        if (hintUI && preTrainingNoteSeconds > 0f && !string.IsNullOrWhiteSpace(preTrainingNote))
+        {
+            hintUI.ShowDialogueOptionsHint(preTrainingNote);
+            yield return new WaitForSecondsRealtime(preTrainingNoteSeconds);
+        }
+
         foreach (var step in order)
         {
             if (!_active) yield break;
@@ -735,7 +767,14 @@ public class TrainingCPTRunner : MonoBehaviour
 
             bool pressed = false;
             bool feedbackShown = false;
-            float t = seconds;
+            bool cardHidden = false;
+
+            // The card itself is only shown for its own "seconds" duration, but — for
+            // non-instruction cards — we keep listening for a response through the
+            // interval that follows before scoring a miss, so a late press during that
+            // gap still counts (e.g. target+late-press => correct).
+            float graceSeconds = isInstruction ? 0f : Mathf.Max(0f, interCardIntervalSeconds);
+            float t = seconds + graceSeconds;
 
             while (t > 0f)
             {
@@ -747,6 +786,14 @@ public class TrainingCPTRunner : MonoBehaviour
                     if (hintUI) hintUI.Hide();
                     StopAll();
                     yield break;
+                }
+
+                // Card disappears once its own display time is up; the note (hint) stays as-is
+                // and we keep listening for a response through the remaining grace window.
+                if (!cardHidden && t <= graceSeconds)
+                {
+                    step.card.gameObject.SetActive(false);
+                    cardHidden = true;
                 }
 
                 var kb = Keyboard.current;
@@ -787,10 +834,17 @@ public class TrainingCPTRunner : MonoBehaviour
                 continue;
             }
 
-            // If no press, decide correctness now (non-target + no press should show CORRECT)
+            if (!cardHidden)
+            {
+                step.card.gameObject.SetActive(false);
+                cardHidden = true;
+            }
+
+            // No press through the full display + grace window: decide correctness now
+            // (non-target + no press should show CORRECT; target + no press => incorrect).
             if (!feedbackShown)
             {
-                bool correct = isNonTarget; // non-target+no press => correct, target+no press => incorrect
+                bool correct = isNonTarget;
                 if (correctCanvas) correctCanvas.SetActive(correct);
                 if (incorrectCanvas) incorrectCanvas.SetActive(!correct);
                 PlaySfx(correct ? correctClip : incorrectClip);
@@ -801,13 +855,26 @@ public class TrainingCPTRunner : MonoBehaviour
                 yield return new WaitForSecondsRealtime(feedbackHoldSeconds);
 
             StopTrainingWindowCue();
-            if (hintUI) hintUI.Hide();
             HideAllFeedback();
-            step.card.gameObject.SetActive(false);
+
+            // Hint intentionally was never hidden above — it only changes when the next
+            // card's ShowDialogueOptionsHint call (top of the next loop iteration) replaces it.
         }
 
         StopTrainingWindowCue();
         TurnAllTrainingCards(false);
+
+        if (hintUI && !string.IsNullOrWhiteSpace(trainingCompleteNote))
+        {
+            hintUI.ShowDialogueOptionsHint(trainingCompleteNote);
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, trainingCompleteNoteSeconds));
+            hintUI.HideDialogueOptionsHint();
+        }
+        else if (hintUI)
+        {
+            hintUI.Hide();
+        }
+
         _active = false;
 
         MarkCompletedForIsland(islandId);

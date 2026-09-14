@@ -1070,6 +1070,38 @@ namespace MoxoCPT
         [Min(1)]
         [SerializeField] private int occurrencesPerDistractor = 3;
 
+        // ================================================================
+        // TRIAL-LOCKED SOA MODE (Study 2)
+        // One distractor per DP trial, fired at a fixed offset from that
+        // trial's own stimulus onset, for a fixed duration — independent of
+        // that trial's ISI. Driven externally (OnTrialStimulusOnset) from
+        // ChangeShapes rather than by a self-contained continuous coroutine,
+        // so it takes priority over all other modes (including Fixed
+        // Occurrences) when enabled, and starts no _dpCo loop of its own.
+        // Default OFF: existing Study 1 modes are completely unaffected.
+        // ================================================================
+        [Header("Trial-Locked SOA Mode (DP only, Study 2)")]
+        [Tooltip("If ON: exactly one distractor fires per DP trial at stimulus_onset + trialLockedSoaSeconds, " +
+                 "for a fixed trialLockedDurationSeconds, regardless of that trial's ISI. Takes priority over " +
+                 "Fixed Occurrences / Condition Catalog / Strict when enabled. Character selection reuses the " +
+                 "same equal-share (1/6) balanced rotation as Condition Catalog. Default OFF — existing Study 1 " +
+                 "data/behavior is unaffected unless this is explicitly turned on.")]
+        [SerializeField] private bool trialLockedSoaSchedule = false;
+
+        [Tooltip("Fixed onset offset from stimulus onset (SOA), in seconds. Spec default: 0.1s (100ms).")]
+        [SerializeField] private float trialLockedSoaSeconds = 0.1f;
+
+        [Tooltip("Fixed distractor duration, in seconds, independent of ISI. Spec default: 0.7s (700ms).")]
+        [SerializeField] private float trialLockedDurationSeconds = 0.7f;
+
+        // Set via SetTrialLockedTotalTrials() before StartDP (StartDP only receives a wall-clock
+        // DP budget, not a trial count, but the balanced rotation needs to know trial count up front).
+        private int _trialLockedTotalTrials = 0;
+        private List<int> _trialLockedOrder;      // one distractor index per DP trial, built once per run
+        private int _trialLockedCursor = 0;
+        private List<int> _trialLockedFallbackBag; // only used if totalTrials isn't a multiple of 6
+        private int _trialLockedFallbackLast = -1;
+
         // Set each DP start: real runs use StartDP(islandId, seed, dpSeconds) from ChangeShapes (stimulus+ISI sum).
         // Two-arg StartDP / StartSystem use FallbackDpBudgetSeconds for editor testing only.
         private float _dpBudgetSeconds;
@@ -1170,6 +1202,16 @@ namespace MoxoCPT
             _curPhaseTrialIndex = phaseTrialIndex;
         }
 
+        /// <summary>
+        /// Call once, before StartDP, on any run where trialLockedSoaSchedule may be used —
+        /// harmless no-op otherwise. Lets the balanced 1/6 rotation be built up front for the
+        /// exact number of DP trials, reusing TryBuildEqualSinglesPlannedEpisodes.
+        /// </summary>
+        public void SetTrialLockedTotalTrials(int totalDpTrials)
+        {
+            _trialLockedTotalTrials = Mathf.Max(0, totalDpTrials);
+        }
+
         public void StartDP(string islandId, int seed, float dpSecondsOverride)
         {
             _dpBudgetSeconds = Mathf.Max(0.001f, dpSecondsOverride);
@@ -1238,7 +1280,10 @@ namespace MoxoCPT
             int combinedSeed = CombineSeeds(seed, HashIslandId(islandId), unchecked((int)0xC0DEC0DE));
             _dpCombinedSeed = combinedSeed;
             _rng = new System.Random(combinedSeed);
-            string runMode = fixedOccurrencesMode ? "FixedOccurrences" : conditionCatalogSchedule ? "ConditionCatalog" : strictExactSchedule ? "Strict" : "Legacy";
+            string runMode = trialLockedSoaSchedule ? "TrialLockedSOA100_700ms"
+                : fixedOccurrencesMode ? "FixedOccurrences"
+                : conditionCatalogSchedule ? "ConditionCatalog"
+                : strictExactSchedule ? "Strict" : "Legacy";
             LoggingDistractors.SetRunMetadata(
                 seed,
                 combinedSeed,
@@ -1269,7 +1314,21 @@ namespace MoxoCPT
 
             _usePlannedDistractorOffRows = false;
 
-            if (fixedOccurrencesMode)
+            // Trial-locked reset (harmless if the mode is off).
+            _trialLockedOrder = null;
+            _trialLockedCursor = 0;
+            _trialLockedFallbackBag = null;
+            _trialLockedFallbackLast = -1;
+
+            if (trialLockedSoaSchedule)
+            {
+                // Reactive mode: no continuous coroutine. Scheduling is driven per-trial by
+                // OnTrialStimulusOnset(), called from ChangeShapes at each DP trial's stimulus onset.
+                _usePlannedDistractorOffRows = true;
+                BuildTrialLockedOrder(combinedSeed);
+                _dpCo = null;
+            }
+            else if (fixedOccurrencesMode)
             {
                 _usePlannedDistractorOffRows = true;
                 _dpCo = StartCoroutine(CoRunDP_FixedOccurrences(combinedSeed));
@@ -2076,6 +2135,158 @@ namespace MoxoCPT
                 var e = entries[idx];
                 Log($"OFF: D{idx + 1} '{(e != null && e.obj ? e.obj.name : "NULL")}' (active={_activeIdx.Count})");
             }
+        }
+
+        // ============================================================
+        // TRIAL-LOCKED SOA SCHEDULER (Study 2)
+        // Reactive, not continuous: ChangeShapes calls OnTrialStimulusOnset()
+        // once per DP trial, at that trial's own stimulus onset. Reuses
+        // ActivatePlanned/DeactivatePlanned verbatim (same ON/OFF logging,
+        // same equal-share weight label, same audio loop+hard-stop behavior
+        // as every other mode) — only the trigger/timing is new.
+        // ============================================================
+
+        /// <summary>
+        /// Builds one distractor index per DP trial using the same equal-share balanced-order
+        /// logic as Condition Catalog (TryBuildEqualSinglesPlannedEpisodes + the no-adjacent-repeat
+        /// greedy orderer), treating each trial as a single "episode" of length 1. Falls back to a
+        /// shuffled no-immediate-repeat bag (still balanced, just without the global fairness/ordering
+        /// guarantee) if the trial count isn't an exact multiple of 6.
+        /// </summary>
+        private void BuildTrialLockedOrder(int combinedSeed)
+        {
+            _trialLockedOrder = null;
+            _trialLockedCursor = 0;
+
+            int totalTrials = _trialLockedTotalTrials;
+            if (totalTrials <= 0)
+            {
+                Debug.LogWarning("[Distractors] Trial-locked SOA: SetTrialLockedTotalTrials() was not called " +
+                    "(or was 0) before StartDP — falling back to a shuffled bag for character selection " +
+                    "(still balanced, but without the exact-equal/no-adjacent-repeat guarantee).", this);
+                return;
+            }
+
+            if (entries.Count != 6)
+            {
+                Debug.LogError($"[Distractors] Trial-locked SOA requires exactly 6 distractors. Found {entries.Count}. Falling back to shuffled-bag selection.", this);
+                return;
+            }
+
+            if (totalTrials % 6 != 0)
+            {
+                Debug.LogWarning($"[Distractors] Trial-locked SOA: totalDpTrials={totalTrials} is not a multiple of 6 " +
+                    "— exact equal-share balance across all trials isn't possible. Falling back to a shuffled " +
+                    "no-immediate-repeat bag (balanced to within 1 exposure, but without the strict global " +
+                    "fairness/ordering guarantee Condition Catalog gives for multiples of 6).", this);
+                return;
+            }
+
+            int k = totalTrials / 6;
+            if (!TryBuildEqualSinglesPlannedEpisodes(totalTrials, k, 1, 1, _rng, out List<ConditionPlannedEpisode> pool, out string buildErr))
+            {
+                Debug.LogError($"[Distractors] Trial-locked SOA: failed to build balanced order ({buildErr}). Falling back to shuffled-bag selection.", this);
+                return;
+            }
+
+            List<ConditionPlannedEpisode> ordered;
+            int maxAtt = Mathf.Max(1, conditionOrderBuildAttempts);
+            bool ok = false;
+            ordered = null;
+            for (int attempt = 0; attempt < maxAtt; attempt++)
+            {
+                int attemptSeed = CombineSeeds(combinedSeed, attempt, unchecked((int)0x7514104C));
+                var rng = new System.Random(attemptSeed);
+                if (TryBuildGreedyPlannedNoAdjacentOverlap(rng, pool, out ordered))
+                {
+                    ok = true;
+                    break;
+                }
+            }
+            if (!ok)
+            {
+                Debug.LogWarning("[Distractors] Trial-locked SOA: could not order with no adjacent same " +
+                    "distractor after " + maxAtt + " attempts; using unconstrained shuffle.", this);
+                ordered = new List<ConditionPlannedEpisode>(pool);
+                Shuffle(ordered, _rng);
+            }
+
+            _trialLockedOrder = new List<int>(ordered.Count);
+            for (int i = 0; i < ordered.Count; i++)
+                _trialLockedOrder.Add(ordered[i].spec.a);
+
+            Log($"TRIAL-LOCKED SOA plan: {totalTrials} trials, {k}x per distractor (equal), " +
+                $"SOA={trialLockedSoaSeconds * 1000f:0}ms, duration={trialLockedDurationSeconds * 1000f:0}ms.");
+        }
+
+        private int NextTrialLockedIndex()
+        {
+            if (_trialLockedOrder != null && _trialLockedCursor < _trialLockedOrder.Count)
+                return _trialLockedOrder[_trialLockedCursor++];
+
+            // Fallback path: trial count unknown ahead of time, or not a multiple of 6.
+            if (_trialLockedFallbackBag == null || _trialLockedFallbackBag.Count == 0)
+            {
+                _trialLockedFallbackBag = new List<int> { 0, 1, 2, 3, 4, 5 };
+                Shuffle(_trialLockedFallbackBag, _rng);
+                if (_trialLockedFallbackBag.Count > 1 && _trialLockedFallbackBag[0] == _trialLockedFallbackLast)
+                    (_trialLockedFallbackBag[0], _trialLockedFallbackBag[1]) = (_trialLockedFallbackBag[1], _trialLockedFallbackBag[0]);
+            }
+
+            int pick = _trialLockedFallbackBag[0];
+            _trialLockedFallbackBag.RemoveAt(0);
+            _trialLockedFallbackLast = pick;
+            return pick;
+        }
+
+        /// <summary>
+        /// Call once per DP trial, right when that trial's stimulus onset is captured. No-ops unless
+        /// trialLockedSoaSchedule is on. stimulusDurationSeconds/isiSeconds are only used for the
+        /// defensive next-trial-overlap check below — they don't change the fixed SOA/duration.
+        /// </summary>
+        public void OnTrialStimulusOnset(long stimulusOnsetMs, float stimulusDurationSeconds, float isiSeconds)
+        {
+            if (!trialLockedSoaSchedule || !_dpRunning) return;
+
+            float soaMs = Mathf.Max(0f, trialLockedSoaSeconds) * 1000f;
+            float durMs = Mathf.Max(0f, trialLockedDurationSeconds) * 1000f;
+
+            // Defensive check only — never blocks scheduling, just flags if a future ISI/duration
+            // change would let the distractor window bleed into the next trial's stimulus onset.
+            float nextOnsetOffsetMs = Mathf.Max(0f, stimulusDurationSeconds) * 1000f + Mathf.Max(0f, isiSeconds) * 1000f;
+            if (soaMs + durMs > nextOnsetOffsetMs)
+            {
+                Debug.LogWarning(
+                    $"[Distractors] Trial-locked SOA: onset+duration ({soaMs + durMs:0}ms) would reach past the " +
+                    $"next trial's stimulus onset ({nextOnsetOffsetMs:0}ms away, from this trial's duration+ISI). " +
+                    "The distractor window may bleed into the next trial. Re-check trialLockedSoaSeconds / " +
+                    "trialLockedDurationSeconds against the current stimulus duration / ISI range.", this);
+            }
+
+            int idx = NextTrialLockedIndex();
+            if (!IsValid(idx)) return;
+
+            StartCoroutine(CoFireTrialLockedDistractor(stimulusOnsetMs, idx));
+        }
+
+        private IEnumerator CoFireTrialLockedDistractor(long stimulusOnsetMs, int idx)
+        {
+            float soaSeconds = Mathf.Max(0f, trialLockedSoaSeconds);
+            float durationSeconds = Mathf.Max(0f, trialLockedDurationSeconds);
+
+            float elapsedSeconds = Mathf.Max(0f, (NowMs() - stimulusOnsetMs) / 1000f);
+            float remaining = soaSeconds - elapsedSeconds;
+            if (remaining > 0f)
+                yield return new WaitForSecondsRealtime(remaining);
+
+            if (!_dpRunning) yield break;
+
+            ActivatePlanned(idx, durationSeconds);
+
+            yield return new WaitForSecondsRealtime(durationSeconds);
+
+            if (!_dpRunning) yield break;
+            DeactivatePlanned(idx);
         }
 
         // ============================================================

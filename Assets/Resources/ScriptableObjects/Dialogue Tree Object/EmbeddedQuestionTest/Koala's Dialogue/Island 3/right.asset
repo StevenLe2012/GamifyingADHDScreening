@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: right
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 62f5da6213f9b2a4b8b290b1a732dab3, type: 3}
-  subtitle: 'Kola: Right? Clear instructions.'
+  subtitle: 'Koala: Right? Clear instructions.'
   character: Koala

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: honestly smart
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 42fcf871d297d4949842ef7331820aa3, type: 3}
-  subtitle: 'Kola: Honestly smart. One wrong mushroom and it''s a whole situation.'
+  subtitle: 'Koala: Honestly smart. One wrong mushroom and it''s a whole situation.'
   character: Koala

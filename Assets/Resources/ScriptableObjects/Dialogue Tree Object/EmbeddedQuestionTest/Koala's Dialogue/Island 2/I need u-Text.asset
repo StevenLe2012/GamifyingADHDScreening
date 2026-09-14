@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: I need u-Text
   m_EditorClassIdentifier: 
   clip: {fileID: 8300000, guid: 1b65d8e67e2d26e4fa719a7390ac3ce5, type: 3}
-  subtitle: 'Kola: I need you to know I almost kept one of those donuts.'
+  subtitle: 'Koala: I need you to know I almost kept one of those donuts.'
   character: Koala
