@@ -465,6 +465,20 @@ public class IslandSelectionUI : MonoBehaviour
     [Tooltip("Optional. Picks a random remaining island; disabled when only one island is available.")]
     [SerializeField] private Button randomIslandButton;
 
+    [Header("Background (optional)")]
+    [Tooltip("Background image behind the picker buttons. Swapped automatically each time the picker " +
+             "opens, based on whether IslandProgress's gate island (e.g. Magic Academy) is still active.")]
+    [SerializeField] private Image backgroundImage;
+    [Tooltip("Shown while the gate island (e.g. Magic Academy) is active — i.e. the picker has only one island in it.")]
+    [SerializeField] private Sprite gateBackgroundSprite;
+    [Tooltip("Shown once the gate is completed and the normal islands are showing.")]
+    [SerializeField] private Sprite normalBackgroundSprite;
+
+    [Tooltip("Any GameObjects (e.g. the navigation hint text, the picker title) that should be hidden " +
+             "while the gate island is active (only one choice to make) and shown normally once the " +
+             "real islands are showing. Add as many as you need.")]
+    [SerializeField] private List<GameObject> hideDuringGate = new List<GameObject>();
+
     [Header("Highlight")]
     [SerializeField] private Color selectedTint = new Color(1.15f, 1.15f, 1.15f, 1f);
     [SerializeField] private Color normalTint = Color.white;
@@ -567,6 +581,17 @@ public class IslandSelectionUI : MonoBehaviour
 
         var remaining = IslandProgress.I != null ? IslandProgress.I.Remaining().ToList() : new List<IslandData>();
         if (remaining.Count == 0) { Hide(); return; }
+
+        bool gateActive = IslandProgress.I != null && IslandProgress.I.IsGateActive;
+
+        if (backgroundImage)
+        {
+            var sprite = gateActive ? gateBackgroundSprite : normalBackgroundSprite;
+            if (sprite) backgroundImage.sprite = sprite;
+        }
+
+        foreach (var go in hideDuringGate)
+            if (go) go.SetActive(!gateActive);
 
         foreach (var island in remaining)
         {
@@ -896,6 +921,10 @@ public class IslandSelectionUI : MonoBehaviour
 
         bool canRandom = _islandsInPicker.Count > 1;
         randomIslandButton.interactable = canRandom;
+
+        // Fully hide (not just disable) when there's nothing to randomize between — covers the
+        // Magic Academy gate phase (exactly one island shown) and any other single-island-left case.
+        randomIslandButton.gameObject.SetActive(canRandom);
 
         // Replace the event object so Inspector-persistent listeners cannot bypass
         // this class's random flow (which handles intro cutscene + state guards).

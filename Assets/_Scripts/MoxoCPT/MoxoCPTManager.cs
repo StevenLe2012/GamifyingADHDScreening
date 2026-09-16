@@ -1802,6 +1802,12 @@ namespace MoxoCPT
             "It looks like you didn't respond or missed every target.\nPress Space to replay the test.";
         [SerializeField] private float redoDelaySeconds = 1.5f;
 
+        [Header("Magic Academy — Minimum Score Gate")]
+        [Tooltip("Magic Academy only: if correct hits are below this after the real run, ask the " +
+                 "participant to replay (same prompt as the safeguard above) instead of proceeding to " +
+                 "results. Set to 0 to disable this check.")]
+        [SerializeField] private int magicAcademyMinHitsToPass = 10;
+
         // NEW: second button (replay training)
         [Header("Safeguard - Optional Replay Training Button (NEW)")]
         [SerializeField] private bool allowReplayTrainingButton = true;
@@ -2243,6 +2249,17 @@ namespace MoxoCPT
                 }
             }
 
+            // Magic Academy only: require a minimum score before letting the participant continue.
+            // Independent of enableSafeguard — this is a separate rule, not the "no participation" net.
+            if (magicAcademyMinHitsToPass > 0 &&
+                CurrentIslandId() == MagicAcademyIslandId &&
+                hit < magicAcademyMinHitsToPass)
+            {
+                Debug.Log($"[MOXO] Magic Academy score {hit} below threshold {magicAcademyMinHitsToPass} → offering replay.");
+                ShowReplayPrompt_KEEP_CPT();
+                return;
+            }
+
             // Count this run toward the session total for CARDS / BREAD / POISON / SKULL (end-game summary).
             CPTScoreRuntime.TryCommitRunToFourIslandTotal(hit, CurrentIslandId());
 
@@ -2349,6 +2366,18 @@ namespace MoxoCPT
                 StartDelayedNarrativeCameraSwitch();
                 StartKoalaAfterGameDialogue();
             });
+
+            // Magic Academy only: offer a second button so a successful participant can still choose
+            // to practice again ("Training", right) instead of only being able to continue ("Start", left).
+            // Order matters: SetReplayTrainingVisible must run BEFORE DelayStartButton, same as the
+            // existing ShowReadyAfterTraining pattern — DelayStartButton's coroutine ends by calling
+            // ApplyNavSelection(), which reads the nav-button list that SetReplayTrainingVisible builds.
+            if (CurrentIslandId() == MagicAcademyIslandId)
+            {
+                intro.SetReplayTrainingVisible(true);
+                intro.ArmReplayTraining(() => { OnGameBeginReal(); }, labelOverride: "Training");
+                intro.DelayStartButton(0f, "Start"); // relabel from the shared "Continue" default
+            }
         }
 
         private void StartDelayedNarrativeCameraSwitch()
@@ -2559,28 +2588,41 @@ namespace MoxoCPT
 
             // Keep CPT lock ON here (we are still "in CPT context" until a choice is made).
 
-            // Show text prompt (2-button body if enabled)
-            if (allowReplayTrainingButton)
-                intro.ShowTextOnly(replayTrainingTitle, replayTrainingBody);
+            // Magic Academy has no training to replay, so this screen is always single-button
+            // ("Redo") there — the two-button (Redo / Replay Training) choice stays for the other
+            // islands, controlled by allowReplayTrainingButton as before.
+            bool isMagicAcademy = CurrentIslandId() == MagicAcademyIslandId;
+            bool showTrainingButton = allowReplayTrainingButton && !isMagicAcademy;
+
+            // Score line only (first line of the per-island results template) — NOT the full
+            // template, which continues into congratulatory text meant only for a real success.
+            int hit = CPTScoreRuntime.I?.CorrectTargetsHit ?? 0;
+            int total = CPTScoreRuntime.I?.TotalTargets ?? 0;
+            int falseAlarms = CPTScoreRuntime.I?.FalseAlarms ?? 0;
+            int totalDistractors = CPTScoreRuntime.I?.TotalDistractors ?? 0;
+            string scoreLine = intro.BuildResultsBody(hit, total, falseAlarms, totalDistractors).Split('\n')[0];
+
+            if (showTrainingButton)
+                intro.ShowTextOnly(replayTrainingTitle, $"{scoreLine}\n\n{replayTrainingBody}");
             else
-                intro.ShowTextOnly(redoTitle, redoBody);
+                intro.ShowTextOnly(redoTitle, $"{scoreLine}\n\n{redoBody}");
 
             // Optional voice over for the replay / training choice prompt
             if (replayPromptVoice)
                 intro.PlayVoice(replayPromptVoice);
 
-            // Start button -> replay test
+            // Start button -> replay test (relabeled "Redo" when it's the only button on screen)
             intro.ArmOnStart(
                 onStart: () =>
                 {
                     OnGameBeginReal();
                 },
                 delayButton: redoDelaySeconds > 0f,
-                delaySeconds: Mathf.Max(0f, redoDelaySeconds)
+                delaySeconds: Mathf.Max(0f, redoDelaySeconds),
+                labelOverride: showTrainingButton ? null : "Redo"
             );
 
-            // NEW: show + wire replay-training button ONLY on this safeguard screen
-            if (allowReplayTrainingButton)
+            if (showTrainingButton)
             {
                 intro.SetReplayTrainingVisible(true);
                 intro.ArmReplayTraining(() =>
@@ -2594,9 +2636,33 @@ namespace MoxoCPT
             }
         }
 
+        // Magic Academy is a mandatory pre-game island (no narrative, gates the real 4-island picker —
+        // see IslandProgress.gateIsland). It has no KoalaDialogueHandler mapping at all, so it must
+        // never fall into the normal post-CPT narrative path below.
+        private const string MagicAcademyIslandId = "MAGICACADEMY";
+
         private void StartKoalaAfterGameDialogue()
         {
+            if (CurrentIslandId() == MagicAcademyIslandId)
+            {
+                StartCoroutine(CoSkipNarrativeAndShowPicker());
+                return;
+            }
             StartCoroutine(CoStartKoalaDialogueNextFrame());
+        }
+
+        private IEnumerator CoSkipNarrativeAndShowPicker()
+        {
+            yield return null;
+            IslandProgress.I?.MarkCompletedById(MagicAcademyIslandId);
+            GameManager.Instance?.ForceUpdateGameState(GameManager.GameState.Explore);
+            yield return null;
+
+            // Same two calls the normal post-narrative flow makes (KoalaDialogueHandler.CoEndAndOpenPicker):
+            // position the picker at the right anchor BEFORE showing it, or it can end up wherever it was
+            // last placed instead of somewhere the player can actually see.
+            IslandTravelManager.I?.PlacePickerForIsland(MagicAcademyIslandId);
+            (IslandSelectionUI.I ?? FindObjectOfType<IslandSelectionUI>(true))?.ShowRemaining();
         }
 
         private IEnumerator CoStartKoalaDialogueNextFrame()

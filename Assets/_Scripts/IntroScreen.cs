@@ -645,6 +645,47 @@ public class IntroScreen : MonoBehaviour
         localCharacter = character;
     }
 
+    [Tooltip("Optional local stimuli shown next to localCharacter, INTRO ONLY (ShowMoxo) — never during " +
+             "the welcome or results screens, which share the same show/hide plumbing. Set at runtime via " +
+             "SetLocalStimuli() from the IntroAnchor.")]
+    [SerializeField] private GameObject localStimuli;
+    private float _stimuliDelaySeconds = 5f;
+    private Coroutine _stimuliDelayCo;
+
+    /// <summary>
+    /// Called by IslandTravelManager alongside SetLocalCharacter(). Pass null to clear the previous
+    /// island's stimuli. delaySeconds is how long after the intro's local character appears before the
+    /// stimuli appears (only takes effect the next time ShowMoxo() runs the actual intro).
+    /// </summary>
+    public void SetLocalStimuli(GameObject stimuli, float delaySeconds)
+    {
+        HideLocalStimuliNow();
+
+        if (localStimuli && localStimuli != stimuli)
+            localStimuli.SetActive(false);
+
+        localStimuli = stimuli;
+        _stimuliDelaySeconds = Mathf.Max(0f, delaySeconds);
+    }
+
+    /// <summary>Hides the local stimuli immediately and cancels any pending delayed-show.</summary>
+    private void HideLocalStimuliNow()
+    {
+        if (_stimuliDelayCo != null)
+        {
+            StopCoroutine(_stimuliDelayCo);
+            _stimuliDelayCo = null;
+        }
+        if (localStimuli) localStimuli.SetActive(false);
+    }
+
+    private System.Collections.IEnumerator CoShowLocalStimuliAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(_stimuliDelaySeconds);
+        _stimuliDelayCo = null;
+        if (localStimuli) localStimuli.SetActive(true);
+    }
+
     // NEW: Replay Training button (keep assigned but default hidden)
     [SerializeField] private Button replayTrainingButton;
     [SerializeField] private TextMeshProUGUI replayTrainingButtonLabel;
@@ -1026,6 +1067,11 @@ public class IntroScreen : MonoBehaviour
         ShowInstant(true);
         DelayStartButton(continueDelaySeconds, GetCurrentButtonLabelOr("Start"));
 
+        // Local stimuli (if configured): appears stimuliDelaySeconds after the character, intro-only.
+        HideLocalStimuliNow();
+        if (localStimuli)
+            _stimuliDelayCo = StartCoroutine(CoShowLocalStimuliAfterDelay());
+
         // Optional generic MOXO intro voice
         if (moxoVoice)
             PlayVoiceInternal(moxoVoice);
@@ -1047,7 +1093,7 @@ public class IntroScreen : MonoBehaviour
         DelayStartButton(delayOverride.HasValue ? delayOverride.Value : defaultReadyDelaySeconds, buttonLabel);
     }
 
-    public void ArmOnStart(UnityAction onStart, bool delayButton = true, float delaySeconds = 5f)
+    public void ArmOnStart(UnityAction onStart, bool delayButton = true, float delaySeconds = 5f, string labelOverride = null)
     {
         _currentStart = new UnityEvent();
         if (onStart != null) _currentStart.AddListener(onStart);
@@ -1061,7 +1107,9 @@ public class IntroScreen : MonoBehaviour
         if (canvasGroup) { canvasGroup.blocksRaycasts = true; canvasGroup.interactable = true; }
         allowPressAtoStart = true;
 
-        if (delayButton) DelayStartButton(delaySeconds, GetCurrentButtonLabelOr("Start"));
+        string label = !string.IsNullOrWhiteSpace(labelOverride) ? labelOverride : GetCurrentButtonLabelOr("Start");
+        if (delayButton) DelayStartButton(delaySeconds, label);
+        else if (startButtonLabel) startButtonLabel.text = StripCountdownSuffix(label);
     }
 
     // NEW: show/hide training button (redo screen only)
@@ -1080,12 +1128,15 @@ public class IntroScreen : MonoBehaviour
     }
 
     // NEW: wire the replay training button action
-    public void ArmReplayTraining(UnityAction onReplayTraining)
+    public void ArmReplayTraining(UnityAction onReplayTraining, string labelOverride = null)
     {
         _currentReplayTraining = new UnityEvent();
         if (onReplayTraining != null) _currentReplayTraining.AddListener(onReplayTraining);
 
         if (!replayTrainingButton) return;
+
+        if (!string.IsNullOrWhiteSpace(labelOverride) && replayTrainingButtonLabel)
+            replayTrainingButtonLabel.text = labelOverride;
 
         replayTrainingButton.onClick.RemoveAllListeners();
         replayTrainingButton.onClick.AddListener(OnReplayTrainingClicked);
@@ -1119,6 +1170,7 @@ public class IntroScreen : MonoBehaviour
         if (canvasGroup) canvasGroup.alpha = 0f;
         _isVisible = false;
         if (localCharacter) localCharacter.SetActive(false);
+        HideLocalStimuliNow();
         gameObject.SetActive(false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
@@ -1211,6 +1263,7 @@ public class IntroScreen : MonoBehaviour
         _isVisible = false;
         _starting = false;
         if (localCharacter) localCharacter.SetActive(false);
+        HideLocalStimuliNow();
         gameObject.SetActive(false);
 
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
@@ -1240,6 +1293,7 @@ public class IntroScreen : MonoBehaviour
         if (canvasGroup) canvasGroup.alpha = 0f;
         _isVisible = false;
         if (localCharacter) localCharacter.SetActive(false);
+        HideLocalStimuliNow();
         gameObject.SetActive(false);
         ApplyWelcomeMouseLookLock(visible: false);
 
@@ -1282,10 +1336,30 @@ public class IntroScreen : MonoBehaviour
 
         if (localCharacter) localCharacter.SetActive(visible);
 
+        // Never auto-show here (this path is shared with ShowWelcome/ShowResults) — only hide,
+        // and only ShowMoxo's own delayed coroutine ever turns the stimuli on.
+        if (!visible) HideLocalStimuliNow();
+
         ApplyWelcomeMouseLookLock(visible);
 
         if (visible) StartTypingEffect();
         else         StopTyping();
+    }
+
+    /// <summary>
+    /// Resolves the per-island results body template (falling back to the shared default) and
+    /// substitutes {HIT}/{TOTAL}/{FA}/{D_TOTAL}. Used by ShowResults and by any other prompt
+    /// (e.g. the safeguard/replay prompt) that wants to display the same score line.
+    /// </summary>
+    public string BuildResultsBody(int hit, int total, int falseAlarms, int totalDistractors)
+    {
+        string activeBodyTemplate = !string.IsNullOrWhiteSpace(_islandResultsBodyTemplate) ? _islandResultsBodyTemplate : resultsBodyTemplate;
+
+        return activeBodyTemplate
+            .Replace("{HIT}",     hit.ToString())
+            .Replace("{TOTAL}",   total.ToString())
+            .Replace("{FA}",      falseAlarms.ToString())
+            .Replace("{D_TOTAL}", totalDistractors.ToString());
     }
 
     public void ShowResults(int hit, int total, int falseAlarms, int totalDistractors, System.Action onContinue = null)
@@ -1294,15 +1368,10 @@ public class IntroScreen : MonoBehaviour
         SetReplayTrainingVisible(false);
 
         // Resolve per-island overrides, falling back to shared inspector defaults
-        string activeTitle        = !string.IsNullOrWhiteSpace(_islandResultsTitle)        ? _islandResultsTitle        : resultsTitle;
-        string activeBodyTemplate = !string.IsNullOrWhiteSpace(_islandResultsBodyTemplate) ? _islandResultsBodyTemplate : resultsBodyTemplate;
-        AudioClip activeVoice     = _islandResultsVoice ? _islandResultsVoice : resultsVoice;
+        string activeTitle    = !string.IsNullOrWhiteSpace(_islandResultsTitle) ? _islandResultsTitle : resultsTitle;
+        AudioClip activeVoice = _islandResultsVoice ? _islandResultsVoice : resultsVoice;
 
-        string body = activeBodyTemplate
-            .Replace("{HIT}",     hit.ToString())
-            .Replace("{TOTAL}",   total.ToString())
-            .Replace("{FA}",      falseAlarms.ToString())
-            .Replace("{D_TOTAL}", totalDistractors.ToString());
+        string body = BuildResultsBody(hit, total, falseAlarms, totalDistractors);
 
         ApplyPreset(moxoPreset, activeTitle, body);
 
@@ -1400,6 +1469,11 @@ public class IntroScreen : MonoBehaviour
         if (startButtonLabel) startButtonLabel.text = StripCountdownSuffix(startButtonLabel.text);
 
         ShowInstant(true);
+
+        // Local stimuli (if configured): appears stimuliDelaySeconds after the character, intro-only.
+        HideLocalStimuliNow();
+        if (localStimuli)
+            _stimuliDelayCo = StartCoroutine(CoShowLocalStimuliAfterDelay());
 
         // Text-only panels cannot start MOXO unless caller arms it elsewhere.
         MoxoStartGate.Disarm();

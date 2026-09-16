@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb8e0160ab262aa448e6729f9f83b059, type: 3}
+  m_Name: MagicAcademyIslandData
+  m_EditorClassIdentifier: 
+  islandId: MAGICACADEMY
+  displayName: Magic Academy
+  icon: {fileID: 21300000, guid: b4a7e9c9e2f6d424fbac6d8e335a232e, type: 3}
+  introTitle: Welcome to Magic Academy!
+  introBody: "This training will prepare you for the adventure ahead.\n\nYour task
+    is simple: press SPACE as quickly and accurately as possible to collect only
+    the books marked with THREE FLOWERS and recover the lost knowledge of this mysterious
+    world.\n\nBeware - every other book is a trick. Ignore them and keep your focus
+    on the red plus sign.\n\nWhen you\u2019re ready, press SPACE to begin your training."
+  countdownSeconds: 5
+  hasMoxoGame: 1
+  startsDialogueOnArrival: 1
+  dialogueHandlerType: DragonHandler
+  trainingIntroTitle: 
+  trainingIntroBody: 
+  readyIntroTitle: Focus
+  readyIntroBody: 'Random visual and audio distractions will appear -  ignore them
+    and keep your focus on the red plus sign.
+
+
+    Are you ready? Use the arrow
+    keys to choose:
+
+
+    * Start - Begin the mission
+
+    * Training - Practice
+    again
+
+
+    Press SPACE to confirm. Good luck!'
+  nonMoxoIntroVoice: {fileID: 0}
+  trainingIntroVoice: {fileID: 8300000, guid: 9855a1b9fe66a48408138017f445e87d, type: 3}
+  readyIntroVoice: {fileID: 0}
+  lockCptToGlobalDefaults: 0
+  totalTrialsOverride: 15
+  totalTargetsOverride: 8
+  totalNonTargetsOverride: 7
+  cardDurationsOverride: []

@@ -11,6 +11,11 @@ public class IslandProgress : MonoBehaviour
     [Tooltip("Drop your 4 standard game islands here (CARDS, BREAD, POISON, SKULL, etc.).")]
     [SerializeField] private List<IslandData> allIslands = new List<IslandData>();
 
+    [Header("Gate (optional)")]
+    [Tooltip("If set, the picker shows ONLY this island until it's completed — the base islands (and " +
+             "bonus) stay hidden until then. Used for a mandatory pre-game island (e.g. Magic Academy).")]
+    [SerializeField] private IslandData gateIsland;
+
     [Header("Bonus / Unlockable")]
     [Tooltip("Optional bonus island (e.g., DRAGON). Leave null to disable bonus logic.")]
     [SerializeField] private IslandData bonusIsland;
@@ -26,6 +31,13 @@ public class IslandProgress : MonoBehaviour
     /// <summary> Islands the player has not completed yet. If the bonus is unlocked, it will be included here. </summary>
     public IEnumerable<IslandData> Remaining(bool includeBonus = true)
     {
+        // Gate: while set and not yet completed, this is the ONLY island the picker shows.
+        if (gateIsland != null && !IsCompleted(gateIsland.islandId))
+        {
+            yield return gateIsland;
+            yield break;
+        }
+
         // base islands
         foreach (var i in allIslands)
         {
@@ -37,6 +49,10 @@ public class IslandProgress : MonoBehaviour
         if (includeBonus && _bonusUnlocked && bonusIsland && !IsCompleted(bonusIsland.islandId))
             yield return bonusIsland;
     }
+
+    /// <summary>True while the gate island (e.g. Magic Academy) is set and not yet completed —
+    /// i.e. the picker is currently showing only the gate, not the base islands.</summary>
+    public bool IsGateActive => gateIsland != null && !IsCompleted(gateIsland.islandId);
 
     public bool AllDone =>
         // All base islands complete AND (bonus is either complete or not configured/unlocked)

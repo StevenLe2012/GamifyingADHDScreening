@@ -818,7 +818,8 @@ public class IslandTravelManager : MonoBehaviour
             _lastIntro.ArmOnStart(
                 null,
                 true,
-                island.countdownSeconds > 0f ? island.countdownSeconds : 2f
+                island.countdownSeconds > 0f ? island.countdownSeconds : 2f,
+                labelOverride: "Start" // force reset — a prior run's "Redo" label must never leak forward
             );
 
             if (logVerbose)
@@ -848,7 +849,8 @@ public class IslandTravelManager : MonoBehaviour
                     StartNonMoxoDialogueAfterIntro(island, islandId);
                 },
                 delayButton: true,
-                delaySeconds: island.countdownSeconds
+                delaySeconds: island.countdownSeconds,
+                labelOverride: "Start" // force reset — a prior MOXO run's "Redo" label must never leak forward
             );
         }
         else
@@ -933,9 +935,13 @@ public class IslandTravelManager : MonoBehaviour
 
         GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 
+        // Magic Academy: no training, and no "focus"/ready screen either — straight from the
+        // (hit-enter) intro into MOXO. Every other island's flow below is untouched.
+        bool skipReadyScreen = string.Equals((islandId ?? "").Trim(), "MAGICACADEMY", StringComparison.OrdinalIgnoreCase);
+
         // READY intro + countdown (loops if player requests replay training)
         var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
-        if (intro)
+        if (intro && !skipReadyScreen)
         {
             bool replayTrainingRequested;
             do
@@ -1322,6 +1328,10 @@ public class IslandTravelManager : MonoBehaviour
         // Pass per-island character and results config (null/empty = fall back to shared defaults).
         var introAnchor = anchor ? anchor.GetComponent<IntroAnchor>() : null;
         intro.SetLocalCharacter(introAnchor ? introAnchor.localCharacter : null);
+        intro.SetLocalStimuli(
+            introAnchor ? introAnchor.localStimuli : null,
+            introAnchor ? introAnchor.stimuliDelaySeconds : 5f
+        );
         intro.SetIslandResultsConfig(
             introAnchor ? introAnchor.resultsVoice        : null,
             introAnchor ? introAnchor.resultsTitle        : null,
