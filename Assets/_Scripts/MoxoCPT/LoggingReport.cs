@@ -65,10 +65,23 @@ namespace MoxoCPT
         /// <summary>1-based attempt number for the CPT run currently in progress.</summary>
         public static int CurrentAttempt { get; private set; } = 1;
 
+        // ---------- Island play order (for practice-effect analysis) ----------
+        // 1-based order in which each DISTINCT island's real CPT run was first started this
+        // browser session. Stable across redo/replay attempts of the same island — e.g. Magic
+        // Academy is always order 1, and if Skull was the next island entered it gets order 2
+        // even if the participant later redoes Skull (still order 2, just a higher attempt).
+        private static readonly Dictionary<string, int> _islandOrderByIsland =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+        private static int _nextIslandOrder = 1;
+
+        /// <summary>Play order (1-based) of the island whose CPT run is currently in progress.</summary>
+        public static int CurrentIslandOrder { get; private set; } = 0;
+
         /// <summary>
         /// Call once at the start of every real CPT run (OnGameBeginReal). Increments
         /// the attempt counter for that island and updates CurrentAttempt so all
         /// trial/distractor rows logged during the run are tagged with the right attempt.
+        /// Also resolves (and assigns, the first time) this island's overall play order.
         /// </summary>
         public static void BeginCptAttempt(string islandId)
         {
@@ -77,6 +90,13 @@ namespace MoxoCPT
             n += 1;
             _attemptByIsland[key] = n;
             CurrentAttempt = n;
+
+            if (!_islandOrderByIsland.TryGetValue(key, out var order))
+            {
+                order = _nextIslandOrder++;
+                _islandOrderByIsland[key] = order;
+            }
+            CurrentIslandOrder = order;
         }
 
         // ---------- PUBLIC API ----------
@@ -109,6 +129,9 @@ namespace MoxoCPT
 
             // Attempt number for the CPT run this trial belongs to.
             int attempt = CurrentAttempt;
+
+            // 1-based order this island's CPT run was first started in, this session.
+            int islandOrder = CurrentIslandOrder;
 
             // reaction_time_ms: blank if null
             string rt = report.ReactionTimeMs.HasValue
@@ -179,6 +202,7 @@ namespace MoxoCPT
 
                 Escape(report.IslandId),
                 Escape(report.IslandName),
+                islandOrder.ToString(inv),
 
                 Escape(report.StimulusType),
                 Escape(report.StimulusName),
@@ -212,7 +236,7 @@ namespace MoxoCPT
                 sw.WriteLine(row);
 #endif
 
-            UploadToFirebase(report, sessionId, clientUtc, attempt);
+            UploadToFirebase(report, sessionId, clientUtc, attempt, islandOrder);
         }
 
         // ---------- INTERNALS ----------
@@ -230,6 +254,7 @@ namespace MoxoCPT
 
             "island_id",
             "island_name",
+            "island_order",
 
             "stimulus_type",
             "stimulus_name",
@@ -304,7 +329,7 @@ namespace MoxoCPT
 
         // ---------- Firebase upload ----------
 
-        private static void UploadToFirebase(Report r, string sessionId, string clientUtc, int attempt)
+        private static void UploadToFirebase(Report r, string sessionId, string clientUtc, int attempt, int islandOrder)
         {
             var svc = FirebaseService.Instance;
             if (svc == null) return;
@@ -319,12 +344,12 @@ namespace MoxoCPT
             // Attempt segment keeps re-runs of the SAME island from overwriting each
             // other (this path uses PUT, so without it a replay would clobber attempt 1).
             var path = $"umaki/cpt_trials/{safePid}/{safeSid}/{safeIsland}/a{attempt}/{key}";
-            var json = BuildCPTTrialJson(r, sessionId, clientUtc, attempt);
+            var json = BuildCPTTrialJson(r, sessionId, clientUtc, attempt, islandOrder);
 
             svc.PutJson(path, json);
         }
 
-        private static string BuildCPTTrialJson(Report r, string sessionId, string clientUtc, int attempt)
+        private static string BuildCPTTrialJson(Report r, string sessionId, string clientUtc, int attempt, int islandOrder)
         {
             var sb = new StringBuilder(512);
             sb.Append(FirebaseService.JS("participant_id",              r.ParticipantId));
@@ -336,6 +361,7 @@ namespace MoxoCPT
             sb.Append(FirebaseService.JN("phase_trial_index",           r.PhaseTrialIndex));
             sb.Append(FirebaseService.JS("island_id",                   r.IslandId));
             sb.Append(FirebaseService.JS("island_name",                 r.IslandName));
+            sb.Append(FirebaseService.JN("island_order",                islandOrder));
             sb.Append(FirebaseService.JS("stimulus_type",               r.StimulusType));
             sb.Append(FirebaseService.JS("stimulus_name",               r.StimulusName));
             sb.Append(FirebaseService.JN("stimulus_duration_ms",        r.StimulusDurationMs));

@@ -14581,10 +14581,6 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 5104753105002371836, guid: f6222a45fc0f98a42ac5ee0dc1e31a99,
         type: 3}
-      insertIndex: 0
-      addedObject: {fileID: 1169678081}
-    - targetCorrespondingSourceObject: {fileID: 5104753105002371836, guid: f6222a45fc0f98a42ac5ee0dc1e31a99,
-        type: 3}
       insertIndex: -1
       addedObject: {fileID: 1124900021}
     - targetCorrespondingSourceObject: {fileID: 5104753105002371836, guid: f6222a45fc0f98a42ac5ee0dc1e31a99,
@@ -50630,57 +50626,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 719823841}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1169678080
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1169678081}
-  - component: {fileID: 1169678082}
-  m_Layer: 0
-  m_Name: MoxoCPT_MagicAcademy
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1169678081
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1169678080}
-  m_LocalRotation: {x: -0, y: 0.6843546, z: -0, w: 0.72914934}
-  m_LocalPosition: {x: 133.29999, y: 0, z: -85.54999}
-  m_LocalScale: {x: 0.37499997, y: 0.375, z: 0.37499997}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1075367107}
-  m_RootOrder: -1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1169678082
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1169678080}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f76bdd81a35825f4d95c089c5c1f9187, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  correctCanvas: {fileID: 837741587}
-  incorrectCanvas: {fileID: 1803023133}
-  audioSource: {fileID: 0}
-  correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
-  incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}
-  sfxVolume: 1
-  feedbackHoldSeconds: 0.5
 --- !u!4 &1170756698 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 961341821192298598, guid: 728ecde6a69697e4ba2f11cbdea49852,
@@ -50748,9 +50693,9 @@ MonoBehaviour:
   lockCardUntilCountdownEnds: 1
   feedbackHoldSeconds: 0.7
   interCardIntervalSeconds: 1
-  trainingCompleteNote: Heads up! The cards will disappear much faster in the actual
-    game. Stay focused and react quickly!
-  trainingCompleteNoteSeconds: 3
+  trainingCompleteNote: "The cards will disappear faster, and you won\u2019t know
+    the correct choices until the end. Stay focused and react quickly!"
+  trainingCompleteNoteSeconds: 5
   audioSource: {fileID: 0}
   correctClip: {fileID: 8300000, guid: 2bb6c2e41e9122643b9fdd0b692a896d, type: 3}
   incorrectClip: {fileID: 8300000, guid: cd89a6f5b15b12c46a850825c646b4f9, type: 3}

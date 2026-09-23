@@ -668,8 +668,6 @@ public class IslandTravelManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[IslandTravel] TravelTo('{island.islandId}') called — click to see caller stack.", this);
-
         CleanupLastNonMoxoHandler();
         StopCptWatchdog();
 
@@ -923,6 +921,11 @@ public class IslandTravelManager : MonoBehaviour
             {
                 if (!trainer.gameObject.activeInHierarchy)
                     trainer.gameObject.SetActive(true);
+
+                // TrainingCPTRunner has its own internal "already completed" tracker that persists
+                // for the rest of the session — without clearing it, training only ever plays once
+                // per Play Mode session and silently no-ops on every entry after that.
+                TrainingCPTRunner.ClearCompletedForIsland(islandId);
 
                 GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 

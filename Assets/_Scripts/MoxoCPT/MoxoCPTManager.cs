@@ -2351,7 +2351,14 @@ namespace MoxoCPT
             {
                 SetCptLock(false);
 
-                KoalaAnimBus.BroadcastToActiveKoalas(d => d.OnResultsContinue());
+                // Magic Academy has no koala dialogue afterward (it skips straight to the picker —
+                // see StartKoalaAfterGameDialogue), so it should settle back to idle instead of
+                // standing up to talk like the other islands do before their narrative kicks in.
+                if (CurrentIslandId() == MagicAcademyIslandId)
+                    KoalaAnimBus.BroadcastToActiveKoalas(d => d.EnsureStandingIdle());
+                else
+                    KoalaAnimBus.BroadcastToActiveKoalas(d => d.OnResultsContinue());
+
                 Debug.Log("[MOXO] Results Continue → Narrative.");
 
                 GameManager.Instance?.UpdateGameState(GameManager.GameState.Narrative);
@@ -2509,11 +2516,12 @@ namespace MoxoCPT
             Debug.Log("[MOXO] ShowPreviewBeforeRestart() called.");
 
             // Callers may still have the CPT-state lock on (the redo prompt keeps it on); release it
-            // here so ShowPreviewInstructions (which briefly sets PrepareCPT) isn't immediately forced
-            // back to CPT. OnGameBeginReal() re-locks it once the participant presses Start on the preview,
-            // and it also resets ChangeShapes' _hasStarted flag right before nudging it, so the trial
-            // loop reliably restarts regardless of the rig's active-state at this earlier point.
+            // so state can actually move off CPT. ShowPreviewInstructions (unlike the old ShowMoxo it
+            // used to use) no longer touches game state itself, so without this explicit switch to
+            // PrepareCPT, state simply never leaves CPT — and CoWaitPreviewThenEnsureCpt's "State !=
+            // CPT" check then thinks the run is already active and never force-starts it.
             SetCptLock(false);
+            GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 
             var travel = IslandTravelManager.I;
             intro.ShowPreviewInstructions(

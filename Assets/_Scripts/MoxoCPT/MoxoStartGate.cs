@@ -10,11 +10,7 @@ namespace MoxoCPT
     {
         public static bool Armed { get; private set; }
 
-        public static void Arm()
-        {
-            Armed = true;
-            UnityEngine.Debug.Log($"[MoxoStartGate] Arm() → Armed=true\n{System.Environment.StackTrace}");
-        }
+        public static void Arm() => Armed = true;
 
         /// <summary>Returns true exactly once after Arm(); resets Armed to false.</summary>
         public static bool TryConsume()
@@ -24,11 +20,6 @@ namespace MoxoCPT
             return true;
         }
 
-        public static void Disarm()
-        {
-            if (Armed)
-                UnityEngine.Debug.Log($"[MoxoStartGate] Disarm() → Armed=false (was true)\n{System.Environment.StackTrace}");
-            Armed = false;
-        }
+        public static void Disarm() => Armed = false;
     }
 }

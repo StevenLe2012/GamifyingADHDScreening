@@ -1007,8 +1007,6 @@ public class IntroScreen : MonoBehaviour
     // ---------- Public API ----------
     public void ShowWelcome()
     {
-        Debug.Log("[IntroScreen] ShowWelcome() — click to see caller stack.", this);
-
         // NEVER show training button here
         SetReplayTrainingVisible(false);
         _isFirstWelcomeActive = true;
@@ -1030,8 +1028,6 @@ public class IntroScreen : MonoBehaviour
 
     public void ShowMoxo(string titleOverride = null, string bodyOverride = null)
     {
-        Debug.Log($"[IntroScreen] ShowMoxo(title='{titleOverride}') — click to see caller stack.", this);
-
         // NEVER show training button here
         SetReplayTrainingVisible(false);
 
@@ -1464,8 +1460,6 @@ public class IntroScreen : MonoBehaviour
 
     public void ShowTextOnly(string title, string body)
     {
-        Debug.Log($"[IntroScreen] ShowTextOnly(title='{title}') — click to see caller stack.", this);
-
         // IMPORTANT: ShowTextOnly is used by Travel/Training/Moxo intro screens.
         // So we ALWAYS hide ReplayTraining here by default.
         SetReplayTrainingVisible(false);
