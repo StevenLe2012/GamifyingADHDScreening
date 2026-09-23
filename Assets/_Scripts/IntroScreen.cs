@@ -616,6 +616,7 @@ using TMPro;
 using UnityEngine.Events;
 using MoxoCPT;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine.EventSystems; // clear lingering submit focus
 
@@ -645,45 +646,37 @@ public class IntroScreen : MonoBehaviour
         localCharacter = character;
     }
 
-    [Tooltip("Optional local stimuli shown next to localCharacter, INTRO ONLY (ShowMoxo) — never during " +
-             "the welcome or results screens, which share the same show/hide plumbing. Set at runtime via " +
+    [Tooltip("Target/non-target stimuli for this island's Preview screen. Shown instantly (no delay) " +
+             "only while the Preview screen is visible, hidden on every other screen. Set at runtime via " +
              "SetLocalStimuli() from the IntroAnchor.")]
-    [SerializeField] private GameObject localStimuli;
-    private float _stimuliDelaySeconds = 5f;
-    private Coroutine _stimuliDelayCo;
+    [SerializeField] private GameObject localTargetStimulus;
+    [SerializeField] private List<GameObject> localNonTargetStimuli = new List<GameObject>();
 
     /// <summary>
-    /// Called by IslandTravelManager alongside SetLocalCharacter(). Pass null to clear the previous
-    /// island's stimuli. delaySeconds is how long after the intro's local character appears before the
-    /// stimuli appears (only takes effect the next time ShowMoxo() runs the actual intro).
+    /// Called by IslandTravelManager alongside SetLocalCharacter(). Pass null/empty to clear the
+    /// previous island's stimuli.
     /// </summary>
-    public void SetLocalStimuli(GameObject stimuli, float delaySeconds)
+    public void SetLocalStimuli(GameObject targetStimulus, List<GameObject> nonTargetStimuli)
     {
         HideLocalStimuliNow();
-
-        if (localStimuli && localStimuli != stimuli)
-            localStimuli.SetActive(false);
-
-        localStimuli = stimuli;
-        _stimuliDelaySeconds = Mathf.Max(0f, delaySeconds);
+        localTargetStimulus = targetStimulus;
+        localNonTargetStimuli = nonTargetStimuli ?? new List<GameObject>();
     }
 
-    /// <summary>Hides the local stimuli immediately and cancels any pending delayed-show.</summary>
+    /// <summary>Hides all local stimuli immediately.</summary>
     private void HideLocalStimuliNow()
     {
-        if (_stimuliDelayCo != null)
-        {
-            StopCoroutine(_stimuliDelayCo);
-            _stimuliDelayCo = null;
-        }
-        if (localStimuli) localStimuli.SetActive(false);
+        if (localTargetStimulus) localTargetStimulus.SetActive(false);
+        foreach (var go in localNonTargetStimuli)
+            if (go) go.SetActive(false);
     }
 
-    private System.Collections.IEnumerator CoShowLocalStimuliAfterDelay()
+    /// <summary>Shows all local stimuli immediately (Preview screen only).</summary>
+    private void ShowLocalStimuliNow()
     {
-        yield return new WaitForSecondsRealtime(_stimuliDelaySeconds);
-        _stimuliDelayCo = null;
-        if (localStimuli) localStimuli.SetActive(true);
+        if (localTargetStimulus) localTargetStimulus.SetActive(true);
+        foreach (var go in localNonTargetStimuli)
+            if (go) go.SetActive(true);
     }
 
     // NEW: Replay Training button (keep assigned but default hidden)
@@ -1014,6 +1007,8 @@ public class IntroScreen : MonoBehaviour
     // ---------- Public API ----------
     public void ShowWelcome()
     {
+        Debug.Log("[IntroScreen] ShowWelcome() — click to see caller stack.", this);
+
         // NEVER show training button here
         SetReplayTrainingVisible(false);
         _isFirstWelcomeActive = true;
@@ -1035,6 +1030,8 @@ public class IntroScreen : MonoBehaviour
 
     public void ShowMoxo(string titleOverride = null, string bodyOverride = null)
     {
+        Debug.Log($"[IntroScreen] ShowMoxo(title='{titleOverride}') — click to see caller stack.", this);
+
         // NEVER show training button here
         SetReplayTrainingVisible(false);
 
@@ -1067,30 +1064,29 @@ public class IntroScreen : MonoBehaviour
         ShowInstant(true);
         DelayStartButton(continueDelaySeconds, GetCurrentButtonLabelOr("Start"));
 
-        // Local stimuli (if configured): appears stimuliDelaySeconds after the character, intro-only.
         HideLocalStimuliNow();
-        if (localStimuli)
-            _stimuliDelayCo = StartCoroutine(CoShowLocalStimuliAfterDelay());
 
         // Optional generic MOXO intro voice
         if (moxoVoice)
             PlayVoiceInternal(moxoVoice);
     }
 
-    public void ShowReadyAfterTraining(string title = "Ready to start?", string body = "Press Space to begin the real test.", float? delayOverride = null, string buttonLabel = "Start", bool showReplayTraining = false)
+    /// <summary>
+    /// Shown right before the real MOXO run: instant target/non-target stimuli (no delay) plus
+    /// fixed instructions and a single Start button. Replaces the old training + ready-screen step.
+    /// </summary>
+    public void ShowPreviewInstructions(string title, string body, float? delayOverride = null, string buttonLabel = "Start")
     {
-        ReplayTrainingPending = false; // reset each time the focus screen is freshly shown
-        MoxoStartGate.Arm();
+        // Unlike ShowMoxo, this does NOT auto-wire Start to begin the real MOXO run directly.
+        // Magic Academy needs to run training after this screen closes, so — same pattern as the
+        // very first pre-training intro screen — the caller (IslandTravelManager /
+        // MoxoCPTManager.ShowPreviewBeforeRestart) decides what happens next via its own
+        // dismiss-then-continue coroutine, instead of racing it with a direct auto-start here.
+        ShowTextOnly(title, body);
+        StopVoice(); // Preview screen is silent, even if a moxoVoice clip is assigned
+        ShowLocalStimuliNow();
 
-        ShowMoxo(title, body); // ShowMoxo already calls SetReplayTrainingVisible(false)
-
-        // Show replay training button BEFORE starting the delay so that
-        // SetStartButtonsInteractable(false) inside CoDelayStart catches it while active,
-        // keeping it greyed out for the full countdown duration.
-        if (showReplayTraining)
-            SetReplayTrainingVisible(true);
-
-        DelayStartButton(delayOverride.HasValue ? delayOverride.Value : defaultReadyDelaySeconds, buttonLabel);
+        ArmOnStart(null, true, delayOverride.HasValue ? delayOverride.Value : defaultReadyDelaySeconds, buttonLabel);
     }
 
     public void ArmOnStart(UnityAction onStart, bool delayButton = true, float delaySeconds = 5f, string labelOverride = null)
@@ -1281,6 +1277,11 @@ public class IntroScreen : MonoBehaviour
 
     private System.Collections.IEnumerator CoFadeOutAndBegin()
     {
+        // Capture BEFORE ApplyWelcomeMouseLookLock(false) clears it below — this coroutine runs
+        // for EVERY screen's Start button (welcome, pre-training intro, redo, preview, results),
+        // and the dialogue-after-intro hook must only fire for the one true global welcome screen.
+        bool wasFirstWelcome = _isFirstWelcomeActive;
+
         StopTyping();
         if (canvasGroup) { canvasGroup.blocksRaycasts = false; canvasGroup.interactable = false; }
 
@@ -1306,7 +1307,7 @@ public class IntroScreen : MonoBehaviour
         if (toInvoke != null) toInvoke.Invoke();
         else Debug.LogWarning("[IntroScreen] No onStart action wired. Panel closed, doing nothing.");
 
-        StartDialogueAfterIntroIfConfigured();
+        if (wasFirstWelcome) StartDialogueAfterIntroIfConfigured();
 
         _starting = false;
     }
@@ -1336,8 +1337,8 @@ public class IntroScreen : MonoBehaviour
 
         if (localCharacter) localCharacter.SetActive(visible);
 
-        // Never auto-show here (this path is shared with ShowWelcome/ShowResults) — only hide,
-        // and only ShowMoxo's own delayed coroutine ever turns the stimuli on.
+        // Never auto-show here (this path is shared with ShowWelcome/ShowResults) — only hide;
+        // only ShowPreviewInstructions ever turns the stimuli on.
         if (!visible) HideLocalStimuliNow();
 
         ApplyWelcomeMouseLookLock(visible);
@@ -1379,6 +1380,16 @@ public class IntroScreen : MonoBehaviour
 
         _currentStart = new UnityEvent();
         if (onContinue != null) _currentStart.AddListener(() => onContinue());
+
+        // CoFadeOutAndBegin() (from whichever screen was shown right before this — e.g. the
+        // Preview screen on a Redo/Training-again retry) strips ALL startButton.onClick listeners
+        // on close. Re-wire it here, same as ShowMoxo/ArmOnStart already do, or the Start button
+        // silently does nothing (both by mouse click and by Space in two-button nav mode).
+        if (startButton)
+        {
+            startButton.onClick.RemoveListener(OnStartClicked);
+            startButton.onClick.AddListener(OnStartClicked);
+        }
 
         // ShowInstant(true) already enables localCharacter, so the island character
         // will appear alongside the results panel automatically.
@@ -1453,6 +1464,8 @@ public class IntroScreen : MonoBehaviour
 
     public void ShowTextOnly(string title, string body)
     {
+        Debug.Log($"[IntroScreen] ShowTextOnly(title='{title}') — click to see caller stack.", this);
+
         // IMPORTANT: ShowTextOnly is used by Travel/Training/Moxo intro screens.
         // So we ALWAYS hide ReplayTraining here by default.
         SetReplayTrainingVisible(false);
@@ -1470,10 +1483,7 @@ public class IntroScreen : MonoBehaviour
 
         ShowInstant(true);
 
-        // Local stimuli (if configured): appears stimuliDelaySeconds after the character, intro-only.
         HideLocalStimuliNow();
-        if (localStimuli)
-            _stimuliDelayCo = StartCoroutine(CoShowLocalStimuliAfterDelay());
 
         // Text-only panels cannot start MOXO unless caller arms it elsewhere.
         MoxoStartGate.Disarm();

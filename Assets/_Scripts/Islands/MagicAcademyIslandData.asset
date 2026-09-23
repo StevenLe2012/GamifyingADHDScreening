@@ -44,7 +44,7 @@ MonoBehaviour:
 
     Press SPACE to confirm. Good luck!'
   nonMoxoIntroVoice: {fileID: 0}
-  trainingIntroVoice: {fileID: 8300000, guid: 9855a1b9fe66a48408138017f445e87d, type: 3}
+  trainingIntroVoice: {fileID: 8300000, guid: d69507d89b1e5594d85cf468f3da8dfc, type: 3}
   readyIntroVoice: {fileID: 0}
   lockCptToGlobalDefaults: 0
   totalTrialsOverride: 15

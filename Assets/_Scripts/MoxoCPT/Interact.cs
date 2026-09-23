@@ -217,6 +217,7 @@ namespace MoxoCPT
             {
                 report.Outcome = "miss";
                 report.Correct = false;
+                // No feedback: omission errors are intentionally silent (red is commission-only).
             }
             else if (!isTargetTrial && hadPress)
             {
@@ -227,6 +228,7 @@ namespace MoxoCPT
             {
                 report.Outcome = "correct_reject";
                 report.Correct = true;
+                // No feedback: withholding on a non-target press is intentionally silent.
             }
 
             // runtime score tracker (optional)

@@ -1,4 +1,5 @@
 // IntroAnchor.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 public class IntroAnchor : MonoBehaviour
@@ -9,13 +10,12 @@ public class IntroAnchor : MonoBehaviour
     [Tooltip("The local character for this island. Shown while the intro screen is visible; hidden when it closes.")]
     public GameObject localCharacter;
 
-    [Tooltip("Optional local stimuli shown next to the local character, INTRO ONLY (not shown during the " +
-             "reward or results screens). Appears stimuliDelaySeconds after the character does, and is " +
-             "hidden as soon as the intro closes. Disable it in the scene; the system enables/disables it.")]
-    public GameObject localStimuli;
+    [Header("Preview Screen Stimuli (shown instantly, before the real MOXO run)")]
+    [Tooltip("This island's single target stimulus object. Shown only while the Preview screen is visible. Disable it in the scene; the system enables/disables it.")]
+    public GameObject localTargetStimulus;
 
-    [Tooltip("Delay (seconds) after the local character appears before the local stimuli appears. Ignored if localStimuli is not assigned.")]
-    public float stimuliDelaySeconds = 5f;
+    [Tooltip("This island's non-target stimulus objects (typically 5). Shown only while the Preview screen is visible. Disable them in the scene; the system enables/disables them.")]
+    public List<GameObject> localNonTargetStimuli = new List<GameObject>();
 
     [Header("Reward (shown after MOXO ends, before results — skipped on redo)")]
     [Tooltip("GameObject enabled briefly after a successful MOXO game. Disable it in the scene; the system enables/disables it automatically.")]

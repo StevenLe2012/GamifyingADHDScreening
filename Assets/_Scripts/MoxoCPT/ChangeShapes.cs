@@ -892,6 +892,10 @@ namespace MoxoCPT
         [Tooltip("AudioSource used to play midPhaseAudio. If unassigned, the clip plays at the countdown UI's world position.")]
         [SerializeField] private AudioSource midPhaseAudioSource;
 
+        [Header("Lighting")]
+        [Tooltip("Enabled when the real MOXO game begins, disabled when it ends.")]
+        [SerializeField] private GameObject directionalLight;
+
         [Header("Countdown UI Placement")]
         [SerializeField] private int countdownSortingOrder = 90;
         [SerializeField] private bool countdownFacePlayer = false;
@@ -1048,6 +1052,16 @@ namespace MoxoCPT
             _runner = StartCoroutine(CoStartAfterIntro());
         }
 
+        /// <summary>
+        /// Call before a retry/redo's ForceStart() so the trial loop actually restarts instead of
+        /// silently no-opping — _hasStarted is otherwise only cleared by OnEnable(), which a redo
+        /// never triggers since this rig stays active the whole time.
+        /// </summary>
+        public void ResetForNewAttempt()
+        {
+            _hasStarted = false;
+        }
+
         // --- Cards binding (scoped to this rig) ---
         private void BindCards()
         {
@@ -1098,6 +1112,8 @@ namespace MoxoCPT
             // Koala is visible for the whole MOXO game.
             BindKoala();
             SetKoalaActive(true);
+
+            if (directionalLight) directionalLight.SetActive(true);
 
             var island = IslandTravelManager.I ? IslandTravelManager.I.CurrentIsland : null;
             _currentIslandId = (island != null) ? (island.islandId ?? "") : "";
@@ -1560,6 +1576,8 @@ namespace MoxoCPT
 
             // Hide progress counter before results screen appears.
             if (showProgressDisplay) progressDisplay?.Hide();
+
+            if (directionalLight) directionalLight.SetActive(false);
 
             // MoxoCPTManager.OnGameEnd owns the post-game flow (reward + results screen).
             // The happy animation is triggered from there so it persists through results.

@@ -1808,14 +1808,7 @@ namespace MoxoCPT
                  "results. Set to 0 to disable this check.")]
         [SerializeField] private int magicAcademyMinHitsToPass = 10;
 
-        // NEW: second button (replay training)
-        [Header("Safeguard - Optional Replay Training Button (NEW)")]
-        [SerializeField] private bool allowReplayTrainingButton = true;
-        [SerializeField] private string replayTrainingTitle = "Want to practice again?";
-        [SerializeField, TextArea]
-        private string replayTrainingBody =
-            "Use Left/Right to choose:\n- Start (replay the test)\n- Replay Training (practice again first)";
-        [Tooltip("Optional voice over clip to play when the replay / replay-training prompt is shown.")]
+        [Tooltip("Optional voice over clip to play when the replay (redo) prompt is shown.")]
         [SerializeField] private AudioClip replayPromptVoice;
 
         // runtime
@@ -1834,9 +1827,6 @@ namespace MoxoCPT
         // NEW: lock GameState to CPT while running / showing results / showing replay prompt
         private bool _lockStateToCpt = false;
         private Coroutine _stateLockCo;
-
-        // NEW: prevent double-start while training flow runs
-        private Coroutine _replayTrainingCo;
 
         // ==================================================
         #region Unity Lifecycle
@@ -2140,13 +2130,6 @@ namespace MoxoCPT
                 return;
             }
 
-            // NEW: cancel training flow if user starts CPT anyway
-            if (_replayTrainingCo != null)
-            {
-                StopCoroutine(_replayTrainingCo);
-                _replayTrainingCo = null;
-            }
-
             try { StopAllCoroutines(); } catch { }
 
             _running = true;
@@ -2203,6 +2186,15 @@ namespace MoxoCPT
                 eyeLogger.BeginSession(pid);
                 _eyeLogging = true;
             }
+
+            // On a retry (redo / train-again), the rig's ChangeShapes stayed continuously active
+            // across the previous attempt, so its one-shot _hasStarted flag (cleared only by
+            // OnEnable) is still true and would make the upcoming ForceStart() silently no-op.
+            // Reset it right here, immediately before nudging, since this is the one point we know
+            // for certain the rig is actually active and findable.
+            var activeRunner = FindObjectsOfType<ChangeShapes>(true)
+                .FirstOrDefault(r => r && r.isActiveAndEnabled && r.gameObject.activeInHierarchy);
+            activeRunner?.ResetForNewAttempt();
 
             NudgeActiveRunnerStart();
         }
@@ -2369,13 +2361,13 @@ namespace MoxoCPT
 
             // Magic Academy only: offer a second button so a successful participant can still choose
             // to practice again ("Training", right) instead of only being able to continue ("Start", left).
-            // Order matters: SetReplayTrainingVisible must run BEFORE DelayStartButton, same as the
-            // existing ShowReadyAfterTraining pattern — DelayStartButton's coroutine ends by calling
+            // Order matters: SetReplayTrainingVisible must run BEFORE DelayStartButton —
+            // DelayStartButton's coroutine ends by calling
             // ApplyNavSelection(), which reads the nav-button list that SetReplayTrainingVisible builds.
             if (CurrentIslandId() == MagicAcademyIslandId)
             {
                 intro.SetReplayTrainingVisible(true);
-                intro.ArmReplayTraining(() => { OnGameBeginReal(); }, labelOverride: "Training");
+                intro.ArmReplayTraining(() => { ShowPreviewBeforeRestart(intro); }, labelOverride: "Training");
                 intro.DelayStartButton(0f, "Start"); // relabel from the shared "Continue" default
             }
         }
@@ -2465,113 +2457,6 @@ namespace MoxoCPT
             return false;
         }
 
-        // NEW: run training again then show the "Ready" panel
-        private void ReplayTrainingThenShowReady()
-        {
-            if (_replayTrainingCo != null)
-            {
-                StopCoroutine(_replayTrainingCo);
-                _replayTrainingCo = null;
-            }
-            _replayTrainingCo = StartCoroutine(CoReplayTrainingThenReady());
-        }
-
-        private IEnumerator CoReplayTrainingThenReady()
-        {
-            // Training should NOT be locked to CPT or the lock will fight PrepareCPT.
-            SetCptLock(false);
-            ExitMoxoCamera();
-
-            // Force PrepareCPT so your TrainingCPTRunner won't instantly abort.
-            GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
-            yield return null;
-
-            string islandId = CurrentIslandId();
-
-            // Find a training runner for this island (prefer BelongsToIsland if available)
-            TrainingCPTRunner runner = null;
-            var all = FindObjectsOfType<TrainingCPTRunner>(true);
-
-            foreach (var r in all)
-            {
-                if (!r) continue;
-                try
-                {
-                    var m = r.GetType().GetMethod("BelongsToIsland", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (m != null)
-                    {
-                        bool ok = (bool)m.Invoke(r, new object[] { islandId });
-                        if (ok) { runner = r; break; }
-                    }
-                }
-                catch { }
-            }
-            if (!runner) runner = all.FirstOrDefault(r => r != null);
-
-            if (!runner)
-            {
-                Debug.LogWarning("[MOXO] ReplayTraining: no TrainingCPTRunner found. Showing Ready anyway.");
-            }
-            else
-            {
-                // Allow rerun even if it was marked completed this session
-                try { TrainingCPTRunner.ClearCompletedForIsland(islandId); } catch { }
-
-                yield return StartCoroutine(runner.RunTrainingForActiveIsland(islandId));
-            }
-
-          
-            // After training: show the ready-to-start panel (this arms the one-shot gate)
-            var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
-            if (intro)
-            {
-                // IMPORTANT: ensure replay training button is hidden on the Ready screen
-                intro.SetReplayTrainingVisible(false);
-
-                // Read island-specific ready text & voice — same logic as IslandTravelManager.
-                var currentIsland = IslandTravelManager.I?.CurrentIsland;
-                var readyTitle = IntroScreen.Fallback(currentIsland?.readyIntroTitle, "Ready to start?");
-                var readyBody  = IntroScreen.Fallback(currentIsland?.readyIntroBody,  "Press Space to begin the real test.");
-                intro.ShowReadyAfterTraining(readyTitle, readyBody);
-
-                // Stop any lingering redo-prompt voice, then play the island's ready voice.
-                intro.StopVoice();
-                if (currentIsland != null && currentIsland.readyIntroVoice)
-                    intro.PlayVoice(currentIsland.readyIntroVoice);
-
-                // ---- NEW: wait until the Ready panel closes, then ensure CPT starts ----
-                float timeout = 45f;
-                while (timeout > 0f)
-                {
-                    bool hidden =
-                        !intro.isActiveAndEnabled ||
-                        !intro.gameObject.activeInHierarchy ||
-                        (intro.GetComponent<CanvasGroup>() && intro.GetComponent<CanvasGroup>().alpha <= 0.001f);
-
-                    if (hidden) break;
-
-                    timeout -= Time.unscaledDeltaTime;
-                    yield return null;
-                }
-
-                // If the player dismissed Ready but CPT didn't start for any reason, start it now.
-                if (GameManager.Instance && GameManager.Instance.State != GameManager.GameState.CPT)
-                {
-                    Debug.LogWarning("[MOXO] ReplayTraining: Ready panel finished but state is not CPT → forcing OnGameBegin().");
-                    OnGameBeginReal();
-                }
-            }
-            else
-            {
-                // No intro screen? Start immediately to avoid getting stuck in PrepareCPT.
-                Debug.LogWarning("[MOXO] ReplayTraining: IntroScreen missing after training → forcing OnGameBegin().");
-                OnGameBeginReal();
-            }
-
-            _replayTrainingCo = null;
-
-        }
-
         private void ShowReplayPrompt_KEEP_CPT()
         {
             Debug.Log("[MOXO] Safeguard triggered → offering replay (stay in CPT, keep MOXO cam).");
@@ -2588,12 +2473,6 @@ namespace MoxoCPT
 
             // Keep CPT lock ON here (we are still "in CPT context" until a choice is made).
 
-            // Magic Academy has no training to replay, so this screen is always single-button
-            // ("Redo") there — the two-button (Redo / Replay Training) choice stays for the other
-            // islands, controlled by allowReplayTrainingButton as before.
-            bool isMagicAcademy = CurrentIslandId() == MagicAcademyIslandId;
-            bool showTrainingButton = allowReplayTrainingButton && !isMagicAcademy;
-
             // Score line only (first line of the per-island results template) — NOT the full
             // template, which continues into congratulatory text meant only for a real success.
             int hit = CPTScoreRuntime.I?.CorrectTargetsHit ?? 0;
@@ -2602,37 +2481,64 @@ namespace MoxoCPT
             int totalDistractors = CPTScoreRuntime.I?.TotalDistractors ?? 0;
             string scoreLine = intro.BuildResultsBody(hit, total, falseAlarms, totalDistractors).Split('\n')[0];
 
-            if (showTrainingButton)
-                intro.ShowTextOnly(replayTrainingTitle, $"{scoreLine}\n\n{replayTrainingBody}");
-            else
-                intro.ShowTextOnly(redoTitle, $"{scoreLine}\n\n{redoBody}");
+            intro.ShowTextOnly(redoTitle, $"{scoreLine}\n\n{redoBody}");
 
-            // Optional voice over for the replay / training choice prompt
+            // Optional voice over for the replay prompt
             if (replayPromptVoice)
                 intro.PlayVoice(replayPromptVoice);
 
-            // Start button -> replay test (relabeled "Redo" when it's the only button on screen)
+            bool isMagicAcademy = CurrentIslandId() == MagicAcademyIslandId;
+
             intro.ArmOnStart(
                 onStart: () =>
                 {
-                    OnGameBeginReal();
+                    if (isMagicAcademy) ShowPreviewBeforeRestart(intro);
+                    else OnGameBeginReal();
                 },
                 delayButton: redoDelaySeconds > 0f,
                 delaySeconds: Mathf.Max(0f, redoDelaySeconds),
-                labelOverride: showTrainingButton ? null : "Redo"
+                labelOverride: "Redo"
+            );
+        }
+
+        // Magic Academy only: shows the Preview screen (target/non-target stimuli) again before
+        // restarting MOXO, so the participant can re-study the stimuli. Used both after a failed
+        // run (Redo) and when voluntarily practicing again from the results screen (Training).
+        private void ShowPreviewBeforeRestart(IntroScreen intro)
+        {
+            Debug.Log("[MOXO] ShowPreviewBeforeRestart() called.");
+
+            // Callers may still have the CPT-state lock on (the redo prompt keeps it on); release it
+            // here so ShowPreviewInstructions (which briefly sets PrepareCPT) isn't immediately forced
+            // back to CPT. OnGameBeginReal() re-locks it once the participant presses Start on the preview,
+            // and it also resets ChangeShapes' _hasStarted flag right before nudging it, so the trial
+            // loop reliably restarts regardless of the rig's active-state at this earlier point.
+            SetCptLock(false);
+
+            var travel = IslandTravelManager.I;
+            intro.ShowPreviewInstructions(
+                travel ? travel.PreviewTitle : "Instructions",
+                travel ? travel.PreviewBody : "Target - Press Space ONCE\nNon-Target - Don't Press Space",
+                travel ? travel.PreviewDelaySeconds : 3f,
+                "Start"
             );
 
-            if (showTrainingButton)
+            StartCoroutine(CoWaitPreviewThenEnsureCpt(intro));
+        }
+
+        // ShowPreviewInstructions no longer auto-starts MOXO on its own Start press (Magic Academy
+        // needs the option to run training in between); this is the actual trigger that starts the
+        // real run once the Preview screen closes, same as IslandTravelManager.CoWaitIntroThenCountdown
+        // does for the first-entry Preview screen.
+        private IEnumerator CoWaitPreviewThenEnsureCpt(IntroScreen intro)
+        {
+            while (intro && intro.IsVisible)
+                yield return null;
+
+            if (GameManager.Instance && GameManager.Instance.State != GameManager.GameState.CPT)
             {
-                intro.SetReplayTrainingVisible(true);
-                intro.ArmReplayTraining(() =>
-                {
-                    ReplayTrainingThenShowReady();
-                });
-            }
-            else
-            {
-                intro.SetReplayTrainingVisible(false);
+                Debug.LogWarning("[MOXO] Preview closed but state is not CPT → forcing OnGameBeginReal().");
+                OnGameBeginReal();
             }
         }
 

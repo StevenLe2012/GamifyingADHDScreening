@@ -560,9 +560,16 @@ public class IslandTravelManager : MonoBehaviour
     [SerializeField] private Canvas pickerCanvasOverride = null;
     [SerializeField] private bool reparentPickerToRuntimeRoot = true;
 
-    [Header("Training")]
-    [SerializeField] private bool alwaysRunTraining = false;
-    [SerializeField] private bool forceTrainingThisTravel = false; // one-shot override
+    [Header("Preview Screen (replaces training + ready screen)")]
+    [SerializeField] private string previewTitle = "Instructions";
+    [SerializeField, TextArea]
+    private string previewBody =
+        "<color=green>Target - Press Space ONCE</color>\n<color=red>Non-Target - Don't Press Space</color>";
+    [SerializeField] private float previewDelaySeconds = 3f;
+
+    public string PreviewTitle => previewTitle;
+    public string PreviewBody => previewBody;
+    public float PreviewDelaySeconds => previewDelaySeconds;
 
     [Header("Debug")]
     [SerializeField] private bool logVerbose = true;
@@ -583,7 +590,6 @@ public class IslandTravelManager : MonoBehaviour
     private IntroScreen _lastIntro;
     private MonoBehaviour _lastCountdown;
     private MonoBehaviour _lastNonMoxoHandler;
-    private bool _didTrainingThisTravel;
     private Coroutine _cptWatchdog;
 
     private void Awake()
@@ -662,11 +668,12 @@ public class IslandTravelManager : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[IslandTravel] TravelTo('{island.islandId}') called — click to see caller stack.", this);
+
         CleanupLastNonMoxoHandler();
         StopCptWatchdog();
 
         CurrentIsland = island;
-        _didTrainingThisTravel = false;
         HasCurrentIslandSpawnRotation = false;
 
         StartCoroutine(CoTravel(island));
@@ -737,21 +744,6 @@ public class IslandTravelManager : MonoBehaviour
         {
             Debug.LogError("[IslandTravel] Island id empty.");
             yield break;
-        }
-
-        // one-shot or always-on training reset
-        if (forceTrainingThisTravel)
-        {
-            TrainingCPTRunner.ClearCompletedForIsland(id);
-            Debug.Log($"[IslandTravel] forceTrainingThisTravel → cleared completion for '{id}'.");
-            forceTrainingThisTravel = false;
-        }
-
-        if (alwaysRunTraining)
-        {
-            TrainingCPTRunner.ClearCompletedForIsland(id);
-            if (logVerbose)
-                Debug.Log($"[IslandTravel] alwaysRunTraining → cleared completion for '{id}'.");
         }
 
         if (!_anchorById.TryGetValue(id, out var dest) || !dest)
@@ -896,121 +888,53 @@ public class IslandTravelManager : MonoBehaviour
 
         GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 
-        // ----- TRAINING GATE (strict + loud logs) -----
-        bool completed = TrainingCPTRunner.HasCompletedForIsland(islandId);
-        Debug.Log(
-            $"[IslandTravel] Training gate for '{islandId}' → didThisTravel={_didTrainingThisTravel}, completed={completed}, alwaysRunTraining={alwaysRunTraining}"
-        );
+        // PREVIEW screen (every island, including Magic Academy): shows this island's target/
+        // non-target stimuli instantly, plus fixed instructions and a single Start button.
+        // Replaces the old training run + ready screen for CARDS/BREAD/POISON/SKULL. Magic
+        // Academy additionally runs guided practice training right after this (see below).
+        var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
+        if (intro)
+        {
+            intro.ShowPreviewInstructions(previewTitle, previewBody, previewDelaySeconds, "Start");
 
-        if (_didTrainingThisTravel == false && completed == false)
+            // Wait until player dismisses the preview screen (NO auto-timeout)
+            while (true)
+            {
+                bool hidden =
+                    !intro.isActiveAndEnabled ||
+                    !intro.gameObject.activeInHierarchy ||
+                    (TryGetCanvasGroup(intro.gameObject, out var cg2) && cg2.alpha <= 0.001f);
+
+                if (hidden) break;
+                yield return null;
+            }
+
+            if (intro && intro.gameObject.activeInHierarchy)
+                intro.HideInstant();
+        }
+
+        // Magic Academy only: guided practice trials (TrainingCPTRunner), after the Preview screen
+        // and before the real MOXO run. The other 4 islands stay training-free.
+        bool isMagicAcademy = string.Equals((islandId ?? "").Trim(), "MAGICACADEMY", StringComparison.OrdinalIgnoreCase);
+        if (isMagicAcademy)
         {
             var trainer = FindTrainerForIsland(islandId);
-
             if (trainer)
             {
                 if (!trainer.gameObject.activeInHierarchy)
                     trainer.gameObject.SetActive(true);
 
-                _didTrainingThisTravel = true;
+                GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
 
-                Debug.Log(
-                    $"[IslandTravel] Training START for island '{islandId}' using '{trainer.name}'."
-                );
-
+                Debug.Log($"[IslandTravel] Magic Academy training START using '{trainer.name}'.");
                 yield return StartCoroutine(trainer.RunTrainingForActiveIsland(islandId));
-
-                Debug.Log($"[IslandTravel] Training FINISH for island '{islandId}'.");
+                Debug.Log("[IslandTravel] Magic Academy training FINISH.");
             }
             else
             {
-                Debug.LogWarning(
-                    $"[IslandTravel] No TrainingCPTRunner strictly bound to island '{islandId}'. Skipping training."
-                );
+                Debug.LogWarning("[IslandTravel] No TrainingCPTRunner bound to Magic Academy. Skipping training.");
             }
         }
-        else
-        {
-            Debug.Log($"[IslandTravel] Training SKIPPED for '{islandId}'.");
-        }
-
-        GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
-
-        // Magic Academy: no training, and no "focus"/ready screen either — straight from the
-        // (hit-enter) intro into MOXO. Every other island's flow below is untouched.
-        bool skipReadyScreen = string.Equals((islandId ?? "").Trim(), "MAGICACADEMY", StringComparison.OrdinalIgnoreCase);
-
-        // READY intro + countdown (loops if player requests replay training)
-        var intro = IntroScreen.Instance ?? FindObjectOfType<IntroScreen>(true);
-        if (intro && !skipReadyScreen)
-        {
-            bool replayTrainingRequested;
-            do
-            {
-                replayTrainingRequested = false;
-
-                var readyTitle = IntroScreen.Fallback(island.readyIntroTitle, "Ready to start?");
-                var readyBody  = IntroScreen.Fallback(island.readyIntroBody,  "Press Space to begin the real test.");
-
-                intro.ShowReadyAfterTraining(readyTitle, readyBody, 5f, "Start", showReplayTraining: true);
-                // Wire the button click (the flag is set on IntroScreen itself before the fade starts)
-                intro.ArmReplayTraining(null);
-
-                // Optional per-island voice over for the READY intro
-                if (island.readyIntroVoice)
-                    intro.PlayVoice(island.readyIntroVoice);
-
-                // Wait until player dismisses the focus screen (NO auto-timeout)
-                while (true)
-                {
-                    bool hidden =
-                        !intro.isActiveAndEnabled ||
-                        !intro.gameObject.activeInHierarchy ||
-                        (TryGetCanvasGroup(intro.gameObject, out var cg2) && cg2.alpha <= 0.001f);
-
-                    if (hidden) break;
-                    yield return null;
-                }
-
-                // Read the flag NOW: ReplayTrainingPending is set at button-click time (before the
-                // fade), so it is already true even if the loop broke on the alpha threshold.
-                replayTrainingRequested = intro.ReplayTrainingPending;
-
-                if (intro && intro.gameObject.activeInHierarchy)
-                    intro.HideInstant();
-
-                // Player chose to replay training: re-run it before showing the focus screen again
-                if (replayTrainingRequested)
-                {
-                    Debug.Log($"[IslandTravel] Replay Training requested from focus screen for island '{islandId}'.");
-
-                    try { TrainingCPTRunner.ClearCompletedForIsland(islandId); } catch { }
-                    _didTrainingThisTravel = false;
-
-                    GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
-
-                    var replayTrainer = FindTrainerForIsland(islandId);
-                    if (replayTrainer)
-                    {
-                        if (!replayTrainer.gameObject.activeInHierarchy)
-                            replayTrainer.gameObject.SetActive(true);
-
-                        _didTrainingThisTravel = true;
-                        Debug.Log($"[IslandTravel] Replay Training START for island '{islandId}' using '{replayTrainer.name}'.");
-                        yield return StartCoroutine(replayTrainer.RunTrainingForActiveIsland(islandId));
-                        Debug.Log($"[IslandTravel] Replay Training FINISH for island '{islandId}'.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[IslandTravel] Replay Training: No TrainingCPTRunner found for island '{islandId}'. Showing focus screen anyway.");
-                    }
-
-                    GameManager.Instance?.UpdateGameState(GameManager.GameState.PrepareCPT);
-                }
-            }
-            while (replayTrainingRequested);
-        }
-
-        TrainingCPTRunner.ForceStopAll();
 
         // make sure we are actually in CPT
         if (GameManager.Instance && GameManager.Instance.State != GameManager.GameState.CPT)
@@ -1329,8 +1253,8 @@ public class IslandTravelManager : MonoBehaviour
         var introAnchor = anchor ? anchor.GetComponent<IntroAnchor>() : null;
         intro.SetLocalCharacter(introAnchor ? introAnchor.localCharacter : null);
         intro.SetLocalStimuli(
-            introAnchor ? introAnchor.localStimuli : null,
-            introAnchor ? introAnchor.stimuliDelaySeconds : 5f
+            introAnchor ? introAnchor.localTargetStimulus : null,
+            introAnchor ? introAnchor.localNonTargetStimuli : null
         );
         intro.SetIslandResultsConfig(
             introAnchor ? introAnchor.resultsVoice        : null,
