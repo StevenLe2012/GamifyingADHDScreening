@@ -119,6 +119,18 @@
       // the canvas DOM size and WebGL render target sizes yourself.
       // config.matchWebGLToCanvasSize = false;
 
+      // Cap the render resolution at ~1920px wide. Unity renders at canvas CSS size x devicePixelRatio,
+      // so 4K / Retina screens (ratio 2-2.25) were drawing 5-8 million pixels per frame and running
+      // slowly. Sized from the SCREEN (not the current window) so it still holds after going fullscreen.
+      // Screens at ratio 1 with a <=1920px canvas are unaffected.
+      (function () {
+        var ratio = window.devicePixelRatio || 1;
+        var maxCssW = Math.min(screen.width, screen.height * 16 / 9);
+        if (maxCssW > 0) {
+          config.devicePixelRatio = Math.min(ratio, Math.max(1, 1920 / maxCssW));
+        }
+      })();
+
       // Fixed 16:9 viewport for research — fullscreen black letterbox/pillarbox.
       var UMakiAspectRatio = 16 / 9;
 

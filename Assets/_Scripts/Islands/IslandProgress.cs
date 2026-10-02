@@ -101,7 +101,10 @@ public class IslandProgress : MonoBehaviour
     {
         if (_bonusUnlocked) return;
         if (!bonusIsland) return; // no bonus configured
-        if (_visited.Count >= bonusUnlockThreshold)
+        // Count only the base islands. _visited also holds the gate island (Magic Academy) and the
+        // bonus itself, which would otherwise unlock the bonus one base island too early.
+        int baseCompleted = allIslands.Count(i => i && IsCompleted(i.islandId));
+        if (baseCompleted >= bonusUnlockThreshold)
         {
             _bonusUnlocked = true;
             Debug.Log($"[IslandProgress] Bonus unlocked → {bonusIsland.islandId}");

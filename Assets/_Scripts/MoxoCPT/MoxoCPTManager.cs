@@ -2577,6 +2577,9 @@ namespace MoxoCPT
             // last placed instead of somewhere the player can actually see.
             IslandTravelManager.I?.PlacePickerForIsland(MagicAcademyIslandId);
             (IslandSelectionUI.I ?? FindObjectOfType<IslandSelectionUI>(true))?.ShowRemaining();
+
+            // Same on-screen hint the dialogue options show; IslandSelectionUI hides it when an island is picked.
+            ExploreHintUI.I?.ShowDialogueOptionsHint("You can now use your mouse to look around. Use the arrow keys to select an island, then press Space to confirm.");
         }
 
         private IEnumerator CoStartKoalaDialogueNextFrame()

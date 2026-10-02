@@ -950,6 +950,7 @@ public class IslandSelectionUI : MonoBehaviour
     IEnumerator DoTravel(IslandData island)
     {
         yield return null;
+        ExploreHintUI.I?.HideDialogueOptionsHint();
         Hide();
         // If a special cutscene exists (e.g. DRAGON intro), let it decide;
         // otherwise fall back to normal travel.
